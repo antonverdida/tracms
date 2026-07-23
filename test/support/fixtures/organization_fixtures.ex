@@ -53,4 +53,23 @@ defmodule Tracms.OrganizationFixtures do
     |> Role.changeset(attrs)
     |> Repo.insert!()
   end
+
+  def named_role_fixture(key) do
+    attrs =
+      case key do
+        "regional_admin" ->
+          %{key: key, name: "Regional Administrator", scope: :region}
+
+        "division_admin" ->
+          %{key: key, name: "Division Administrator", scope: :division}
+
+        "training_coordinator" ->
+          %{key: key, name: "Training Coordinator", scope: :office}
+
+        "participant" ->
+          %{key: key, name: "Participant", scope: :participant}
+      end
+
+    Repo.get_by(Role, key: key) || role_fixture(attrs)
+  end
 end

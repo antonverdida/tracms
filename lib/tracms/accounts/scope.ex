@@ -47,6 +47,9 @@ defmodule Tracms.Accounts.Scope do
   def division_admin?(scope), do: role?(scope, "division_admin")
   def coordinator?(scope), do: role?(scope, "training_coordinator")
 
+  def training_manager?(scope),
+    do: regional_admin?(scope) or division_admin?(scope) or coordinator?(scope)
+
   defp role_key_for(%User{role: role}) do
     if Ecto.assoc_loaded?(role) && role do
       role.key
