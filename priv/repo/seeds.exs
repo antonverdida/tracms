@@ -1,4 +1,4 @@
-alias Tracms.Accounts.Role
+alias Tracms.Accounts.{Role, User}
 alias Tracms.Organization.{Division, Office}
 alias Tracms.Repo
 
@@ -159,3 +159,34 @@ Enum.each(offices, fn office_attrs ->
     conflict_target: :code
   )
 end)
+
+demo_email = "admin@tracms.local"
+demo_password = "Admin123456!"
+
+regional_admin_role = Repo.get_by!(Role, key: "regional_admin")
+regional_office = Repo.get_by!(Office, code: "RO9-REG")
+
+demo_user =
+  Repo.get_by(User, email: demo_email) ||
+    %User{}
+    |> User.email_changeset(%{email: demo_email})
+    |> Repo.insert!()
+
+demo_user
+|> User.profile_changeset(%{
+  full_name: "TRACMS Administrator",
+  status: :active,
+  role_id: regional_admin_role.id,
+  office_id: regional_office.id,
+  approved_at: DateTime.utc_now(:second)
+})
+|> User.password_changeset(%{password: demo_password})
+|> Ecto.Changeset.change(confirmed_at: DateTime.utc_now(:second))
+|> Repo.update!()
+
+IO.puts("""
+
+TRACMS demo account ready:
+  email: #{demo_email}
+  password: #{demo_password}
+""")
