@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="csrf-token" content={get_csrf_token()} />
+    <meta
+      name="description"
+      content="TRACMS is the planned digital platform for DepEd Region IX training, registration, attendance, certification, and professional development records."
+    />
+    <.live_title default="TRACMS" suffix=" · DepEd Region IX">
+      {assigns[:page_title]}
+    </.live_title>
+    <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
+    <script defer phx-track-static type="text/javascript" src={~p"/assets/js/app.js"}>
+    </script>
+  </head>
+  <body class="h-full">
+    <div class="auth-strip">
+      <ul class="auth-strip-list">
+        <%= if @current_scope do %>
+          <li class="auth-strip-text">
+            {@current_scope.user.email}
+          </li>
+          <li>
+            <.link href={~p"/users/settings"} class="auth-strip-link">Settings</.link>
+          </li>
+          <li>
+            <.link href={~p"/users/log-out"} method="delete" class="auth-strip-link">
+              Log out
+            </.link>
+          </li>
+        <% else %>
+          <li>
+            <.link href={~p"/users/register"} class="auth-strip-link">Register</.link>
+          </li>
+          <li>
+            <.link href={~p"/users/log-in"} class="auth-strip-link">Log in</.link>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+    {@inner_content}
+  </body>
+</html>
