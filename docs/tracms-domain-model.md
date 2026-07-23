@@ -31,6 +31,22 @@ This document records the first domain entities added after the Phoenix scaffold
   - regional, division, school, or unit-level offices
   - optionally linked to a division
 
+### Trainings
+
+- `training_activities`
+  - first business module in implementation
+  - linked to one creator user
+  - linked to one owning office
+  - linked to one owning division
+  - contains lifecycle state for publication and approval flow
+
+### Registrations
+
+- `registrations`
+  - links one user to one training activity
+  - tracks registration status through submission, review, and withdrawal
+  - stores reviewer metadata for approval decisions
+
 ## User Metadata Added in This Slice
 
 - `full_name`

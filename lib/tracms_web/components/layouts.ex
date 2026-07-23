@@ -50,10 +50,24 @@ defmodule TracmsWeb.Layouts do
           </a>
 
           <nav class="nav-links" aria-label="Primary">
-            <a href="#overview" class="nav-link">Overview</a>
-            <a href="#modules" class="nav-link">Modules</a>
-            <a href="#principles" class="nav-link">Principles</a>
-            <.button href="#roadmap" variant="secondary">Roadmap</.button>
+            <.link navigate={~p"/"} class="nav-link">Home</.link>
+            <%= if @current_scope && @current_scope.user do %>
+              <.link navigate={~p"/catalog/trainings"} class="nav-link">Catalog</.link>
+              <.link navigate={~p"/my/registrations"} class="nav-link">My registrations</.link>
+              <.link
+                :if={Tracms.Accounts.Scope.training_manager?(@current_scope)}
+                navigate={~p"/trainings"}
+                class="nav-link"
+              >
+                Trainings
+              </.link>
+              <.link navigate={~p"/users/settings"} class="nav-link">Settings</.link>
+            <% else %>
+              <a href="#overview" class="nav-link">Overview</a>
+              <a href="#modules" class="nav-link">Modules</a>
+              <a href="#principles" class="nav-link">Principles</a>
+              <.button href="#roadmap" variant="secondary">Roadmap</.button>
+            <% end %>
           </nav>
         </div>
       </header>

@@ -54,6 +54,20 @@ defmodule TracmsWeb.Router do
       on_mount: [{TracmsWeb.UserAuth, :require_authenticated}] do
       live "/users/settings", UserLive.Settings, :edit
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
+      live "/catalog/trainings", RegistrationLive.Catalog, :index
+      live "/my/registrations", RegistrationLive.MyIndex, :index
+    end
+
+    live_session :training_management,
+      on_mount: [
+        {TracmsWeb.UserAuth, :require_authenticated},
+        {TracmsWeb.TrainingLive.Auth, :require_training_manager}
+      ] do
+      live "/trainings", TrainingLive.Index, :index
+      live "/trainings/new", TrainingLive.Form, :new
+      live "/trainings/:id/edit", TrainingLive.Form, :edit
+      live "/trainings/:id", TrainingLive.Show, :show
+      live "/trainings/:training_id/registrations", TrainingLive.Registrations, :index
     end
 
     post "/users/update-password", UserSessionController, :update_password
