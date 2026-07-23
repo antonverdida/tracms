@@ -45,6 +45,19 @@ defmodule Tracms.Registrations do
     end
   end
 
+  def list_manageable_registrations(scope) do
+    if Scope.training_manager?(scope) do
+      Registration
+      |> join(:inner, [registration], training in assoc(registration, :training_activity))
+      |> scope_manageable_registrations(scope)
+      |> preload(^@preloads)
+      |> order_by([registration, _training], desc: registration.inserted_at)
+      |> Repo.all()
+    else
+      []
+    end
+  end
+
   def list_training_registrations(scope, training_id) do
     training_activity = Trainings.get_training_activity!(scope, training_id)
 
@@ -193,4 +206,20 @@ defmodule Tracms.Registrations do
 
   defp preload_result({:ok, registration}), do: {:ok, Repo.preload(registration, @preloads)}
   defp preload_result(other), do: other
+
+  defp scope_manageable_registrations(query, scope) do
+    cond do
+      Scope.regional_admin?(scope) ->
+        query
+
+      Scope.division_admin?(scope) and scope.division_id ->
+        where(query, [_registration, training], training.division_id == ^scope.division_id)
+
+      Scope.coordinator?(scope) and scope.office_id ->
+        where(query, [_registration, training], training.office_id == ^scope.office_id)
+
+      true ->
+        where(query, [_registration, _training], false)
+    end
+  end
 end

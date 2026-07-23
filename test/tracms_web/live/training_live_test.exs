@@ -12,7 +12,7 @@ defmodule TracmsWeb.TrainingLiveTest do
         conn
         |> log_in_user(user)
         |> live(~p"/trainings")
-        |> follow_redirect(conn, ~p"/")
+        |> follow_redirect(conn, ~p"/dashboard")
     end
   end
 

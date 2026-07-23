@@ -34,6 +34,8 @@ defmodule Tracms.Trainings.TrainingActivity do
     field :starts_on, :date
     field :ends_on, :date
     field :published_at, :utc_datetime
+    field :minimum_attendance_percentage, :integer, default: 75
+    field :evaluation_required, :boolean, default: false
 
     belongs_to :creator_user, User
     belongs_to :office, Office
@@ -68,6 +70,8 @@ defmodule Tracms.Trainings.TrainingActivity do
       :starts_on,
       :ends_on,
       :published_at,
+      :minimum_attendance_percentage,
+      :evaluation_required,
       :creator_user_id,
       :office_id,
       :division_id
@@ -83,7 +87,9 @@ defmodule Tracms.Trainings.TrainingActivity do
       :registration_deadline,
       :max_capacity,
       :starts_on,
-      :ends_on
+      :ends_on,
+      :minimum_attendance_percentage,
+      :evaluation_required
     ])
     |> validate_length(:title, max: 200)
     |> validate_length(:description, max: 5_000)
@@ -91,6 +97,10 @@ defmodule Tracms.Trainings.TrainingActivity do
     |> validate_length(:organizer, max: 200)
     |> validate_length(:venue, max: 200)
     |> validate_number(:max_capacity, greater_than: 0, less_than_or_equal_to: 100_000)
+    |> validate_number(:minimum_attendance_percentage,
+      greater_than_or_equal_to: 0,
+      less_than_or_equal_to: 100
+    )
     |> validate_registration_deadline()
     |> validate_schedule_range()
     |> assoc_constraint(:creator_user)

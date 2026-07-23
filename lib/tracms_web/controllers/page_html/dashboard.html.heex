@@ -1,0 +1,336 @@
+<Layouts.app
+  flash={@flash}
+  current_scope={@current_scope}
+  variant="dashboard"
+  active_nav="dashboard"
+>
+  <div class="dashboard-portal">
+    <section class="dashboard-portal-hero">
+      <div class="dashboard-portal-hero-copy">
+        <h1 class="dashboard-portal-title">Good Morning, {@greeting_name}!</h1>
+        <p class="dashboard-portal-copy">{@dashboard_intro}</p>
+      </div>
+
+      <div class="dashboard-date-pill">
+        <.icon name="hero-calendar-days" class="size-5" />
+        <span>{@dashboard_date}</span>
+      </div>
+    </section>
+
+    <section class="dashboard-stat-grid">
+      <article
+        :for={metric <- @metrics}
+        class={["dashboard-stat-card", "dashboard-stat-card-#{metric.tone}"]}
+      >
+        <div class={["dashboard-stat-icon", "dashboard-stat-icon-#{metric.tone}"]}>
+          <.icon name={metric.icon} class="size-7" />
+        </div>
+
+        <div class="dashboard-stat-content">
+          <p class="dashboard-stat-label">{metric.label}</p>
+          <p class="dashboard-stat-value">{metric.value}</p>
+          <p class="dashboard-stat-meta">{metric.meta}</p>
+        </div>
+      </article>
+    </section>
+
+    <section class="dashboard-portal-grid">
+      <article class="panel portal-panel portal-panel-upcoming">
+        <div class="dashboard-section-head">
+          <div>
+            <p class="eyebrow">
+              {if @dashboard_mode == :manager,
+                do: "Operational schedule",
+                else: "Training schedule"}
+            </p>
+            <h2 class="section-title">
+              {if @dashboard_mode == :manager,
+                do: "Upcoming Training Activities",
+                else: "My Upcoming Trainings"}
+            </h2>
+          </div>
+
+          <.link
+            navigate={
+              if @dashboard_mode == :manager, do: ~p"/trainings", else: ~p"/my/registrations"
+            }
+            class="dashboard-panel-link"
+          >
+            View all
+          </.link>
+        </div>
+
+        <%= if @upcoming_items == [] do %>
+          <div class="portal-empty-state">
+            <div class="portal-empty-icon">
+              <.icon
+                name={
+                  if @dashboard_mode == :manager, do: "hero-calendar-days", else: "hero-book-open"
+                }
+                class="size-7"
+              />
+            </div>
+            <div>
+              <h3 class="portal-empty-title">
+                {if @dashboard_mode == :manager,
+                  do: "No scheduled training activities yet",
+                  else: "No upcoming training records yet"}
+              </h3>
+              <p class="section-copy portal-empty-copy">
+                {if @dashboard_mode == :manager,
+                  do:
+                    "Create your first training activity to start publishing schedules, managing registrations, and tracking delivery progress.",
+                  else:
+                    "Your approved or submitted trainings will appear here once you start joining regional activities."}
+              </p>
+            </div>
+
+            <div class="portal-empty-actions">
+              <.link
+                navigate={
+                  if @dashboard_mode == :manager,
+                    do: ~p"/trainings/new",
+                    else: ~p"/catalog/trainings"
+                }
+                class="portal-link-button portal-link-button-primary"
+              >
+                {if @dashboard_mode == :manager,
+                  do: "Create first training",
+                  else: "Browse trainings"}
+              </.link>
+            </div>
+          </div>
+        <% else %>
+          <div class="portal-event-list">
+            <div :for={item <- @upcoming_items} class="portal-event-card">
+              <div class="portal-date-card">
+                <span class="portal-date-month">{item.month}</span>
+                <span class="portal-date-day">{item.day}</span>
+              </div>
+
+              <div class="portal-event-body">
+                <div class="badge-row">
+                  <span class="badge-soft">{item.badge}</span>
+                </div>
+                <h3 class="portal-event-title">{item.title}</h3>
+                <p class="portal-event-meta">{item.meta_primary}</p>
+                <p class="portal-event-submeta">{item.meta_secondary}</p>
+              </div>
+
+              <.link navigate={item.action_path} class="portal-inline-action">
+                {item.action_label}
+              </.link>
+            </div>
+          </div>
+        <% end %>
+      </article>
+
+      <article class="panel portal-panel portal-panel-status">
+        <div class="dashboard-section-head">
+          <div>
+            <p class="eyebrow">
+              {if @dashboard_mode == :manager, do: "Pipeline view", else: "Status overview"}
+            </p>
+            <h2 class="section-title">
+              {if @dashboard_mode == :manager,
+                do: "Training Status Pipeline",
+                else: "My Registration Status"}
+            </h2>
+          </div>
+        </div>
+
+        <div class="portal-status-list">
+          <div :for={item <- @status_items} class="portal-status-item">
+            <div class="portal-status-head">
+              <div>
+                <p class="portal-status-label">{item.label}</p>
+                <p class="portal-status-copy">{item.description}</p>
+              </div>
+              <span class="portal-status-value">{item.value}</span>
+            </div>
+
+            <div class="portal-progress">
+              <span style={"width: #{item.percent}%"}></span>
+            </div>
+          </div>
+        </div>
+
+        <p class="portal-note">{@status_note}</p>
+      </article>
+
+      <article class="panel portal-panel portal-panel-workflow">
+        <div class="dashboard-section-head">
+          <div>
+            <p class="eyebrow">
+              {if @dashboard_mode == :manager, do: "Registration queue", else: "Evaluation status"}
+            </p>
+            <h2 class="section-title">
+              {if @dashboard_mode == :manager,
+                do: "Registration Status",
+                else: "Evaluation & Completion"}
+            </h2>
+          </div>
+
+          <.link navigate={@workflow_link} class="dashboard-panel-link">
+            {if @dashboard_mode == :manager, do: "Review queue", else: "Open records"}
+          </.link>
+        </div>
+
+        <div class="portal-workflow-list">
+          <div
+            :for={item <- @workflow_items}
+            class={["portal-workflow-item", "portal-workflow-item-#{item.tone}"]}
+          >
+            <div>
+              <p class="portal-workflow-label">{item.label}</p>
+              <p class="portal-workflow-copy">{item.description}</p>
+            </div>
+            <span class="portal-workflow-value">{item.value}</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel portal-panel portal-panel-monitor">
+        <div class="dashboard-section-head">
+          <div>
+            <p class="eyebrow">
+              {if @dashboard_mode == :manager, do: "Activity capacity", else: "My records"}
+            </p>
+            <h2 class="section-title">
+              {if @dashboard_mode == :manager,
+                do: "Registration Monitoring",
+                else: "My Training Records"}
+            </h2>
+          </div>
+
+          <.link
+            navigate={
+              if @dashboard_mode == :manager, do: ~p"/trainings", else: ~p"/my/registrations"
+            }
+            class="dashboard-panel-link"
+          >
+            View all
+          </.link>
+        </div>
+
+        <%= if @monitoring_rows == [] do %>
+          <div class="portal-empty-quiet">
+            <p class="section-copy">
+              {if @dashboard_mode == :manager,
+                do:
+                  "Registration counts and status summaries will appear here once training activities are created.",
+                else:
+                  "Your registration history and evaluation progress will appear here after you join a training."}
+            </p>
+          </div>
+        <% else %>
+          <div class="data-table-wrap">
+            <table class="data-table portal-table">
+              <thead>
+                <tr>
+                  <%= if @dashboard_mode == :manager do %>
+                    <th>Training Title</th>
+                    <th>Registered</th>
+                    <th>Capacity</th>
+                    <th>Status</th>
+                  <% else %>
+                    <th>Training Title</th>
+                    <th>Schedule</th>
+                    <th>Status</th>
+                    <th>Evaluation</th>
+                  <% end %>
+                </tr>
+              </thead>
+              <tbody>
+                <tr :for={row <- @monitoring_rows}>
+                  <td>
+                    <.link navigate={row.action_path} class="portal-table-link">
+                      {row.title}
+                    </.link>
+                  </td>
+                  <%= if @dashboard_mode == :manager do %>
+                    <td>{row.metric}</td>
+                    <td>{row.capacity}</td>
+                    <td>
+                      <span class={["portal-chip", "portal-chip-#{row.status_tone}"]}>
+                        {row.status_label}
+                      </span>
+                    </td>
+                  <% else %>
+                    <td>{row.schedule}</td>
+                    <td>
+                      <span class={["portal-chip", "portal-chip-#{row.status_tone}"]}>
+                        {row.status_label}
+                      </span>
+                    </td>
+                    <td>{row.evaluation_label}</td>
+                  <% end %>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        <% end %>
+      </article>
+
+      <article class="panel portal-panel portal-panel-actions">
+        <div class="dashboard-section-head">
+          <div>
+            <p class="eyebrow">Quick actions</p>
+            <h2 class="section-title">Quick Actions</h2>
+          </div>
+        </div>
+
+        <div class="portal-action-grid">
+          <.link :for={action <- @quick_actions} navigate={action.path} class="portal-action-tile">
+            <div class={["portal-action-icon", "portal-action-icon-#{action.tone}"]}>
+              <.icon name={action.icon} class="size-6" />
+            </div>
+            <div>
+              <h3 class="portal-action-title">{action.title}</h3>
+              <p class="portal-action-copy">{action.copy}</p>
+            </div>
+          </.link>
+        </div>
+      </article>
+
+      <article class="panel portal-panel portal-panel-activity">
+        <div class="dashboard-section-head">
+          <div>
+            <p class="eyebrow">Recent activity</p>
+            <h2 class="section-title">Latest Updates</h2>
+          </div>
+        </div>
+
+        <%= if @recent_activities == [] do %>
+          <div class="portal-empty-quiet">
+            <p class="section-copy">
+              Recent training, registration, and evaluation updates will appear here once new activity is recorded in TRACMS.
+            </p>
+          </div>
+        <% else %>
+          <div class="portal-activity-list">
+            <div :for={activity <- @recent_activities} class="portal-activity-item">
+              <div class={["portal-activity-icon", "portal-activity-icon-#{activity.tone}"]}>
+                <.icon name={activity.icon} class="size-5" />
+              </div>
+
+              <div class="portal-activity-copy">
+                <h3 class="portal-activity-title">{activity.title}</h3>
+                <p class="portal-activity-meta">{activity.detail}</p>
+              </div>
+
+              <span class="portal-activity-time">{activity.timestamp}</span>
+            </div>
+          </div>
+        <% end %>
+      </article>
+    </section>
+
+    <footer class="dashboard-portal-footer">
+      <span>
+        &copy; {@current_year} Department of Education - Region IX. All rights reserved.
+      </span>
+      <span>TRACMS Version 1.0.0</span>
+    </footer>
+  </div>
+</Layouts.app>

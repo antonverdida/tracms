@@ -39,7 +39,12 @@ defmodule TracmsWeb.TrainingLive.Registrations do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
+    <Layouts.app
+      flash={@flash}
+      current_scope={@current_scope}
+      variant="dashboard"
+      active_nav="trainings"
+    >
       <div class="space-y-6">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>

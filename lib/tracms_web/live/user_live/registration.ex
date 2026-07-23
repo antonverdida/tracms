@@ -7,37 +7,169 @@ defmodule TracmsWeb.UserLive.Registration do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="mx-auto max-w-sm">
-        <div class="text-center">
-          <.header>
-            Register for an account
-            <:subtitle>
+    <Layouts.app flash={@flash} current_scope={@current_scope} variant="auth">
+      <section class="auth-stage auth-portal-stage">
+        <article class="auth-brand-panel auth-portal-brand-panel">
+          <div class="auth-portal-brand-top">
+            <img src={~p"/images/tracms-logo.svg"} alt="TRACMS logo" class="auth-portal-brand-logo" />
+            <div class="auth-portal-brand-lockup">
+              <p class="auth-portal-brand-overline">Department of Education</p>
+              <p class="auth-portal-brand-region">Region IX</p>
+            </div>
+          </div>
+
+          <div class="auth-brand-stack">
+            <p class="auth-portal-brand-divider"></p>
+            <h1 class="auth-portal-brand-system">TRACMS</h1>
+            <h2 class="auth-portal-brand-title">
+              Training, Registration, Attendance, and Certification Management System
+            </h2>
+            <p class="auth-brand-copy">
+              A centralized platform for managing training activities, participant
+              registration, attendance monitoring, digital certification, and professional
+              development records for DepEd Region IX.
+            </p>
+          </div>
+
+          <div class="auth-portal-feature-list">
+            <div class="auth-portal-feature-item">
+              <div class="auth-portal-feature-icon">
+                <.icon name="hero-book-open" class="size-7" />
+              </div>
+              <div>
+                <p class="auth-portal-feature-title">Training Management</p>
+                <p class="auth-portal-feature-copy">
+                  Create, manage, and monitor training activities.
+                </p>
+              </div>
+            </div>
+
+            <div class="auth-portal-feature-item">
+              <div class="auth-portal-feature-icon">
+                <.icon name="hero-users" class="size-7" />
+              </div>
+              <div>
+                <p class="auth-portal-feature-title">Participant Registration</p>
+                <p class="auth-portal-feature-copy">
+                  Online registration and participant management.
+                </p>
+              </div>
+            </div>
+
+            <div class="auth-portal-feature-item">
+              <div class="auth-portal-feature-icon">
+                <.icon name="hero-clipboard-document-check" class="size-7" />
+              </div>
+              <div>
+                <p class="auth-portal-feature-title">Attendance Tracking</p>
+                <p class="auth-portal-feature-copy">Manual and QR-based attendance monitoring.</p>
+              </div>
+            </div>
+
+            <div class="auth-portal-feature-item">
+              <div class="auth-portal-feature-icon">
+                <.icon name="hero-academic-cap" class="size-7" />
+              </div>
+              <div>
+                <p class="auth-portal-feature-title">Digital Certificates</p>
+                <p class="auth-portal-feature-copy">
+                  Automated certificate generation and distribution.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="auth-portal-brand-surface" aria-hidden="true"></div>
+        </article>
+
+        <article class="auth-portal-pane">
+          <div class="auth-portal-security-head">
+            <div class="auth-portal-security-icon">
+              <.icon name="hero-identification" class="size-10" />
+            </div>
+            <p class="auth-portal-security-kicker">Portal Access</p>
+            <p class="auth-portal-security-copy">Request secure access to the TRACMS platform.</p>
+          </div>
+
+          <article class="auth-card auth-portal-card auth-portal-card-compact">
+            <div class="auth-portal-avatar">
+              <.icon name="hero-user-plus" class="size-11" />
+            </div>
+
+            <div class="auth-card-header auth-portal-card-header">
+              <h2 class="auth-card-title">Create account</h2>
+              <p class="auth-card-copy">
+                Enter your work email address to receive your first secure sign-in link.
+              </p>
+            </div>
+
+            <.form
+              for={@form}
+              id="registration_form"
+              phx-submit="save"
+              phx-change="validate"
+              class="auth-form auth-portal-form"
+            >
+              <div class="auth-form-section">
+                <label class="auth-portal-field-block">
+                  <span class="field-label auth-portal-label">Email Address</span>
+                  <div class="auth-portal-input-shell">
+                    <.icon name="hero-envelope" class="auth-portal-input-icon" />
+                    <input
+                      type="email"
+                      name={@form[:email].name}
+                      id={@form[:email].id}
+                      value={@form[:email].value}
+                      class="auth-portal-input"
+                      autocomplete="username"
+                      spellcheck="false"
+                      placeholder="Enter your DepEd email address"
+                      required
+                      phx-mounted={JS.focus()}
+                    />
+                  </div>
+                </label>
+                <p
+                  :for={msg <- @form[:email].errors}
+                  class="mt-1 flex items-center gap-2 text-sm text-[var(--tracms-danger)]"
+                >
+                  <.icon name="hero-exclamation-circle" class="size-5" />
+                  {translate_error(msg)}
+                </p>
+              </div>
+
+              <.button phx-disable-with="Creating account..." class="w-full auth-portal-submit">
+                <.icon name="hero-paper-airplane" class="size-5" /> Create account
+              </.button>
+            </.form>
+
+            <p class="auth-portal-support-copy">
               Already registered?
-              <.link navigate={~p"/users/log-in"} class="font-semibold text-brand hover:underline">
-                Log in
+              <.link navigate={~p"/users/log-in"} class="auth-inline-link">
+                Sign in
               </.link>
-              to your account now.
-            </:subtitle>
-          </.header>
-        </div>
+            </p>
+          </article>
 
-        <.form for={@form} id="registration_form" phx-submit="save" phx-change="validate">
-          <.input
-            field={@form[:email]}
-            type="email"
-            label="Email"
-            autocomplete="username"
-            spellcheck="false"
-            required
-            phx-mounted={JS.focus()}
-          />
+          <article class="auth-portal-notice">
+            <div class="auth-portal-notice-icon">
+              <.icon name="hero-information-circle" class="size-6" />
+            </div>
+            <div>
+              <p class="auth-portal-notice-title">Access Guidance</p>
+              <p class="auth-portal-notice-copy">
+                Use your official work email address. Access approval and portal use remain
+                subject to applicable internal DepEd Region IX policies.
+              </p>
+            </div>
+          </article>
 
-          <.button phx-disable-with="Creating account..." class="btn btn-primary w-full">
-            Create an account
-          </.button>
-        </.form>
-      </div>
+          <footer class="auth-portal-footer">
+            <p>&copy; 2026 Department of Education - Region IX</p>
+            <p>All rights reserved.</p>
+          </footer>
+        </article>
+      </section>
     </Layouts.app>
     """
   end

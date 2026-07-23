@@ -14,7 +14,7 @@ defmodule TracmsWeb.TrainingLive.Auth do
       socket =
         socket
         |> put_flash(:error, "You do not have access to training management.")
-        |> redirect(to: ~p"/")
+        |> redirect(to: ~p"/dashboard")
 
       {:halt, socket}
     end

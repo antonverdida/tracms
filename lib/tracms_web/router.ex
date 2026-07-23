@@ -50,12 +50,15 @@ defmodule TracmsWeb.Router do
   scope "/", TracmsWeb do
     pipe_through [:browser, :require_authenticated_user]
 
+    get "/dashboard", PageController, :dashboard
+
     live_session :require_authenticated_user,
       on_mount: [{TracmsWeb.UserAuth, :require_authenticated}] do
       live "/users/settings", UserLive.Settings, :edit
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
       live "/catalog/trainings", RegistrationLive.Catalog, :index
       live "/my/registrations", RegistrationLive.MyIndex, :index
+      live "/my/registrations/:registration_id/evaluation", RegistrationLive.Evaluation, :edit
     end
 
     live_session :training_management,
@@ -68,6 +71,8 @@ defmodule TracmsWeb.Router do
       live "/trainings/:id/edit", TrainingLive.Form, :edit
       live "/trainings/:id", TrainingLive.Show, :show
       live "/trainings/:training_id/registrations", TrainingLive.Registrations, :index
+      live "/trainings/:training_id/attendance", TrainingLive.Attendance, :index
+      live "/trainings/:training_id/completion", TrainingLive.Completion, :index
     end
 
     post "/users/update-password", UserSessionController, :update_password
