@@ -3,149 +3,58 @@
     <section id="overview" class="hero-grid">
       <article class="hero-card hero-main">
         <div class="hero-kicker">
-          <span>Phase 0 Foundation</span>
+          <span>DepEd Region IX</span>
           <span>•</span>
-          <span>Phoenix v{Application.spec(:phoenix, :vsn)}</span>
+          <span>TRACMS</span>
         </div>
 
-        <h1 class="hero-title">
-          A simple and professional training records platform for DepEd Region IX.
-        </h1>
+        <h1 class="hero-title">Training management for DepEd Region IX.</h1>
 
         <p class="hero-lead">
-          TRACMS is being built as a centralized system for training planning, participant
-          registration, attendance monitoring, evaluation, certificate issuance, verification,
-          and professional development history. This foundation keeps the implementation clean,
-          consistent, and ready for a proper government workflow.
+          TRACMS manages training activities, registration, attendance, and certification in one
+          regional system.
         </p>
 
         <div class="hero-actions">
-          <.button href="#modules">View planned modules</.button>
-          <.button href="#principles" variant="ghost">See implementation principles</.button>
+          <%= if @current_scope && @current_scope.user do %>
+            <.button navigate={~p"/dashboard"}>Open dashboard</.button>
+          <% else %>
+            <.button navigate={~p"/users/log-in"}>Sign in</.button>
+          <% end %>
         </div>
       </article>
 
       <aside class="stack">
-        <div class="metric-grid">
-          <div class="metric-card">
-            <div class="metric-label">Architecture</div>
-            <div class="metric-value">Monolith</div>
-            <div class="metric-note">Phoenix 1.8 + LiveView + PostgreSQL</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">Design System</div>
-            <div class="metric-value">Unified</div>
-            <div class="metric-note">
-              Buttons, panels, forms, tables, and flash states share one base style.
-            </div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">Records Model</div>
-            <div class="metric-value">Accurate</div>
-            <div class="metric-note">
-              Registrations, attendance, and certificates are modeled separately.
-            </div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">Current Stage</div>
-            <div class="metric-value">Scaffolded</div>
-            <div class="metric-note">
-              Core app foundation and planning docs are now in the repository.
-            </div>
-          </div>
-        </div>
+        <article class="panel panel-muted">
+          <p class="eyebrow">Access</p>
+          <h2 class="section-title">Internal regional platform</h2>
+          <p class="section-copy">
+            This system is intended for authorized DepEd Region IX users and training participants.
+          </p>
+        </article>
       </aside>
     </section>
 
-    <section class="content-grid">
-      <article class="panel" id="modules">
-        <p class="eyebrow">Planned MVP</p>
-        <h2 class="section-title">Core modules for the first complete release</h2>
-        <p class="section-copy">
-          The MVP is intentionally narrow enough to stay maintainable while still covering the
-          full training lifecycle end to end.
-        </p>
-        <div class="feature-grid mt-6">
-          <div class="feature-card">
-            <h3 class="feature-title">Training Management</h3>
-            <p class="feature-copy">Creation, approval, publication, and structured schedules.</p>
-          </div>
-          <div class="feature-card">
-            <h3 class="feature-title">Registration and Participants</h3>
-            <p class="feature-copy">
-              Online registration, review, approval, and participant tracking.
-            </p>
-          </div>
-          <div class="feature-card">
-            <h3 class="feature-title">Attendance and Evaluation</h3>
-            <p class="feature-copy">
-              Manual and QR-based attendance with evaluation-gated completion.
-            </p>
-          </div>
-          <div class="feature-card">
-            <h3 class="feature-title">Certificates and Verification</h3>
-            <p class="feature-copy">
-              Eligibility checks, PDF generation, release, and public verification.
-            </p>
-          </div>
+    <section class="panel" id="modules">
+      <p class="eyebrow">What TRACMS covers</p>
+      <div class="feature-grid mt-6">
+        <div class="feature-card">
+          <h3 class="feature-title">Training activities</h3>
+          <p class="feature-copy">Planning, approval, publication, and schedules.</p>
         </div>
-      </article>
-
-      <article class="panel panel-muted" id="principles">
-        <p class="eyebrow">Implementation Principles</p>
-        <h2 class="section-title">How we are keeping the project accurate and professional</h2>
-        <ul class="list-clean mt-6">
-          <li>
-            One consistent interface for buttons, panels, forms, tables, alerts, and modal patterns.
-          </li>
-          <li>
-            Government-style clarity over flashy UI, with high readability and strong contrast.
-          </li>
-          <li>
-            Append-only audit behavior for sensitive approvals, attendance overrides, and certificate release.
-          </li>
-          <li>
-            Separate records for users, participants, registrations, attendance sessions, and certificate issuances.
-          </li>
-          <li>
-            Phase-based delivery so advanced integrations do not block core workflow quality.
-          </li>
-        </ul>
-      </article>
-    </section>
-
-    <section class="content-grid" id="roadmap">
-      <article class="panel">
-        <p class="eyebrow">Current Delivery Path</p>
-        <h2 class="section-title">Phase 0 is now focused on project foundations</h2>
-        <div class="badge-row mt-6">
-          <span class="badge-soft">Phoenix scaffold ready</span>
-          <span class="badge-soft">Dependencies installed</span>
-          <span class="badge-soft">UI base theme started</span>
-          <span class="badge-soft">Planning docs in place</span>
+        <div class="feature-card">
+          <h3 class="feature-title">Registration</h3>
+          <p class="feature-copy">Participant sign-up and review workflow.</p>
         </div>
-        <p class="section-copy">
-          The next implementation slice will introduce authentication, organization master data,
-          and the first real domain contexts so the training workflow can start on a reliable base.
-        </p>
-      </article>
-
-      <article class="panel">
-        <p class="eyebrow">Project Notes</p>
-        <h2 class="section-title">Documentation is part of the implementation</h2>
-        <p class="section-copy">
-          The repository already contains the main implementation plan, and this first pass adds
-          more project-facing documentation so the structure stays intentional as the codebase
-          grows.
-        </p>
-        <ul class="list-clean mt-6">
-          <li>
-            <code>docs/tracms-implementation-plan.md</code> for the master delivery strategy
-          </li>
-          <li><code>docs/tracms-phase-0-foundation.md</code> for current scaffold decisions</li>
-          <li><code>docs/tracms-ui-system.md</code> for consistent interface rules</li>
-        </ul>
-      </article>
+        <div class="feature-card">
+          <h3 class="feature-title">Attendance</h3>
+          <p class="feature-copy">Attendance capture and completion tracking.</p>
+        </div>
+        <div class="feature-card">
+          <h3 class="feature-title">Certificates</h3>
+          <p class="feature-copy">Issuance and verification-ready records.</p>
+        </div>
+      </div>
     </section>
   </div>
 </Layouts.app>

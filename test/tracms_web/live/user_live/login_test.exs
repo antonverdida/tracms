@@ -8,39 +8,13 @@ defmodule TracmsWeb.UserLive.LoginTest do
     test "renders login page", %{conn: conn} do
       {:ok, _lv, html} = live(conn, ~p"/users/log-in")
 
-      assert html =~ "Sign in to TRACMS"
-      assert html =~ "Password sign-in"
-      assert html =~ "Send secure sign-in link"
-      assert html =~ "Create account"
-    end
-  end
-
-  describe "user login - magic link" do
-    test "sends magic link email when user exists", %{conn: conn} do
-      user = user_fixture()
-
-      {:ok, lv, _html} = live(conn, ~p"/users/log-in")
-
-      {:ok, _lv, html} =
-        form(lv, "#login_form_magic", user: %{email: user.email})
-        |> render_submit()
-        |> follow_redirect(conn, ~p"/users/log-in")
-
-      assert html =~ "If your email is in our system"
-
-      assert Tracms.Repo.get_by!(Tracms.Accounts.UserToken, user_id: user.id).context ==
-               "login"
-    end
-
-    test "does not disclose if user is registered", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/users/log-in")
-
-      {:ok, _lv, html} =
-        form(lv, "#login_form_magic", user: %{email: "idonotexist@example.com"})
-        |> render_submit()
-        |> follow_redirect(conn, ~p"/users/log-in")
-
-      assert html =~ "If your email is in our system"
+      assert html =~ "Welcome Back!"
+      assert html =~ "Authorized DepEd Region IX personnel only."
+      assert html =~ "Department of Education"
+      assert html =~ "Training Management"
+      assert html =~ "Security Notice"
+      refute html =~ "Send secure sign-in link"
+      refute html =~ "Create account"
     end
   end
 
@@ -57,7 +31,7 @@ defmodule TracmsWeb.UserLive.LoginTest do
 
       conn = submit_form(form, conn)
 
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/dashboard"
     end
 
     test "redirects to login page with a flash error if credentials are invalid", %{
@@ -76,20 +50,6 @@ defmodule TracmsWeb.UserLive.LoginTest do
     end
   end
 
-  describe "login navigation" do
-    test "redirects to registration page when the create account link is clicked", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/users/log-in")
-
-      {:ok, _login_live, login_html} =
-        lv
-        |> element("main a", "Create account")
-        |> render_click()
-        |> follow_redirect(conn, ~p"/users/register")
-
-      assert login_html =~ "Register"
-    end
-  end
-
   describe "re-authentication (sudo mode)" do
     setup %{conn: conn} do
       user = user_fixture()
@@ -99,12 +59,11 @@ defmodule TracmsWeb.UserLive.LoginTest do
     test "shows login page with email filled in", %{conn: conn, user: user} do
       {:ok, _lv, html} = live(conn, ~p"/users/log-in")
 
-      assert html =~ "Re-authenticate"
+      assert html =~ "Secure Login"
       refute html =~ "Create account"
-      assert html =~ "Send secure sign-in link"
-
-      assert html =~
-               ~s(<input type="email" name="user[email]" id="login_form_password_email" value="#{user.email}")
+      refute html =~ "Send secure sign-in link"
+      assert html =~ ~s(id="login_form_password_email")
+      assert html =~ ~s(value="#{user.email}")
     end
   end
 end

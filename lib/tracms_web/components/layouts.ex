@@ -31,16 +31,25 @@ defmodule TracmsWeb.Layouts do
     default: nil,
     doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
 
-  attr :variant, :string, default: "default", values: ~w(default auth)
+  attr :variant, :string, default: "default", values: ~w(default auth dashboard)
+  attr :active_nav, :string, default: nil
 
   slot :inner_block, required: true
 
   def app(assigns) do
     ~H"""
-    <div class={["app-shell", @variant == "auth" && "app-shell-auth"]}>
-      <.site_header current_scope={@current_scope} variant={@variant} />
+    <div class={[
+      "app-shell",
+      @variant == "auth" && "app-shell-auth",
+      @variant == "dashboard" && "app-shell-dashboard"
+    ]}>
+      <.site_header current_scope={@current_scope} variant={@variant} active_nav={@active_nav} />
 
-      <main class={[(@variant == "auth" && "auth-page-wrap") || "page-wrap"]}>
+      <main class={[
+        @variant == "default" && "page-wrap",
+        @variant == "auth" && "auth-page-wrap",
+        @variant == "dashboard" && "dashboard-page-wrap"
+      ]}>
         {render_slot(@inner_block)}
       </main>
 
@@ -51,10 +60,14 @@ defmodule TracmsWeb.Layouts do
 
   attr :current_scope, :map, required: true
   attr :variant, :string, required: true
+  attr :active_nav, :string, default: nil
 
   defp site_header(assigns) do
     ~H"""
-    <header class={["app-header", @variant == "auth" && "app-header-auth"]}>
+    <header
+      :if={@variant == "default"}
+      class={["app-header", @variant == "auth" && "app-header-auth"]}
+    >
       <div class="topbar">
         <.link navigate={~p"/"} class="brand-lockup">
           <img src={~p"/images/tracms-logo.svg"} alt="TRACMS logo" class="brand-logo" />
@@ -91,7 +104,95 @@ defmodule TracmsWeb.Layouts do
         </nav>
       </div>
     </header>
+
+    <header :if={@variant == "dashboard"} class="dashboard-header">
+      <div class="dashboard-topbar-shell">
+        <div class="dashboard-topbar">
+          <.link navigate={~p"/dashboard"} class="brand-lockup">
+            <img src={~p"/images/tracms-logo.svg"} alt="TRACMS logo" class="brand-logo" />
+            <span class="brand-copy">
+              <span class="eyebrow">Department of Education • Region IX</span>
+              <span class="brand-title">TRACMS Portal</span>
+              <span class="brand-subtitle">
+                Training, Registration, Attendance, and Certification Management System
+              </span>
+            </span>
+          </.link>
+
+          <div class="dashboard-topbar-actions">
+            <div class="dashboard-profile-card">
+              <div class="dashboard-profile-avatar">{user_initials(@current_scope.user)}</div>
+              <div class="dashboard-profile-copy">
+                <span class="dashboard-profile-name">{user_display_name(@current_scope.user)}</span>
+                <span class="dashboard-profile-role">{dashboard_role_label(@current_scope)}</span>
+              </div>
+            </div>
+            <.button navigate={~p"/users/settings"} variant="ghost">Settings</.button>
+            <.button href={~p"/users/log-out"} method="delete" variant="ghost">Log out</.button>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-nav-shell">
+        <nav class="dashboard-menu" aria-label="Dashboard navigation">
+          <.link
+            navigate={~p"/dashboard"}
+            class={dashboard_menu_link_class(@active_nav, "dashboard")}
+          >
+            Dashboard
+          </.link>
+          <.link
+            navigate={~p"/catalog/trainings"}
+            class={dashboard_menu_link_class(@active_nav, "catalog")}
+          >
+            Registration
+          </.link>
+          <.link
+            navigate={~p"/my/registrations"}
+            class={dashboard_menu_link_class(@active_nav, "registrations")}
+          >
+            My Records
+          </.link>
+          <.link
+            :if={Tracms.Accounts.Scope.training_manager?(@current_scope)}
+            navigate={~p"/trainings"}
+            class={dashboard_menu_link_class(@active_nav, "trainings")}
+          >
+            Training Management
+          </.link>
+        </nav>
+      </div>
+    </header>
     """
+  end
+
+  defp dashboard_menu_link_class(active_nav, nav) do
+    [
+      "dashboard-menu-link",
+      active_nav == nav && "dashboard-menu-link-active"
+    ]
+  end
+
+  defp user_display_name(%{full_name: full_name, email: email}) do
+    full_name || email
+  end
+
+  defp user_initials(%{full_name: full_name, email: email}) do
+    (full_name || email)
+    |> String.split(~r/\s+/, trim: true)
+    |> Enum.take(2)
+    |> Enum.map_join("", &String.first/1)
+    |> String.upcase()
+  end
+
+  defp dashboard_role_label(scope) do
+    case scope.role_key do
+      "regional_admin" -> "Regional Administrator"
+      "division_admin" -> "Division Administrator"
+      "training_coordinator" -> "Training Coordinator"
+      "participant" -> "Participant"
+      _ -> "Authorized User"
+    end
   end
 
   @doc """

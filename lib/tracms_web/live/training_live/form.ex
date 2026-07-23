@@ -52,7 +52,12 @@ defmodule TracmsWeb.TrainingLive.Form do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
+    <Layouts.app
+      flash={@flash}
+      current_scope={@current_scope}
+      variant="dashboard"
+      active_nav="trainings"
+    >
       <div class="space-y-6">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -78,6 +83,18 @@ defmodule TracmsWeb.TrainingLive.Form do
               <.input field={@form[:max_capacity]} type="number" label="Maximum capacity" min="1" />
               <.input field={@form[:starts_on]} type="date" label="Start date" />
               <.input field={@form[:ends_on]} type="date" label="End date" />
+              <.input
+                field={@form[:minimum_attendance_percentage]}
+                type="number"
+                label="Minimum attendance percentage"
+                min="0"
+                max="100"
+              />
+              <.input
+                field={@form[:evaluation_required]}
+                type="checkbox"
+                label="Require participant evaluation before completion"
+              />
               <div class="md:col-span-2">
                 <.input
                   field={@form[:registration_deadline]}

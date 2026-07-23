@@ -1,6 +1,7 @@
 defmodule TracmsWeb.RegistrationLive.MyIndex do
   use TracmsWeb, :live_view
 
+  alias Tracms.Evaluations
   alias Tracms.Registrations
 
   @impl true
@@ -32,7 +33,12 @@ defmodule TracmsWeb.RegistrationLive.MyIndex do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
+    <Layouts.app
+      flash={@flash}
+      current_scope={@current_scope}
+      variant="dashboard"
+      active_nav="registrations"
+    >
       <div class="space-y-6">
         <.header>
           My Registrations
@@ -69,6 +75,21 @@ defmodule TracmsWeb.RegistrationLive.MyIndex do
               <:col :let={registration} label="Notes">
                 {registration.review_notes || "No review notes yet"}
               </:col>
+              <:col :let={registration} label="Evaluation">
+                {evaluation_status_label(registration, @evaluation_submissions)}
+              </:col>
+              <:action :let={registration}>
+                <.button
+                  :if={
+                    registration.status == :approved and
+                      registration.training_activity.evaluation_required
+                  }
+                  navigate={~p"/my/registrations/#{registration.id}/evaluation"}
+                  variant="secondary"
+                >
+                  {evaluation_action_label(registration, @evaluation_submissions)}
+                </.button>
+              </:action>
               <:action :let={registration}>
                 <.button
                   :if={registration.status in [:submitted, :approved, :waitlisted]}
@@ -88,10 +109,34 @@ defmodule TracmsWeb.RegistrationLive.MyIndex do
   end
 
   defp load_registrations(socket) do
-    assign(
-      socket,
-      :registrations,
-      Registrations.list_user_registrations(socket.assigns.current_scope)
+    registrations = Registrations.list_user_registrations(socket.assigns.current_scope)
+
+    socket
+    |> assign(:registrations, registrations)
+    |> assign(
+      :evaluation_submissions,
+      Evaluations.list_submission_map(Enum.map(registrations, & &1.id))
     )
+  end
+
+  defp evaluation_status_label(registration, evaluation_submissions) do
+    cond do
+      not registration.training_activity.evaluation_required ->
+        "Not required"
+
+      Map.has_key?(evaluation_submissions, registration.id) ->
+        "Submitted"
+
+      true ->
+        "Pending"
+    end
+  end
+
+  defp evaluation_action_label(registration, evaluation_submissions) do
+    if Map.has_key?(evaluation_submissions, registration.id) do
+      "Update evaluation"
+    else
+      "Submit evaluation"
+    end
   end
 end

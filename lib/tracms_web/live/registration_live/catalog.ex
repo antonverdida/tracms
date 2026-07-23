@@ -40,7 +40,12 @@ defmodule TracmsWeb.RegistrationLive.Catalog do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
+    <Layouts.app
+      flash={@flash}
+      current_scope={@current_scope}
+      variant="dashboard"
+      active_nav="catalog"
+    >
       <div class="space-y-6">
         <.header>
           Available Trainings

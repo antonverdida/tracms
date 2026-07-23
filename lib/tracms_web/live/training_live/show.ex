@@ -51,7 +51,12 @@ defmodule TracmsWeb.TrainingLive.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
+    <Layouts.app
+      flash={@flash}
+      current_scope={@current_scope}
+      variant="dashboard"
+      active_nav="trainings"
+    >
       <div class="space-y-6">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -63,6 +68,12 @@ defmodule TracmsWeb.TrainingLive.Show do
             <.button navigate={~p"/trainings"} variant="ghost">Back to list</.button>
             <.button navigate={~p"/trainings/#{@training_activity.id}/registrations"} variant="ghost">
               View registrations
+            </.button>
+            <.button navigate={~p"/trainings/#{@training_activity.id}/attendance"} variant="ghost">
+              Attendance
+            </.button>
+            <.button navigate={~p"/trainings/#{@training_activity.id}/completion"} variant="ghost">
+              Completion
             </.button>
             <.button
               :if={Trainings.editable?(@training_activity)}
@@ -105,6 +116,18 @@ defmodule TracmsWeb.TrainingLive.Show do
                 <div class="feature-card">
                   <div class="feature-title">Status</div>
                   <div class="feature-copy">{Trainings.format_status(@training_activity.status)}</div>
+                </div>
+                <div class="feature-card">
+                  <div class="feature-title">Minimum attendance</div>
+                  <div class="feature-copy">
+                    {@training_activity.minimum_attendance_percentage}%
+                  </div>
+                </div>
+                <div class="feature-card">
+                  <div class="feature-title">Evaluation required</div>
+                  <div class="feature-copy">
+                    {if @training_activity.evaluation_required, do: "Yes", else: "No"}
+                  </div>
                 </div>
               </div>
             </div>
