@@ -31,53 +31,66 @@ defmodule TracmsWeb.Layouts do
     default: nil,
     doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
 
+  attr :variant, :string, default: "default", values: ~w(default auth)
+
   slot :inner_block, required: true
 
   def app(assigns) do
     ~H"""
-    <div class="app-shell">
-      <header class="app-header">
-        <div class="topbar">
-          <a href="/" class="brand-lockup">
-            <span class="brand-mark">IX</span>
-            <span class="brand-copy">
-              <span class="eyebrow">DepEd Region IX</span>
-              <span class="brand-title">TRACMS</span>
-              <span class="brand-subtitle">
-                Training, Registration, Attendance, and Certification Management System
-              </span>
-            </span>
-          </a>
+    <div class={["app-shell", @variant == "auth" && "app-shell-auth"]}>
+      <.site_header current_scope={@current_scope} variant={@variant} />
 
-          <nav class="nav-links" aria-label="Primary">
-            <.link navigate={~p"/"} class="nav-link">Home</.link>
-            <%= if @current_scope && @current_scope.user do %>
-              <.link navigate={~p"/catalog/trainings"} class="nav-link">Catalog</.link>
-              <.link navigate={~p"/my/registrations"} class="nav-link">My registrations</.link>
-              <.link
-                :if={Tracms.Accounts.Scope.training_manager?(@current_scope)}
-                navigate={~p"/trainings"}
-                class="nav-link"
-              >
-                Trainings
-              </.link>
-              <.link navigate={~p"/users/settings"} class="nav-link">Settings</.link>
-            <% else %>
-              <a href="#overview" class="nav-link">Overview</a>
-              <a href="#modules" class="nav-link">Modules</a>
-              <a href="#principles" class="nav-link">Principles</a>
-              <.button href="#roadmap" variant="secondary">Roadmap</.button>
-            <% end %>
-          </nav>
-        </div>
-      </header>
-
-      <main class="page-wrap">
+      <main class={[(@variant == "auth" && "auth-page-wrap") || "page-wrap"]}>
         {render_slot(@inner_block)}
       </main>
 
       <.flash_group flash={@flash} />
     </div>
+    """
+  end
+
+  attr :current_scope, :map, required: true
+  attr :variant, :string, required: true
+
+  defp site_header(assigns) do
+    ~H"""
+    <header class={["app-header", @variant == "auth" && "app-header-auth"]}>
+      <div class="topbar">
+        <.link navigate={~p"/"} class="brand-lockup">
+          <img src={~p"/images/tracms-logo.svg"} alt="TRACMS logo" class="brand-logo" />
+          <span class="brand-copy">
+            <span class="eyebrow">DepEd Region IX</span>
+            <span class="brand-title">TRACMS</span>
+            <span class="brand-subtitle">
+              Training, Registration, Attendance, and Certification Management System
+            </span>
+          </span>
+        </.link>
+
+        <nav class="nav-links" aria-label="Primary">
+          <%= if @current_scope && @current_scope.user do %>
+            <.link navigate={~p"/"} class="nav-link">Home</.link>
+            <.link navigate={~p"/catalog/trainings"} class="nav-link">Catalog</.link>
+            <.link navigate={~p"/my/registrations"} class="nav-link">My registrations</.link>
+            <.link
+              :if={Tracms.Accounts.Scope.training_manager?(@current_scope)}
+              navigate={~p"/trainings"}
+              class="nav-link"
+            >
+              Trainings
+            </.link>
+            <.link navigate={~p"/users/settings"} class="nav-link">Settings</.link>
+            <span class="nav-user">{@current_scope.user.email}</span>
+            <.button href={~p"/users/log-out"} method="delete" variant="ghost">Log out</.button>
+          <% else %>
+            <.link navigate={~p"/"} class="nav-link">Home</.link>
+            <.button :if={@variant != "auth"} navigate={~p"/users/log-in"} variant="secondary">
+              Log in
+            </.button>
+          <% end %>
+        </nav>
+      </div>
+    </header>
     """
   end
 

@@ -110,9 +110,11 @@ defmodule TracmsWeb.CoreComponents do
     }
 
     assigns =
-      assign_new(assigns, :class, fn ->
-        ["btn-base", Map.fetch!(variants, assigns[:variant])]
-      end)
+      assign(assigns, :class, [
+        "btn-base",
+        Map.fetch!(variants, assigns[:variant]),
+        assigns[:class]
+      ])
 
     if rest[:href] || rest[:navigate] || rest[:patch] do
       ~H"""

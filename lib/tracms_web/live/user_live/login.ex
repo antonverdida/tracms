@@ -6,91 +6,136 @@ defmodule TracmsWeb.UserLive.Login do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="mx-auto max-w-sm space-y-4">
-        <div class="text-center">
-          <.header>
-            <p>Log in</p>
-            <:subtitle>
-              <%= if @current_scope do %>
-                You need to reauthenticate to perform sensitive actions on your account.
-              <% else %>
-                Don't have an account? <.link
-                  navigate={~p"/users/register"}
-                  class="font-semibold text-brand hover:underline"
-                  phx-no-format
-                >Sign up</.link> for an account now.
-              <% end %>
-            </:subtitle>
-          </.header>
-        </div>
-
-        <div :if={local_mail_adapter?()} class="alert alert-info">
-          <.icon name="hero-information-circle" class="size-6 shrink-0" />
-          <div>
-            <p>You are running the local mail adapter.</p>
-            <p>
-              To see sent emails, visit <.link href="/dev/mailbox" class="underline">the mailbox page</.link>.
+    <Layouts.app flash={@flash} current_scope={@current_scope} variant="auth">
+      <section class="auth-stage">
+        <article class="auth-brand-panel">
+          <div class="auth-brand-stack">
+            <p class="hero-kicker">DepEd Region IX</p>
+            <h1 class="auth-brand-title">
+              Training records, registration, and certification in one system.
+            </h1>
+            <p class="auth-brand-copy">
+              Internal access for the regional training management platform.
             </p>
           </div>
-        </div>
+          <div class="auth-brand-tag">Secure regional access</div>
+        </article>
 
-        <.form
-          :let={f}
-          for={@form}
-          id="login_form_magic"
-          action={~p"/users/log-in"}
-          phx-submit="submit_magic"
-        >
-          <.input
-            readonly={!!@current_scope}
-            field={f[:email]}
-            type="email"
-            label="Email"
-            autocomplete="username"
-            spellcheck="false"
-            required
-            phx-mounted={JS.focus()}
-          />
-          <.button class="btn btn-primary w-full">
-            Log in with email <span aria-hidden="true">→</span>
-          </.button>
-        </.form>
+        <article class="auth-card">
+          <div class="auth-card-header">
+            <p class="eyebrow">Secure access</p>
+            <h2 class="auth-card-title">
+              <%= if @current_scope do %>
+                Re-authenticate
+              <% else %>
+                Sign in to TRACMS
+              <% end %>
+            </h2>
+            <p class="auth-card-copy">
+              <%= if @current_scope do %>
+                Confirm your identity to continue.
+              <% else %>
+                Sign in with your registered account.
+              <% end %>
+            </p>
+          </div>
 
-        <div class="divider">or</div>
+          <div :if={local_mail_adapter?()} class="auth-note">
+            <.icon
+              name="hero-information-circle"
+              class="size-5 shrink-0 text-[var(--tracms-primary)]"
+            />
+            <div>
+              <p class="font-semibold">Local mail adapter is active.</p>
+              <p>
+                Sign-in links are delivered to <.link href="/dev/mailbox" class="auth-inline-link">the development mailbox</.link>.
+              </p>
+            </div>
+          </div>
 
-        <.form
-          :let={f}
-          for={@form}
-          id="login_form_password"
-          action={~p"/users/log-in"}
-          phx-submit="submit_password"
-          phx-trigger-action={@trigger_submit}
-        >
-          <.input
-            readonly={!!@current_scope}
-            field={f[:email]}
-            type="email"
-            label="Email"
-            autocomplete="username"
-            spellcheck="false"
-            required
-          />
-          <.input
-            field={@form[:password]}
-            type="password"
-            label="Password"
-            autocomplete="current-password"
-            spellcheck="false"
-          />
-          <.button class="btn btn-primary w-full" name={@form[:remember_me].name} value="true">
-            Log in and stay logged in <span aria-hidden="true">→</span>
-          </.button>
-          <.button class="btn btn-primary btn-soft w-full mt-2">
-            Log in only this time
-          </.button>
-        </.form>
-      </div>
+          <.form
+            :let={f}
+            for={@form}
+            id="login_form_password"
+            action={~p"/users/log-in"}
+            phx-submit="submit_password"
+            phx-trigger-action={@trigger_submit}
+            class="auth-form"
+          >
+            <div class="auth-form-section">
+              <div>
+                <p class="auth-form-heading">Password sign-in</p>
+                <p class="auth-form-copy">Use your email and password.</p>
+              </div>
+
+              <.input
+                readonly={!!@current_scope}
+                field={f[:email]}
+                type="email"
+                label="Email address"
+                autocomplete="username"
+                spellcheck="false"
+                required
+                phx-mounted={JS.focus()}
+              />
+              <.input
+                field={@form[:password]}
+                type="password"
+                label="Password"
+                autocomplete="current-password"
+                spellcheck="false"
+                required
+              />
+              <.input
+                field={f[:remember_me]}
+                type="checkbox"
+                label="Keep me signed in on this device"
+              />
+            </div>
+
+            <.button class="w-full">Sign in</.button>
+          </.form>
+
+          <div class="auth-divider">
+            <span>Email-link access</span>
+          </div>
+
+          <.form
+            :let={f}
+            for={@form}
+            id="login_form_magic"
+            action={~p"/users/log-in"}
+            phx-submit="submit_magic"
+            class="auth-form"
+          >
+            <div class="auth-form-section">
+              <div>
+                <p class="auth-form-heading">Send secure sign-in link</p>
+                <p class="auth-form-copy">Use email-link access instead.</p>
+              </div>
+
+              <.input
+                readonly={!!@current_scope}
+                field={f[:email]}
+                type="email"
+                label="Email address"
+                autocomplete="username"
+                spellcheck="false"
+                required
+              />
+            </div>
+
+            <.button variant="secondary" class="w-full">Send secure sign-in link</.button>
+          </.form>
+
+          <p :if={!@current_scope} class="auth-footer-copy">
+            Need an account?
+            <.link navigate={~p"/users/register"} class="auth-inline-link">
+              Create account
+            </.link>
+          </p>
+        </article>
+      </section>
     </Layouts.app>
     """
   end
@@ -101,7 +146,7 @@ defmodule TracmsWeb.UserLive.Login do
       Phoenix.Flash.get(socket.assigns.flash, :email) ||
         get_in(socket.assigns, [:current_scope, Access.key(:user), Access.key(:email)])
 
-    form = to_form(%{"email" => email}, as: "user")
+    form = to_form(%{"email" => email, "remember_me" => false}, as: "user")
 
     {:ok, assign(socket, form: form, trigger_submit: false)}
   end
