@@ -12,36 +12,6 @@ defmodule TracmsWeb.RegistrationLive.Catalog do
   end
 
   @impl true
-  def handle_event("register", %{"id" => id}, socket) do
-    case Registrations.register_user_for_training(socket.assigns.current_scope, id) do
-      {:ok, _registration} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Registration submitted successfully.")
-         |> load_catalog()}
-
-      {:error, :already_registered} ->
-        {:noreply, put_flash(socket, :error, "You are already registered for this training.")}
-
-      {:error, :capacity_reached} ->
-        {:noreply, put_flash(socket, :error, "This training has reached its maximum capacity.")}
-
-      {:error, :registration_not_open} ->
-        {:noreply,
-         put_flash(socket, :error, "Registration for this training has not opened yet.")}
-
-      {:error, :registration_closed} ->
-        {:noreply, put_flash(socket, :error, "Registration for this training is already closed.")}
-
-      {:error, :not_published} ->
-        {:noreply, put_flash(socket, :error, "This training is not yet open for registration.")}
-
-      _ ->
-        {:noreply, put_flash(socket, :error, "Unable to submit your registration right now.")}
-    end
-  end
-
-  @impl true
   def render(assigns) do
     ~H"""
     <Layouts.app
@@ -92,12 +62,19 @@ defmodule TracmsWeb.RegistrationLive.Catalog do
                   <span class="badge-soft">{training.category}</span>
                   <span class="badge-soft">{format_date(training.starts_on)}</span>
                   <span class="badge-soft">{format_modality(training.modality)}</span>
+                  <span class="badge-soft">{registration_mode_label(training)}</span>
                 </div>
 
                 <div class="portal-resource-facts">
                   <div>
                     <span class="portal-fact-label">Venue</span>
                     <span class="portal-fact-value">{training.venue}</span>
+                  </div>
+                  <div>
+                    <span class="portal-fact-label">Schedule</span>
+                    <span class="portal-fact-value">
+                      {format_date(training.starts_on)} to {format_date(training.ends_on)}
+                    </span>
                   </div>
                   <div>
                     <span class="portal-fact-label">Deadline</span>
@@ -115,7 +92,7 @@ defmodule TracmsWeb.RegistrationLive.Catalog do
                   <span class={["portal-chip", "portal-chip-#{status_tone(training.status)}"]}>
                     {Registrations.format_status(training.status)}
                   </span>
-                  <.button phx-click="register" phx-value-id={training.id}>Register now</.button>
+                  <.button navigate={~p"/catalog/trainings/#{training.id}"}>View details</.button>
                 </div>
               </article>
             </div>
@@ -173,4 +150,7 @@ defmodule TracmsWeb.RegistrationLive.Catalog do
   defp status_tone(:published), do: "green"
   defp status_tone(:registration_closed), do: "amber"
   defp status_tone(_status), do: "blue"
+
+  defp registration_mode_label(%{registration_form_url: nil}), do: "TRACMS registration"
+  defp registration_mode_label(_training), do: "External registration"
 end

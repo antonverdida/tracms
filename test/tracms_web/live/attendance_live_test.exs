@@ -3,17 +3,28 @@ defmodule TracmsWeb.AttendanceLiveTest do
 
   import Phoenix.LiveViewTest
   import Tracms.AttendanceFixtures
+  import Tracms.RegistrationsFixtures
   import Tracms.TrainingsFixtures
 
   describe "attendance management flow" do
     test "creates a session, opens it, and marks attendance", %{conn: conn} do
       manager = training_manager_scope_fixture("training_coordinator")
-      training_activity = published_training_fixture_for_manager(manager.scope)
+
+      training_activity =
+        published_training_fixture_for_manager(manager.scope, %{
+          attendance_sheet_id: "attendance-sheet-main",
+          attendance_sheet_range: "Attendance!A:C"
+        })
 
       registration =
         approved_registration_fixture(
           training_manager: manager,
-          training_activity: training_activity
+          training_activity: training_activity,
+          participant:
+            participant_scope_fixture(%{
+              email: "attendance.participant@example.com",
+              full_name: "Attendance Participant"
+            })
         )
 
       {:ok, lv, html} =
@@ -22,6 +33,8 @@ defmodule TracmsWeb.AttendanceLiveTest do
         |> live(~p"/trainings/#{training_activity.id}/attendance")
 
       assert html =~ "Create attendance session"
+      assert html =~ "Attendance method"
+      assert html =~ "Recommended session naming"
 
       html =
         lv
@@ -57,6 +70,18 @@ defmodule TracmsWeb.AttendanceLiveTest do
 
       assert html =~ "Attendance updated successfully."
       assert html =~ "Present"
+      assert html =~ "Attendance rate"
+      assert html =~ "Present today"
+
+      html =
+        lv
+        |> element("button[phx-click=\"sync_google_sheet_attendance\"]", "Sync Google Sheet")
+        |> render_click()
+
+      assert html =~ "Attendance sync completed: 1 updated, 0 skipped, 1 errors."
+      assert html =~ "Latest Sync Result"
+      assert html =~ "Rows needing review"
+      assert html =~ "missing.participant@example.com"
     end
   end
 end

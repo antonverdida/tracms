@@ -81,6 +81,48 @@ defmodule TracmsWeb.TrainingLive.Attendance do
     end
   end
 
+  def handle_event("sync_google_sheet_attendance", %{"id" => id}, socket) do
+    case Attendance.sync_session_attendance_from_google_sheet(socket.assigns.current_scope, id) do
+      {:ok, result} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, attendance_sync_flash(result))
+         |> load_page(id)
+         |> assign(:google_sheet_sync_result, result)}
+
+      {:error, :session_not_open} ->
+        {:noreply, put_flash(socket, :error, "Open the attendance session before syncing.")}
+
+      {:error, :google_sheet_sync_not_configured} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Configure the attendance Google Sheet ID and range on the training record first."
+         )}
+
+      {:error, {:missing_attendance_sync_headers, headers}} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Google Sheet is missing required headers: #{Enum.join(headers, ", ")}."
+         )}
+
+      {:error, :google_sheet_has_no_values} ->
+        {:noreply,
+         put_flash(socket, :error, "The attendance Google Sheet does not contain any rows yet.")}
+
+      {:error, reason} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Unable to sync attendance right now: #{format_sync_error(reason)}."
+         )}
+    end
+  end
+
   def handle_event(
         "mark_attendance",
         %{"registration_id" => registration_id, "status" => status},
@@ -128,6 +170,12 @@ defmodule TracmsWeb.TrainingLive.Attendance do
           copy="Create session-based attendance sheets and mark approved participants."
         >
           <:actions>
+            <.button
+              navigate={~p"/trainings/#{@training_activity.id}/integrations"}
+              variant="ghost"
+            >
+              Google Workspace
+            </.button>
             <.button navigate={~p"/trainings/#{@training_activity.id}"} variant="ghost">
               Back to training
             </.button>
@@ -165,7 +213,13 @@ defmodule TracmsWeb.TrainingLive.Attendance do
             >
               <div class="grid gap-5 md:grid-cols-2">
                 <div class="md:col-span-2">
-                  <.input field={@session_form[:name]} type="text" label="Session name" required />
+                  <.input
+                    field={@session_form[:name]}
+                    type="text"
+                    label="Session name"
+                    placeholder="Day 1 - Morning Session"
+                    required
+                  />
                 </div>
                 <.input
                   field={@session_form[:session_date]}
@@ -181,6 +235,24 @@ defmodule TracmsWeb.TrainingLive.Attendance do
                 <.button phx-disable-with="Creating session...">Create session</.button>
               </div>
             </.form>
+
+            <div class="mt-6 dashboard-action-grid">
+              <div class="feature-card">
+                <div class="feature-title">Attendance method</div>
+                <div class="feature-copy">{@training_activity.attendance_monitoring_method}</div>
+              </div>
+              <div class="feature-card">
+                <div class="feature-title">Recommended session naming</div>
+                <div class="feature-copy">
+                  Day 1 - Morning Session, Day 1 - Afternoon Session, Day 2 - Opening Program
+                </div>
+              </div>
+            </div>
+
+            <p class="mt-4 section-copy">
+              Attendance recording in this release remains manager-assisted even when the training
+              record is configured for QR-based monitoring.
+            </p>
           </article>
 
           <article class="panel panel-muted portal-list-panel">
@@ -237,6 +309,14 @@ defmodule TracmsWeb.TrainingLive.Attendance do
             >
               <:actions>
                 <.button
+                  :if={attendance_sync_available?(@training_activity, @selected_session)}
+                  phx-click="sync_google_sheet_attendance"
+                  phx-value-id={@selected_session.id}
+                  variant="secondary"
+                >
+                  Sync Google Sheet
+                </.button>
+                <.button
                   :if={@selected_session.status == :draft}
                   phx-click="open_session"
                   phx-value-id={@selected_session.id}
@@ -265,6 +345,94 @@ defmodule TracmsWeb.TrainingLive.Attendance do
             </p>
 
             <.portal_stat_grid cards={@selected_session_cards} />
+
+            <div class="mt-6 dashboard-action-grid">
+              <div class="feature-card">
+                <div class="feature-title">Attendance Google Sheet ID</div>
+                <div class="feature-copy">
+                  {@training_activity.attendance_sheet_id || "Not configured"}
+                </div>
+              </div>
+              <div class="feature-card">
+                <div class="feature-title">Attendance range</div>
+                <div class="feature-copy">
+                  {@training_activity.attendance_sheet_range || "Not configured"}
+                </div>
+              </div>
+              <div class="feature-card">
+                <div class="feature-title">Last attendance sync</div>
+                <div class="feature-copy">
+                  {format_sync_timestamp(@training_activity.attendance_sheet_last_synced_at)}
+                </div>
+              </div>
+            </div>
+
+            <%= if @google_sheet_sync_result do %>
+              <div class="mt-6 rounded-[28px] border border-slate-200 bg-slate-50/80 p-5 shadow-sm">
+                <div class="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p class="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">
+                      Latest Sync Result
+                    </p>
+                    <p class="mt-2 text-base font-semibold text-slate-900">
+                      {@google_sheet_sync_result.updated_count} attendance records updated
+                    </p>
+                  </div>
+                  <div class="flex flex-wrap gap-3 text-sm text-slate-600">
+                    <span class="portal-chip portal-chip-green">
+                      Updated: {@google_sheet_sync_result.updated_count}
+                    </span>
+                    <span class="portal-chip portal-chip-amber">
+                      Skipped rows: {@google_sheet_sync_result.skipped_count}
+                    </span>
+                    <span class="portal-chip portal-chip-rose">
+                      Errors: {@google_sheet_sync_result.error_count}
+                    </span>
+                  </div>
+                </div>
+
+                <%= if @google_sheet_sync_result.errors != [] do %>
+                  <div class="mt-4 rounded-3xl border border-rose-200 bg-white p-4">
+                    <p class="text-sm font-semibold text-rose-700">Rows needing review</p>
+                    <ul class="mt-3 space-y-2 text-sm text-slate-600">
+                      <li :for={error <- Enum.take(@google_sheet_sync_result.errors, 3)}>
+                        Row {error.row}: {error.message}
+                      </li>
+                    </ul>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+
+            <div class="mt-6 portal-workflow-list">
+              <div class="portal-workflow-item portal-workflow-item-amber">
+                <div>
+                  <p class="portal-workflow-label">Late</p>
+                  <p class="portal-workflow-copy">
+                    Participants who attended but were marked late for the selected session.
+                  </p>
+                </div>
+                <span class="portal-workflow-value">{@summary.late}</span>
+              </div>
+              <div class="portal-workflow-item portal-workflow-item-blue">
+                <div>
+                  <p class="portal-workflow-label">Excused</p>
+                  <p class="portal-workflow-copy">
+                    Participants with an excused attendance record for this session.
+                  </p>
+                </div>
+                <span class="portal-workflow-value">{@summary.excused}</span>
+              </div>
+              <div class="portal-workflow-item portal-workflow-item-slate">
+                <div>
+                  <p class="portal-workflow-label">Unmarked</p>
+                  <p class="portal-workflow-copy">
+                    Approved participants who still need an attendance decision.
+                  </p>
+                </div>
+                <span class="portal-workflow-value">{@summary.unmarked}</span>
+              </div>
+            </div>
 
             <%= if @roster == [] do %>
               <.portal_empty_state
@@ -385,6 +553,7 @@ defmodule TracmsWeb.TrainingLive.Attendance do
     |> assign(:selected_session, selected_session)
     |> assign(:roster, roster)
     |> assign(:summary, summary)
+    |> assign(:google_sheet_sync_result, nil)
     |> assign(:summary_cards, attendance_summary_cards(attendance_sessions, roster))
     |> assign(:selected_session_cards, selected_session_cards(summary, roster))
     |> assign(:session_form, build_session_form(training_activity))
@@ -452,10 +621,18 @@ defmodule TracmsWeb.TrainingLive.Attendance do
 
   defp selected_session_cards(summary, roster) do
     [
-      summary_card("Present", summary.present, "Participants marked as present"),
-      summary_card("Late", summary.late, "Participants marked late"),
-      summary_card("Excused", summary.excused, "Participants marked with an excuse"),
-      summary_card("Unmarked", summary.unmarked, "#{length(roster)} participants in this roster")
+      summary_card(
+        "Total participants",
+        length(roster),
+        "Approved participants in this attendance roster"
+      ),
+      summary_card("Present today", summary.present, "Participants marked as present"),
+      summary_card(
+        "Attendance rate",
+        "#{attendance_rate(summary, roster)}%",
+        "Present, late, and excused records counted as attended"
+      ),
+      summary_card("Absent", summary.absent, "Participants marked absent for this session")
     ]
   end
 
@@ -488,6 +665,39 @@ defmodule TracmsWeb.TrainingLive.Attendance do
   defp session_status_tone(:open), do: "green"
   defp session_status_tone(:closed), do: "blue"
   defp session_status_tone(_status), do: "slate"
+
+  defp attendance_rate(_summary, []), do: 0
+
+  defp attendance_rate(summary, roster) do
+    attended_count = summary.present + summary.late + summary.excused
+    round(attended_count * 100 / length(roster))
+  end
+
+  defp attendance_sync_available?(training_activity, selected_session) do
+    selected_session.status == :open and
+      is_binary(training_activity.attendance_sheet_id) and
+      training_activity.attendance_sheet_id != "" and
+      is_binary(training_activity.attendance_sheet_range) and
+      training_activity.attendance_sheet_range != ""
+  end
+
+  defp attendance_sync_flash(result) do
+    "Attendance sync completed: #{result.updated_count} updated, #{result.skipped_count} skipped, #{result.error_count} errors."
+  end
+
+  defp format_sync_timestamp(nil), do: "Not yet synced"
+
+  defp format_sync_timestamp(timestamp) do
+    Calendar.strftime(timestamp, "%b %d, %Y %I:%M %p UTC")
+  end
+
+  defp format_sync_error(reason) when is_atom(reason) do
+    reason
+    |> Atom.to_string()
+    |> String.replace("_", " ")
+  end
+
+  defp format_sync_error(reason), do: inspect(reason)
 
   defp participant_name(registration) do
     registration.registrant_user.full_name || registration.registrant_user.email

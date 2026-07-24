@@ -49,6 +49,8 @@ defmodule Tracms.Accounts.UserToken do
     {token, %UserToken{token: token, context: "session", user_id: user.id, authenticated_at: dt}}
   end
 
+  def session_validity_in_days, do: @session_validity_in_days
+
   @doc """
   Checks if the token is valid and returns its underlying lookup query.
 

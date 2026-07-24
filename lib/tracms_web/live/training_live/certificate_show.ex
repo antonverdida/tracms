@@ -3,6 +3,7 @@ defmodule TracmsWeb.TrainingLive.CertificateShow do
 
   alias Tracms.Certificates
   alias Tracms.Trainings
+  alias TracmsWeb.CertificateComponents
 
   @impl true
   def mount(%{"training_id" => training_id, "certificate_id" => certificate_id}, _session, socket) do
@@ -33,6 +34,20 @@ defmodule TracmsWeb.TrainingLive.CertificateShow do
             <.button navigate={~p"/trainings/#{@training_activity.id}/certificates"} variant="ghost">
               Back to certificate register
             </.button>
+            <.button
+              href={~p"/trainings/#{@training_activity.id}/certificates/#{@certificate.id}/print"}
+              target="_blank"
+              rel="noopener"
+              variant="secondary"
+            >
+              Print certificate
+            </.button>
+            <.button
+              href={~p"/trainings/#{@training_activity.id}/certificates/#{@certificate.id}/export"}
+              variant="primary"
+            >
+              Export document
+            </.button>
           </:actions>
         </.portal_page_header>
 
@@ -45,8 +60,8 @@ defmodule TracmsWeb.TrainingLive.CertificateShow do
 
           <.certificate_sheet
             certificate={@certificate}
-            participant_name={participant_name(@certificate)}
-            issued_by_name={issued_by_name(@certificate)}
+            participant_name={CertificateComponents.certificate_participant_name(@certificate)}
+            issued_by_name={CertificateComponents.certificate_issued_by_name(@certificate)}
           />
         </section>
       </div>
@@ -72,15 +87,4 @@ defmodule TracmsWeb.TrainingLive.CertificateShow do
         |> assign(:certificate, certificate)
     end
   end
-
-  defp participant_name(certificate) do
-    certificate.registration.registrant_user.full_name ||
-      certificate.registration.registrant_user.email
-  end
-
-  defp issued_by_name(%{issued_by_user: %{full_name: full_name, email: email}}) do
-    full_name || email
-  end
-
-  defp issued_by_name(_certificate), do: "Authorized Issuing Officer"
 end

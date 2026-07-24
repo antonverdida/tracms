@@ -57,13 +57,17 @@ defmodule Tracms.AttendanceFixtures do
     registration
   end
 
-  def published_training_fixture_for_manager(scope) do
-    training_activity_fixture(scope, %{
-      status: :published,
-      published_at: DateTime.utc_now(:second),
-      registration_deadline: DateTime.add(DateTime.utc_now(:second), 7, :day),
-      starts_on: Date.add(Date.utc_today(), 14),
-      ends_on: Date.add(Date.utc_today(), 16)
-    })
+  def published_training_fixture_for_manager(scope, attrs \\ %{}) do
+    training_activity_fixture(
+      scope,
+      %{
+        status: :published,
+        published_at: DateTime.utc_now(:second),
+        registration_deadline: DateTime.add(DateTime.utc_now(:second), 7, :day),
+        starts_on: Date.add(Date.utc_today(), 14),
+        ends_on: Date.add(Date.utc_today(), 16)
+      }
+      |> Map.merge(Enum.into(attrs, %{}))
+    )
   end
 end

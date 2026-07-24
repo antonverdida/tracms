@@ -12,8 +12,16 @@ defmodule TracmsWeb.UserLive.SettingsTest do
         |> log_in_user(user_fixture())
         |> live(~p"/users/settings")
 
-      assert html =~ "Change Email"
-      assert html =~ "Save Password"
+      assert html =~ "Profile"
+      assert html =~ "Access Summary"
+      assert html =~ "Change email"
+      assert html =~ "Update password"
+      assert html =~ "Communication"
+      assert html =~ "Activity"
+      assert html =~ "Account Completeness"
+      assert html =~ "Profile completion"
+      assert html =~ "Save preferences"
+      assert html =~ "Active Sessions"
     end
 
     test "redirects if user is not logged in", %{conn: conn} do
@@ -70,7 +78,7 @@ defmodule TracmsWeb.UserLive.SettingsTest do
           "user" => %{"email" => "with spaces"}
         })
 
-      assert result =~ "Change Email"
+      assert result =~ "Change email"
       assert result =~ "must have the @ sign and no spaces"
     end
 
@@ -84,8 +92,69 @@ defmodule TracmsWeb.UserLive.SettingsTest do
         })
         |> render_submit()
 
-      assert result =~ "Change Email"
+      assert result =~ "Change email"
       assert result =~ "did not change"
+    end
+  end
+
+  describe "update profile form" do
+    setup %{conn: conn} do
+      user = user_fixture()
+      %{conn: log_in_user(conn, user), user: user}
+    end
+
+    test "updates the allowed profile fields", %{conn: conn, user: user} do
+      {:ok, lv, _html} = live(conn, ~p"/users/settings")
+
+      result =
+        lv
+        |> form("#profile_form", %{
+          "user" => %{
+            "full_name" => "Juan Dela Cruz",
+            "employee_number" => "DEPED-2026-00125"
+          }
+        })
+        |> render_submit()
+
+      assert result =~ "Profile updated successfully."
+
+      updated_user = Accounts.get_user!(user.id)
+      assert updated_user.full_name == "Juan Dela Cruz"
+      assert updated_user.employee_number == "DEPED-2026-00125"
+    end
+  end
+
+  describe "update notification preferences form" do
+    setup %{conn: conn} do
+      user = user_fixture()
+      %{conn: log_in_user(conn, user), user: user}
+    end
+
+    test "updates the saved notification preferences", %{conn: conn, user: user} do
+      {:ok, lv, _html} = live(conn, ~p"/users/settings")
+
+      result =
+        lv
+        |> form("#notification_preferences_form", %{
+          "notification_preferences" => %{
+            "training_announcements" => "true",
+            "registration_updates" => "false",
+            "certificate_availability" => "true",
+            "system_announcements" => "false"
+          }
+        })
+        |> render_submit()
+
+      assert result =~ "Notification preferences updated successfully."
+
+      updated_user = Accounts.get_user!(user.id)
+
+      assert updated_user.notification_preferences == %{
+               "training_announcements" => true,
+               "registration_updates" => false,
+               "certificate_availability" => true,
+               "system_announcements" => false
+             }
     end
   end
 
@@ -136,7 +205,7 @@ defmodule TracmsWeb.UserLive.SettingsTest do
           }
         })
 
-      assert result =~ "Save Password"
+      assert result =~ "Update password"
       assert result =~ "should be at least 12 character(s)"
       assert result =~ "does not match password"
     end
@@ -154,7 +223,7 @@ defmodule TracmsWeb.UserLive.SettingsTest do
         })
         |> render_submit()
 
-      assert result =~ "Save Password"
+      assert result =~ "Update password"
       assert result =~ "should be at least 12 character(s)"
       assert result =~ "does not match password"
     end

@@ -115,6 +115,12 @@ defmodule TracmsWeb.RegistrationLive.MyIndex do
                     <td>
                       <div class="portal-action-stack">
                         <.button
+                          navigate={~p"/catalog/trainings/#{registration.training_activity.id}"}
+                          variant="secondary"
+                        >
+                          View training
+                        </.button>
+                        <.button
                           :if={
                             registration.status == :approved and
                               registration.training_activity.evaluation_required

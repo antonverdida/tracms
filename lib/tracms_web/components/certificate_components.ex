@@ -103,6 +103,20 @@ defmodule TracmsWeb.CertificateComponents do
     """
   end
 
+  def certificate_participant_name(%{registration: %{registrant_user: registrant_user}}) do
+    registrant_user.full_name || registrant_user.email
+  end
+
+  def certificate_issued_by_name(%{issued_by_user: %{full_name: full_name, email: email}}) do
+    full_name || email
+  end
+
+  def certificate_issued_by_name(_certificate), do: "Authorized Issuing Officer"
+
+  def certificate_scope_label(%{registration: %{training_activity: training_activity}}) do
+    issuing_scope(training_activity)
+  end
+
   defp issuing_scope(training_activity) do
     cond do
       training_activity.office && training_activity.office.name ->

@@ -17,6 +17,10 @@ defmodule TracmsWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :require_training_manager do
+    plug TracmsWeb.TrainingManagerAuth, :require_training_manager
+  end
+
   scope "/", TracmsWeb do
     pipe_through :browser
 
@@ -51,12 +55,15 @@ defmodule TracmsWeb.Router do
     pipe_through [:browser, :require_authenticated_user]
 
     get "/dashboard", PageController, :dashboard
+    get "/my/certificates/:id/print", CertificateDocumentController, :participant_print
+    get "/my/certificates/:id/export", CertificateDocumentController, :participant_export
 
     live_session :require_authenticated_user,
       on_mount: [{TracmsWeb.UserAuth, :require_authenticated}] do
       live "/users/settings", UserLive.Settings, :edit
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
       live "/catalog/trainings", RegistrationLive.Catalog, :index
+      live "/catalog/trainings/:id", RegistrationLive.Show, :show
       live "/my/registrations", RegistrationLive.MyIndex, :index
       live "/my/certificates", CertificateLive.MyIndex, :index
       live "/my/certificates/:id", CertificateLive.Show, :show
@@ -73,6 +80,7 @@ defmodule TracmsWeb.Router do
       live "/trainings/new", TrainingLive.Form, :new
       live "/trainings/:id/edit", TrainingLive.Form, :edit
       live "/trainings/:id", TrainingLive.Show, :show
+      live "/trainings/:training_id/integrations", TrainingLive.Integrations, :index
       live "/trainings/:training_id/registrations", TrainingLive.Registrations, :index
       live "/trainings/:training_id/attendance", TrainingLive.Attendance, :index
       live "/trainings/:training_id/completion", TrainingLive.Completion, :index
@@ -84,6 +92,18 @@ defmodule TracmsWeb.Router do
     end
 
     post "/users/update-password", UserSessionController, :update_password
+  end
+
+  scope "/", TracmsWeb do
+    pipe_through [:browser, :require_authenticated_user, :require_training_manager]
+
+    get "/trainings/:training_id/certificates/:certificate_id/print",
+        CertificateDocumentController,
+        :manager_print
+
+    get "/trainings/:training_id/certificates/:certificate_id/export",
+        CertificateDocumentController,
+        :manager_export
   end
 
   scope "/", TracmsWeb do

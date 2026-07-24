@@ -126,6 +126,27 @@ defmodule Tracms.AccountsTest do
       assert approved_user.status == :active
       assert %DateTime{} = approved_user.approved_at
     end
+
+    test "update_user_notification_preferences/2 persists saved preference values" do
+      user = user_fixture()
+
+      assert {:ok, updated_user} =
+               Accounts.update_user_notification_preferences(user, %{
+                 "notification_preferences" => %{
+                   "training_announcements" => "true",
+                   "registration_updates" => "false",
+                   "certificate_availability" => "true",
+                   "system_announcements" => "false"
+                 }
+               })
+
+      assert updated_user.notification_preferences == %{
+               "training_announcements" => true,
+               "registration_updates" => false,
+               "certificate_availability" => true,
+               "system_announcements" => false
+             }
+    end
   end
 
   describe "sudo_mode?/2" do
@@ -363,6 +384,27 @@ defmodule Tracms.AccountsTest do
       dt = ~N[2020-01-01 00:00:00]
       {1, nil} = Repo.update_all(UserToken, set: [inserted_at: dt, authenticated_at: dt])
       refute Accounts.get_user_by_session_token(token)
+    end
+  end
+
+  describe "list_user_sessions/1" do
+    test "returns only active session tokens for the given user" do
+      user = user_fixture()
+      other_user = user_fixture()
+
+      active_user_token = Accounts.generate_user_session_token(user)
+      expired_user_token = Accounts.generate_user_session_token(user)
+      other_token = Accounts.generate_user_session_token(other_user)
+
+      offset_user_token(active_user_token, -1, :day)
+      offset_user_token(expired_user_token, -20, :day)
+      offset_user_token(other_token, -1, :day)
+
+      sessions = Accounts.list_user_sessions(user)
+
+      assert length(sessions) == 1
+      assert Enum.all?(sessions, &(&1.user_id == user.id))
+      assert Enum.all?(sessions, &(&1.context == "session"))
     end
   end
 

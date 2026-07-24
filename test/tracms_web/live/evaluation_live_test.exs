@@ -100,6 +100,9 @@ defmodule TracmsWeb.EvaluationLiveTest do
       assert html =~ "Completion criteria"
       assert html =~ "Completed"
       assert html =~ "Pending Evaluation"
+      assert html =~ "Eligible for certificate"
+      assert html =~ "Certificate readiness"
+      assert html =~ "Ready for release from the certificate register"
     end
   end
 end
