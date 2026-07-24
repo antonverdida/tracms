@@ -14,14 +14,23 @@ defmodule Tracms.TrainingsTest do
                Trainings.create_training_activity(scope, %{
                  title: "Assessment Training",
                  description: "Training description",
-                 category: "Assessment",
+                 objectives: "Understand regional assessment planning and classroom application.",
+                 category: "Assessment and Evaluation",
+                 training_type: "Capacity Building Training",
                  organizer: "DepEd Region IX",
                  modality: :hybrid,
                  venue: "Pagadian City",
+                 venue_address: "Pagadian City, Zamboanga del Sur",
+                 total_hours: 16,
+                 target_participants: "Teachers and supervisors",
+                 participant_qualification: "Must be a current DepEd employee.",
+                 registration_opens_on: ~D[2026-08-20],
                  registration_deadline: ~U[2026-09-01 08:00:00Z],
                  max_capacity: 80,
                  starts_on: ~D[2026-09-10],
-                 ends_on: ~D[2026-09-11]
+                 ends_on: ~D[2026-09-11],
+                 attendance_monitoring_method: "Manual Verification",
+                 certificate_type: "Certificate of Participation"
                })
 
       assert training_activity.creator_user_id == user.id

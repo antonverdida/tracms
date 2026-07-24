@@ -53,27 +53,28 @@ defmodule TracmsWeb.RegistrationLive.Evaluation do
       variant="dashboard"
       active_nav="registrations"
     >
-      <div class="space-y-6">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p class="eyebrow">Participant evaluation</p>
-            <h1 class="section-title">{@registration.training_activity.title}</h1>
-            <p class="section-copy">
-              Submit your training feedback to complete the evaluation requirement for this activity.
-            </p>
-          </div>
-          <.button navigate={~p"/my/registrations"} variant="ghost">Back to registrations</.button>
-        </div>
+      <div class="portal-page-shell">
+        <.portal_page_header
+          eyebrow="Participant evaluation"
+          title={@registration.training_activity.title}
+          copy="Submit your training feedback to complete the evaluation requirement for this activity."
+        >
+          <:actions>
+            <.button navigate={~p"/my/registrations"} variant="ghost">
+              Back to registrations
+            </.button>
+          </:actions>
+        </.portal_page_header>
+
+        <.portal_stat_grid cards={@summary_cards} />
 
         <section class="content-grid">
-          <article class="panel">
-            <p class="eyebrow">Evaluation form</p>
-            <h2 class="section-title">
-              {if @existing_submission?, do: "Update evaluation", else: "Submit evaluation"}
-            </h2>
-            <p class="section-copy">
-              Share your overall rating, key feedback, and how you plan to apply the training.
-            </p>
+          <article class="panel portal-list-panel">
+            <.portal_panel_header
+              eyebrow="Evaluation form"
+              title={if @existing_submission?, do: "Update evaluation", else: "Submit evaluation"}
+              meta="Share your overall rating, key feedback, and how you plan to apply the training."
+            />
 
             <.form
               for={@form}
@@ -110,15 +111,16 @@ defmodule TracmsWeb.RegistrationLive.Evaluation do
             </.form>
           </article>
 
-          <article class="panel panel-muted">
-            <p class="eyebrow">Training context</p>
-            <h2 class="section-title">Completion requirement</h2>
+          <article class="panel panel-muted portal-list-panel">
+            <.portal_panel_header eyebrow="Training context" title="Completion requirement" />
 
-            <div class="stack mt-6">
+            <div class="stack">
               <div class="feature-card">
                 <div class="feature-title">Training schedule</div>
                 <div class="feature-copy">
-                  {@registration.training_activity.starts_on} to {@registration.training_activity.ends_on}
+                  {format_date(@registration.training_activity.starts_on)} to {format_date(
+                    @registration.training_activity.ends_on
+                  )}
                 </div>
               </div>
               <div class="feature-card">
@@ -156,9 +158,35 @@ defmodule TracmsWeb.RegistrationLive.Evaluation do
     |> assign(:registration, registration)
     |> assign(:evaluation_submission, evaluation_submission)
     |> assign(:existing_submission?, not is_nil(evaluation_submission.id))
+    |> assign(:summary_cards, evaluation_summary_cards(registration, evaluation_submission))
     |> assign(
       :form,
       to_form(Evaluations.change_submission(evaluation_submission), as: "evaluation_submission")
     )
+  end
+
+  defp evaluation_summary_cards(registration, evaluation_submission) do
+    [
+      summary_card(
+        "Schedule",
+        format_date(registration.training_activity.starts_on),
+        "Ends on #{format_date(registration.training_activity.ends_on)}"
+      ),
+      summary_card(
+        "Minimum attendance",
+        "#{registration.training_activity.minimum_attendance_percentage}%",
+        "Required completion threshold"
+      ),
+      summary_card("Evaluation required", "Yes", "Feedback must be submitted for completion"),
+      summary_card(
+        "Submission status",
+        if(is_nil(evaluation_submission.id), do: "Pending", else: "Submitted"),
+        if(
+          is_nil(evaluation_submission.id),
+          do: "You still need to complete this form",
+          else: "Your feedback can still be updated"
+        )
+      )
+    ]
   end
 end

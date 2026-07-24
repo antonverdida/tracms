@@ -154,11 +154,24 @@ defmodule TracmsWeb.Layouts do
             My Records
           </.link>
           <.link
+            navigate={~p"/my/certificates"}
+            class={dashboard_menu_link_class(@active_nav, "certificates")}
+          >
+            Certificates
+          </.link>
+          <.link
             :if={Tracms.Accounts.Scope.training_manager?(@current_scope)}
             navigate={~p"/trainings"}
             class={dashboard_menu_link_class(@active_nav, "trainings")}
           >
             Training Management
+          </.link>
+          <.link
+            :if={Tracms.Accounts.Scope.training_manager?(@current_scope)}
+            navigate={~p"/reports"}
+            class={dashboard_menu_link_class(@active_nav, "reports")}
+          >
+            Reports
           </.link>
         </nav>
       </div>

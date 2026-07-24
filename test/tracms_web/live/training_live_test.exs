@@ -43,14 +43,23 @@ defmodule TracmsWeb.TrainingLiveTest do
           training_activity: %{
             title: "Regional Literacy Summit",
             description: "Summit description",
-            category: "Literacy",
+            objectives: "Improve literacy program delivery and assessment planning.",
+            category: "Curriculum and Instruction",
+            training_type: "Professional Development Program",
             organizer: "DepEd Region IX",
             modality: "face_to_face",
             venue: "Zamboanga Peninsula",
+            venue_address: "Pagadian City, Zamboanga del Sur",
+            total_hours: "24",
+            target_participants: "Teachers and school heads",
+            participant_qualification: "Must be endorsed by the school head.",
+            registration_opens_on: "2026-07-20",
             registration_deadline: "2026-08-01T09:00",
             max_capacity: 150,
             starts_on: "2026-08-10",
-            ends_on: "2026-08-12"
+            ends_on: "2026-08-12",
+            attendance_monitoring_method: "QR Code and Manual Verification",
+            certificate_type: "Certificate of Participation"
           }
         )
 

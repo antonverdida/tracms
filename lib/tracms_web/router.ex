@@ -58,6 +58,8 @@ defmodule TracmsWeb.Router do
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
       live "/catalog/trainings", RegistrationLive.Catalog, :index
       live "/my/registrations", RegistrationLive.MyIndex, :index
+      live "/my/certificates", CertificateLive.MyIndex, :index
+      live "/my/certificates/:id", CertificateLive.Show, :show
       live "/my/registrations/:registration_id/evaluation", RegistrationLive.Evaluation, :edit
     end
 
@@ -67,12 +69,18 @@ defmodule TracmsWeb.Router do
         {TracmsWeb.TrainingLive.Auth, :require_training_manager}
       ] do
       live "/trainings", TrainingLive.Index, :index
+      live "/reports", TrainingLive.Reports, :index
       live "/trainings/new", TrainingLive.Form, :new
       live "/trainings/:id/edit", TrainingLive.Form, :edit
       live "/trainings/:id", TrainingLive.Show, :show
       live "/trainings/:training_id/registrations", TrainingLive.Registrations, :index
       live "/trainings/:training_id/attendance", TrainingLive.Attendance, :index
       live "/trainings/:training_id/completion", TrainingLive.Completion, :index
+      live "/trainings/:training_id/certificates", TrainingLive.Certificates, :index
+
+      live "/trainings/:training_id/certificates/:certificate_id",
+           TrainingLive.CertificateShow,
+           :show
     end
 
     post "/users/update-password", UserSessionController, :update_password

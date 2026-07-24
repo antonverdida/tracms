@@ -15,14 +15,23 @@ defmodule Tracms.TrainingsFixtures do
       Enum.into(attrs, %{
         title: "Training #{System.unique_integer([:positive])}",
         description: "Focused capability-building activity for schools and offices.",
-        category: "Professional Development",
+        category: "Teacher Development",
+        training_type: "Capacity Building Training",
         organizer: "DepEd Region IX",
         modality: :face_to_face,
         venue: "Regional Learning Center",
+        venue_address: "Pagadian City, Zamboanga del Sur",
+        total_hours: 24,
+        objectives: "Strengthen core competencies and deliver practical school-based outputs.",
+        target_participants: "Teachers, school heads, and DepEd personnel.",
+        participant_qualification: "Must be endorsed by the appropriate office or school head.",
+        registration_opens_on: Date.add(Date.utc_today(), -5),
         registration_deadline: ~U[2026-08-01 09:00:00Z],
         max_capacity: 120,
         starts_on: ~D[2026-08-10],
-        ends_on: ~D[2026-08-12]
+        ends_on: ~D[2026-08-12],
+        attendance_monitoring_method: "QR Code and Manual Verification",
+        certificate_type: "Certificate of Participation"
       })
 
     {:ok, training_activity} = Trainings.create_training_activity(scope, attrs)

@@ -3,6 +3,7 @@ defmodule Tracms.Registrations.Registration do
   import Ecto.Changeset
 
   alias Tracms.Accounts.User
+  alias Tracms.Certificates.CertificateRecord
   alias Tracms.Trainings.TrainingActivity
 
   @primary_key {:id, :binary_id, autogenerate: true}
@@ -20,6 +21,7 @@ defmodule Tracms.Registrations.Registration do
     belongs_to :training_activity, TrainingActivity
     belongs_to :registrant_user, User
     belongs_to :reviewer_user, User
+    has_one :certificate_record, CertificateRecord
 
     timestamps(type: :utc_datetime)
   end

@@ -22,51 +22,32 @@ defmodule TracmsWeb.TrainingLive.Completion do
       variant="dashboard"
       active_nav="trainings"
     >
-      <div class="space-y-6">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p class="eyebrow">Completion summary</p>
-            <h1 class="section-title">{@training_activity.title}</h1>
-            <p class="section-copy">
-              Review attendance percentage, evaluation submission, and computed completion status.
-            </p>
-          </div>
-          <div class="flex flex-wrap gap-3">
+      <div class="portal-page-shell">
+        <.portal_page_header
+          eyebrow="Completion summary"
+          title={@training_activity.title}
+          copy="Review attendance percentage, evaluation submission, and computed completion status."
+        >
+          <:actions>
             <.button navigate={~p"/trainings/#{@training_activity.id}"} variant="ghost">
               Back to training
             </.button>
             <.button navigate={~p"/trainings/#{@training_activity.id}/attendance"} variant="ghost">
               Attendance
             </.button>
-          </div>
-        </div>
+            <.button
+              navigate={~p"/trainings/#{@training_activity.id}/certificates"}
+              variant="ghost"
+            >
+              Certificates
+            </.button>
+          </:actions>
+        </.portal_page_header>
 
-        <div class="dashboard-summary-grid">
-          <article class="dashboard-summary-card">
-            <p class="dashboard-summary-label">Completed</p>
-            <p class="dashboard-summary-value">{@summary.completed}</p>
-          </article>
-          <article class="dashboard-summary-card">
-            <p class="dashboard-summary-label">Pending evaluation</p>
-            <p class="dashboard-summary-value">{@summary.pending_evaluation}</p>
-          </article>
-          <article class="dashboard-summary-card">
-            <p class="dashboard-summary-label">Insufficient attendance</p>
-            <p class="dashboard-summary-value">{@summary.insufficient_attendance}</p>
-          </article>
-          <article class="dashboard-summary-card">
-            <p class="dashboard-summary-label">Awaiting attendance</p>
-            <p class="dashboard-summary-value">{@summary.awaiting_attendance}</p>
-          </article>
-        </div>
+        <.portal_stat_grid cards={@summary_cards} />
 
-        <section class="panel space-y-5">
-          <div class="dashboard-section-head">
-            <div>
-              <p class="eyebrow">Training rules</p>
-              <h2 class="section-title">Completion criteria</h2>
-            </div>
-          </div>
+        <section class="panel portal-list-panel">
+          <.portal_panel_header eyebrow="Training rules" title="Completion criteria" />
 
           <div class="dashboard-action-grid">
             <div class="feature-card">
@@ -84,38 +65,60 @@ defmodule TracmsWeb.TrainingLive.Completion do
           </div>
         </section>
 
-        <section class="panel">
+        <section class="panel portal-list-panel">
           <%= if @entries == [] do %>
-            <h2 class="section-title">No approved participants yet</h2>
-            <p class="section-copy">
-              Approve registrations first to begin completion tracking for this training.
-            </p>
+            <.portal_empty_state
+              icon="hero-academic-cap"
+              title="No approved participants yet"
+              copy="Approve registrations first to begin completion tracking for this training."
+            />
           <% else %>
-            <.table id="completion-roster" rows={@entries}>
-              <:col :let={entry} label="Participant">
-                <div class="font-semibold">
-                  {entry.registration.registrant_user.full_name ||
-                    entry.registration.registrant_user.email}
-                </div>
-                <div class="text-sm text-[var(--tracms-text-muted)]">
-                  {entry.registration.registrant_user.email}
-                </div>
-              </:col>
-              <:col :let={entry} label="Attendance">
-                <div>{entry.attendance_percentage}%</div>
-                <div class="text-sm text-[var(--tracms-text-muted)]">
-                  {entry.attended_sessions_count} of {entry.total_sessions_count} sessions
-                </div>
-              </:col>
-              <:col :let={entry} label="Evaluation">
-                {evaluation_label(@training_activity.evaluation_required, entry.evaluation_submission)}
-              </:col>
-              <:col :let={entry} label="Completion">
-                <span class="badge-soft">
-                  {Evaluations.completion_status_label(entry.completion_status)}
-                </span>
-              </:col>
-            </.table>
+            <.portal_panel_header
+              eyebrow="Participant progress"
+              title="Completion roster"
+              meta={completion_caption(@entries)}
+            />
+
+            <div class="data-table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Participant</th>
+                    <th>Attendance</th>
+                    <th>Evaluation</th>
+                    <th>Completion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr :for={entry <- @entries}>
+                    <td>
+                      <div class="portal-cell-title">{participant_name(entry)}</div>
+                      <div class="portal-cell-meta">{entry.registration.registrant_user.email}</div>
+                    </td>
+                    <td>
+                      <div>{entry.attendance_percentage}%</div>
+                      <div class="portal-cell-meta">
+                        {entry.attended_sessions_count} of {entry.total_sessions_count} sessions
+                      </div>
+                    </td>
+                    <td>
+                      {evaluation_label(
+                        @training_activity.evaluation_required,
+                        entry.evaluation_submission
+                      )}
+                    </td>
+                    <td>
+                      <span class={[
+                        "portal-chip",
+                        "portal-chip-#{completion_status_tone(entry.completion_status)}"
+                      ]}>
+                        {Evaluations.completion_status_label(entry.completion_status)}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           <% end %>
         </section>
       </div>
@@ -134,9 +137,46 @@ defmodule TracmsWeb.TrainingLive.Completion do
     |> assign(:training_activity, training_activity)
     |> assign(:entries, entries)
     |> assign(:summary, Evaluations.completion_summary(entries))
+    |> assign(:summary_cards, completion_summary_cards(Evaluations.completion_summary(entries)))
   end
 
   defp evaluation_label(false, _submission), do: "Not required"
   defp evaluation_label(true, nil), do: "Pending"
   defp evaluation_label(true, _submission), do: "Submitted"
+
+  defp completion_summary_cards(summary) do
+    [
+      summary_card("Completed", summary.completed, "Participants who satisfied all requirements"),
+      summary_card(
+        "Pending evaluation",
+        summary.pending_evaluation,
+        "Participants waiting on feedback submission"
+      ),
+      summary_card(
+        "Insufficient attendance",
+        summary.insufficient_attendance,
+        "Below the minimum attendance threshold"
+      ),
+      summary_card(
+        "Awaiting attendance",
+        summary.awaiting_attendance,
+        "Sessions still need attendance records"
+      )
+    ]
+  end
+
+  defp completion_caption(entries) do
+    count = length(entries)
+    "Showing #{count} approved participant #{if(count == 1, do: "record", else: "records")}."
+  end
+
+  defp participant_name(entry) do
+    entry.registration.registrant_user.full_name || entry.registration.registrant_user.email
+  end
+
+  defp completion_status_tone(:completed), do: "green"
+  defp completion_status_tone(:pending_evaluation), do: "amber"
+  defp completion_status_tone(:insufficient_attendance), do: "rose"
+  defp completion_status_tone(:awaiting_attendance), do: "blue"
+  defp completion_status_tone(_status), do: "slate"
 end

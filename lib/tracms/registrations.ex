@@ -23,6 +23,7 @@ defmodule Tracms.Registrations do
 
       TrainingActivity
       |> where([training], training.status == :published)
+      |> where([training], training.registration_opens_on <= ^Date.utc_today())
       |> where([training], training.registration_deadline >= ^DateTime.utc_now(:second))
       |> where([training], training.id not in ^training_ids)
       |> preload([:office, :division])
@@ -151,11 +152,22 @@ defmodule Tracms.Registrations do
   defp ensure_authenticated_scope(%Scope{user: %{id: user_id}}), do: {:ok, user_id}
   defp ensure_authenticated_scope(_scope), do: {:error, :unauthorized}
 
-  defp ensure_training_open(%TrainingActivity{status: :published, registration_deadline: deadline}) do
-    if DateTime.compare(deadline, DateTime.utc_now(:second)) in [:gt, :eq] do
-      :ok
-    else
-      {:error, :registration_closed}
+  defp ensure_training_open(%TrainingActivity{
+         status: :published,
+         registration_opens_on: opens_on,
+         registration_deadline: deadline
+       }) do
+    today = Date.utc_today()
+
+    cond do
+      Date.compare(opens_on, today) == :gt ->
+        {:error, :registration_not_open}
+
+      DateTime.compare(deadline, DateTime.utc_now(:second)) in [:gt, :eq] ->
+        :ok
+
+      true ->
+        {:error, :registration_closed}
     end
   end
 
