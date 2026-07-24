@@ -7,8 +7,9 @@
   <div class="dashboard-portal">
     <section class="dashboard-portal-hero">
       <div class="dashboard-portal-hero-copy">
-        <h1 class="dashboard-portal-title">Good Morning, {@greeting_name}!</h1>
-        <p class="dashboard-portal-copy">{@dashboard_intro}</p>
+        <p class="eyebrow">{@dashboard_role_label}</p>
+        <h1 class="dashboard-portal-title">Good Morning, {@greeting_name}</h1>
+        <p class="dashboard-portal-copy">{@dashboard_context_title}</p>
       </div>
 
       <div class="dashboard-date-pill">
@@ -30,6 +31,9 @@
           <p class="dashboard-stat-label">{metric.label}</p>
           <p class="dashboard-stat-value">{metric.value}</p>
           <p class="dashboard-stat-meta">{metric.meta}</p>
+          <div :if={metric.details != []} class="dashboard-stat-detail-list">
+            <p :for={detail <- metric.details} class="dashboard-stat-detail-item">{detail}</p>
+          </div>
         </div>
       </article>
     </section>
@@ -61,31 +65,24 @@
         </div>
 
         <%= if @upcoming_items == [] do %>
-          <div class="portal-empty-state">
-            <div class="portal-empty-icon">
-              <.icon
-                name={
-                  if @dashboard_mode == :manager, do: "hero-calendar-days", else: "hero-book-open"
-                }
-                class="size-7"
-              />
-            </div>
-            <div>
-              <h3 class="portal-empty-title">
-                {if @dashboard_mode == :manager,
-                  do: "No scheduled training activities yet",
-                  else: "No upcoming training records yet"}
-              </h3>
-              <p class="section-copy portal-empty-copy">
-                {if @dashboard_mode == :manager,
-                  do:
-                    "Create your first training activity to start publishing schedules, managing registrations, and tracking delivery progress.",
-                  else:
-                    "Your approved or submitted trainings will appear here once you start joining regional activities."}
-              </p>
-            </div>
-
-            <div class="portal-empty-actions">
+          <.portal_empty_state
+            icon={
+              if @dashboard_mode == :manager, do: "hero-calendar-days", else: "hero-book-open"
+            }
+            title={
+              if @dashboard_mode == :manager,
+                do: "No scheduled training activities yet",
+                else: "No upcoming training records yet"
+            }
+            copy={
+              if @dashboard_mode == :manager,
+                do:
+                  "Create your first training activity to start publishing schedules, managing registrations, and tracking delivery progress.",
+                else:
+                  "Your approved or submitted trainings will appear here once you start joining regional activities."
+            }
+          >
+            <:actions>
               <.link
                 navigate={
                   if @dashboard_mode == :manager,
@@ -98,8 +95,8 @@
                   do: "Create first training",
                   else: "Browse trainings"}
               </.link>
-            </div>
-          </div>
+            </:actions>
+          </.portal_empty_state>
         <% else %>
           <div class="portal-event-list">
             <div :for={item <- @upcoming_items} class="portal-event-card">
@@ -110,7 +107,7 @@
 
               <div class="portal-event-body">
                 <div class="badge-row">
-                  <span class="badge-soft">{item.badge}</span>
+                  <span :for={badge <- item.badges} class="badge-soft">{badge}</span>
                 </div>
                 <h3 class="portal-event-title">{item.title}</h3>
                 <p class="portal-event-meta">{item.meta_primary}</p>
@@ -133,7 +130,7 @@
             </p>
             <h2 class="section-title">
               {if @dashboard_mode == :manager,
-                do: "Training Status Pipeline",
+                do: "Training Workflow",
                 else: "My Registration Status"}
             </h2>
           </div>
@@ -238,6 +235,7 @@
                     <th>Schedule</th>
                     <th>Status</th>
                     <th>Evaluation</th>
+                    <th>Certificate</th>
                   <% end %>
                 </tr>
               </thead>
@@ -264,6 +262,7 @@
                       </span>
                     </td>
                     <td>{row.evaluation_label}</td>
+                    <td>{row.certificate_label}</td>
                   <% end %>
                 </tr>
               </tbody>

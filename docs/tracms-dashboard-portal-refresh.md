@@ -79,6 +79,18 @@ After reviewing the live dashboard in the browser, the dashboard was refined fur
 - keep only one stronger empty state in the main operational panel
 - make lower-row panels quieter and more operational
 
+## July 24 Dashboard Refinement
+
+After reviewing the latest dashboard improvement plan, the best supported refinements for the current TRACMS codebase are:
+
+- make the homepage more explicitly role-aware for regional administrators, division administrators, coordinators, and participants
+- reduce the greeting block so operational data stays visually dominant
+- enrich KPI cards with clearer breakdowns instead of generic one-line captions
+- make upcoming activity cards show more useful operational context
+- preserve the current implemented navigation rather than adding unsupported modules prematurely
+
+These refinements keep the dashboard closer to a training operations command center while staying honest to the modules that already exist in the system.
+
 ## Next Recommended UI Work
 
 1. Bring the same portal card language into training index, registrations, and attendance pages

@@ -2,6 +2,7 @@ defmodule TracmsWeb.PageController do
   use TracmsWeb, :controller
 
   alias Tracms.Accounts.Scope
+  alias Tracms.Certificates
   alias Tracms.Evaluations
   alias Tracms.Registrations
   alias Tracms.Trainings
@@ -19,21 +20,30 @@ defmodule TracmsWeb.PageController do
     today = Date.utc_today()
     open_trainings = Registrations.list_open_training_activities(scope)
     my_registrations = Registrations.list_user_registrations(scope)
+    my_certificates = Certificates.list_user_certificates(scope)
     managed_trainings = Trainings.list_training_activities(scope)
     manageable_registrations = Registrations.list_manageable_registrations(scope)
+    manageable_certificates = Certificates.list_manageable_certificates(scope)
     evaluation_submissions = load_evaluation_submissions(my_registrations)
 
     assigns =
       common_dashboard_assigns(scope, today)
       |> Map.merge(
         if Scope.training_manager?(scope) do
-          manager_dashboard_assigns(scope, today, managed_trainings, manageable_registrations)
+          manager_dashboard_assigns(
+            scope,
+            today,
+            managed_trainings,
+            manageable_registrations,
+            manageable_certificates
+          )
         else
           participant_dashboard_assigns(
             today,
             open_trainings,
             my_registrations,
-            evaluation_submissions
+            evaluation_submissions,
+            my_certificates
           )
         end
       )
@@ -42,26 +52,37 @@ defmodule TracmsWeb.PageController do
   end
 
   defp common_dashboard_assigns(scope, today) do
+    {role_label, context_title} = dashboard_identity(scope)
+
     %{
+      dashboard_role_label: role_label,
+      dashboard_context_title: context_title,
       greeting_name: greeting_name(scope.user),
       dashboard_date: format_dashboard_date(today),
       current_year: today.year
     }
   end
 
-  defp manager_dashboard_assigns(_scope, today, managed_trainings, manageable_registrations) do
+  defp manager_dashboard_assigns(
+         scope,
+         today,
+         managed_trainings,
+         manageable_registrations,
+         manageable_certificates
+       ) do
     active_registration_count = count_active_registrations(manageable_registrations)
+    unique_participant_count = count_unique_participants(manageable_registrations)
 
     submitted_registration_count =
       Enum.count(manageable_registrations, &(&1.status == :submitted))
 
-    published_training_count =
-      count_trainings(managed_trainings, [:published, :registration_closed])
-
-    live_training_count =
-      count_trainings(managed_trainings, [:published, :registration_closed, :in_progress])
+    waitlisted_registration_count =
+      Enum.count(manageable_registrations, &(&1.status == :waitlisted))
 
     completed_training_count = count_trainings(managed_trainings, [:completed, :archived])
+
+    active_training_count =
+      count_trainings(managed_trainings, [:published, :registration_closed, :in_progress])
 
     approval_training_count =
       count_trainings(managed_trainings, [
@@ -70,41 +91,66 @@ defmodule TracmsWeb.PageController do
         :pending_region_approval
       ])
 
+    current_month_registration_count = count_created_in_month(manageable_registrations, today)
     pending_action_count = approval_training_count + submitted_registration_count
     registration_counts_by_training = registration_counts_by_training(manageable_registrations)
+    issued_certificate_count = length(manageable_certificates)
+    downloaded_certificate_count = count_delivery_status(manageable_certificates, :downloaded)
+    available_certificate_count = count_delivery_status(manageable_certificates, :available)
+    issued_this_month_count = count_created_in_month(manageable_certificates, today)
     first_training = List.first(managed_trainings)
 
     %{
       dashboard_mode: :manager,
-      dashboard_intro: "Current training operations for DepEd Region IX.",
+      dashboard_intro: "#{management_scope_label(scope)} dashboard",
       metrics: [
         metric(
           "hero-academic-cap",
           "blue",
           "Total Trainings",
           length(managed_trainings),
-          "Across your management scope"
+          "Across your current management scope",
+          [
+            "Active: #{active_training_count}",
+            "Completed: #{completed_training_count}",
+            "Draft or approval: #{approval_training_count}"
+          ]
         ),
         metric(
           "hero-users",
           "green",
-          "Participant Registrations",
-          active_registration_count,
-          "#{submitted_registration_count} awaiting review"
+          "Participants",
+          unique_participant_count,
+          "Users currently represented in your scope",
+          [
+            "Active registrations: #{active_registration_count}",
+            "Awaiting review: #{submitted_registration_count}",
+            "Submitted this month: #{current_month_registration_count}"
+          ]
         ),
         metric(
-          "hero-signal",
+          "hero-document-check",
           "amber",
-          "Live Activities",
-          live_training_count,
-          "#{completed_training_count} completed or archived"
+          "Certificates Issued",
+          issued_certificate_count,
+          "Issued training credentials in your current scope",
+          [
+            "Available: #{available_certificate_count}",
+            "Acknowledged: #{downloaded_certificate_count}",
+            "Issued this month: #{issued_this_month_count}"
+          ]
         ),
         metric(
           "hero-exclamation-triangle",
           "rose",
           "Pending Actions",
           pending_action_count,
-          "#{published_training_count} published and open for delivery"
+          "Items that still require management action",
+          [
+            "Approval requests: #{approval_training_count}",
+            "Registration review: #{submitted_registration_count}",
+            "Waitlisted: #{waitlisted_registration_count}"
+          ]
         )
       ],
       upcoming_items:
@@ -116,7 +162,11 @@ defmodule TracmsWeb.PageController do
         build_manager_monitoring_rows(today, managed_trainings, registration_counts_by_training),
       quick_actions: build_manager_quick_actions(first_training),
       recent_activities:
-        build_manager_recent_activities(managed_trainings, manageable_registrations),
+        build_manager_recent_activities(
+          managed_trainings,
+          manageable_registrations,
+          manageable_certificates
+        ),
       workflow_link: manager_training_link(first_training, :registrations)
     }
   end
@@ -125,7 +175,8 @@ defmodule TracmsWeb.PageController do
          today,
          open_trainings,
          my_registrations,
-         evaluation_submissions
+         evaluation_submissions,
+         my_certificates
        ) do
     approved_registration_count = Enum.count(my_registrations, &(&1.status == :approved))
 
@@ -136,38 +187,69 @@ defmodule TracmsWeb.PageController do
       pending_evaluation_registrations(my_registrations, evaluation_submissions)
 
     pending_action_count = follow_up_registration_count + length(pending_evaluations)
+    upcoming_registration_count = count_upcoming_registrations(my_registrations, today)
+    certificates_by_registration_id = certificate_map_by_registration(my_certificates)
+    issued_certificate_count = length(my_certificates)
+    downloaded_certificate_count = count_delivery_status(my_certificates, :downloaded)
+    available_certificate_count = count_delivery_status(my_certificates, :available)
+
+    awaiting_certificate_count =
+      Enum.count(my_registrations, fn registration ->
+        registration.status == :approved and
+          not Map.has_key?(certificates_by_registration_id, registration.id)
+      end)
 
     %{
       dashboard_mode: :participant,
-      dashboard_intro: "Your current trainings, approvals, and required follow-up.",
+      dashboard_intro: "Personal training and evaluation overview",
       metrics: [
         metric(
           "hero-academic-cap",
           "blue",
-          "Open Trainings",
-          length(open_trainings),
-          "Published activities available for registration"
+          "Upcoming Trainings",
+          upcoming_registration_count,
+          "Submitted or approved activities on your schedule",
+          [
+            "Open catalog: #{length(open_trainings)}",
+            "Approved: #{approved_registration_count}",
+            "Awaiting update: #{follow_up_registration_count}"
+          ]
         ),
         metric(
           "hero-clipboard-document-list",
           "green",
           "My Registrations",
           length(my_registrations),
-          "Submitted and approved records"
+          "Records currently saved in TRACMS",
+          [
+            "Approved: #{approved_registration_count}",
+            "Follow-up required: #{follow_up_registration_count}",
+            "Rejected or withdrawn: #{count_closed_registrations(my_registrations)}"
+          ]
         ),
         metric(
-          "hero-check-badge",
+          "hero-document-check",
           "amber",
-          "Approved Records",
-          approved_registration_count,
-          "#{length(pending_evaluations)} evaluation requirements pending"
+          "Certificates",
+          issued_certificate_count,
+          "Issued certificate records connected to your trainings",
+          [
+            "Available: #{available_certificate_count}",
+            "Acknowledged: #{downloaded_certificate_count}",
+            "Awaiting release: #{awaiting_certificate_count}"
+          ]
         ),
         metric(
           "hero-exclamation-triangle",
           "rose",
           "Pending Actions",
           pending_action_count,
-          "Registrations or evaluations that still need your attention"
+          "Registrations or evaluations that still need your attention",
+          [
+            "Registration follow-up: #{follow_up_registration_count}",
+            "Pending evaluations: #{length(pending_evaluations)}",
+            "Open trainings: #{length(open_trainings)}"
+          ]
         )
       ],
       upcoming_items:
@@ -186,15 +268,19 @@ defmodule TracmsWeb.PageController do
           evaluation_submissions
         ),
       monitoring_rows:
-        build_participant_monitoring_rows(my_registrations, evaluation_submissions),
+        build_participant_monitoring_rows(
+          my_registrations,
+          evaluation_submissions,
+          certificates_by_registration_id
+        ),
       quick_actions: build_participant_quick_actions(pending_evaluations),
-      recent_activities: build_participant_recent_activities(my_registrations),
+      recent_activities: build_participant_recent_activities(my_registrations, my_certificates),
       workflow_link: ~p"/my/registrations"
     }
   end
 
-  defp metric(icon, tone, label, value, meta) do
-    %{icon: icon, tone: tone, label: label, value: value, meta: meta}
+  defp metric(icon, tone, label, value, meta, details) do
+    %{icon: icon, tone: tone, label: label, value: value, meta: meta, details: details}
   end
 
   defp build_manager_upcoming_items(today, managed_trainings, registration_counts_by_training) do
@@ -207,7 +293,7 @@ defmodule TracmsWeb.PageController do
         month: format_short_month(training.starts_on),
         day: format_day_number(training.starts_on),
         title: training.title,
-        badge: modality_label(training.modality),
+        badges: [modality_label(training.modality), Trainings.format_status(training.status)],
         meta_primary:
           [training.category, training.venue] |> Enum.reject(&blank?/1) |> Enum.join(" • "),
         meta_secondary:
@@ -241,7 +327,10 @@ defmodule TracmsWeb.PageController do
           month: format_short_month(training.starts_on),
           day: format_day_number(training.starts_on),
           title: training.title,
-          badge: Registrations.format_status(registration.status),
+          badges: [
+            Registrations.format_status(registration.status),
+            modality_label(training.modality)
+          ],
           meta_primary:
             [format_long_date(training.starts_on), training.venue]
             |> Enum.reject(&blank?/1)
@@ -260,7 +349,7 @@ defmodule TracmsWeb.PageController do
           month: format_short_month(training.starts_on),
           day: format_day_number(training.starts_on),
           title: training.title,
-          badge: modality_label(training.modality),
+          badges: [modality_label(training.modality), Trainings.format_status(training.status)],
           meta_primary:
             [training.category, training.venue] |> Enum.reject(&blank?/1) |> Enum.join(" • "),
           meta_secondary:
@@ -290,7 +379,7 @@ defmodule TracmsWeb.PageController do
         "Published",
         (counts[:published] || 0) + (counts[:registration_closed] || 0),
         total,
-        "Visible in the registration catalog"
+        "Visible in the catalog or in registration delivery"
       ),
       status_item(
         "Ongoing",
@@ -452,11 +541,16 @@ defmodule TracmsWeb.PageController do
     end)
   end
 
-  defp build_participant_monitoring_rows(my_registrations, evaluation_submissions) do
+  defp build_participant_monitoring_rows(
+         my_registrations,
+         evaluation_submissions,
+         certificates_by_registration_id
+       ) do
     my_registrations
     |> Enum.take(5)
     |> Enum.map(fn registration ->
       training = registration.training_activity
+      certificate = Map.get(certificates_by_registration_id, registration.id)
 
       %{
         title: training.title,
@@ -464,7 +558,8 @@ defmodule TracmsWeb.PageController do
         status_label: Registrations.format_status(registration.status),
         status_tone: registration_tone(registration.status),
         evaluation_label: participant_evaluation_label(registration, evaluation_submissions),
-        action_path: participant_action_path(registration, evaluation_submissions)
+        certificate_label: participant_certificate_label(certificate),
+        action_path: participant_action_path(registration, evaluation_submissions, certificate)
       }
     end)
   end
@@ -505,6 +600,20 @@ defmodule TracmsWeb.PageController do
         "Completion Review",
         "Review completion results.",
         manager_training_link(first_training, :completion)
+      ),
+      quick_action(
+        "hero-document-check",
+        "green",
+        "Certificates",
+        "Issue and review certificate records.",
+        manager_training_link(first_training, :certificates)
+      ),
+      quick_action(
+        "hero-chart-bar-square",
+        "blue",
+        "Reports",
+        "Open training operations summaries.",
+        ~p"/reports"
       )
     ]
   end
@@ -533,6 +642,13 @@ defmodule TracmsWeb.PageController do
         participant_evaluation_path(pending_evaluations)
       ),
       quick_action(
+        "hero-document-check",
+        "green",
+        "My Certificates",
+        "Open issued training credentials.",
+        ~p"/my/certificates"
+      ),
+      quick_action(
         "hero-cog-6-tooth",
         "slate",
         "Account Settings",
@@ -542,7 +658,11 @@ defmodule TracmsWeb.PageController do
     ]
   end
 
-  defp build_manager_recent_activities(managed_trainings, manageable_registrations) do
+  defp build_manager_recent_activities(
+         managed_trainings,
+         manageable_registrations,
+         manageable_certificates
+       ) do
     training_activities =
       Enum.map(managed_trainings, fn training ->
         %{
@@ -570,22 +690,52 @@ defmodule TracmsWeb.PageController do
         }
       end)
 
-    recent_activities(training_activities ++ registration_activities)
+    certificate_activities =
+      Enum.map(manageable_certificates, fn certificate ->
+        participant = certificate.registration.registrant_user
+        participant_name = participant.full_name || participant.email
+
+        %{
+          sort_at: certificate.inserted_at,
+          icon: "hero-document-check",
+          tone: delivery_status_tone(certificate.delivery_status),
+          title: "#{participant_name} certificate issued",
+          detail:
+            "#{certificate.registration.training_activity.title} • #{Certificates.format_delivery_status(certificate.delivery_status)}",
+          timestamp: format_timestamp(certificate.inserted_at)
+        }
+      end)
+
+    recent_activities(training_activities ++ registration_activities ++ certificate_activities)
   end
 
-  defp build_participant_recent_activities(my_registrations) do
-    my_registrations
-    |> Enum.map(fn registration ->
-      %{
-        sort_at: registration.inserted_at,
-        icon: "hero-clipboard-document-list",
-        tone: registration_tone(registration.status),
-        title: registration.training_activity.title,
-        detail: "Registration status: #{Registrations.format_status(registration.status)}",
-        timestamp: format_timestamp(registration.inserted_at)
-      }
-    end)
-    |> recent_activities()
+  defp build_participant_recent_activities(my_registrations, my_certificates) do
+    registration_activities =
+      Enum.map(my_registrations, fn registration ->
+        %{
+          sort_at: registration.inserted_at,
+          icon: "hero-clipboard-document-list",
+          tone: registration_tone(registration.status),
+          title: registration.training_activity.title,
+          detail: "Registration status: #{Registrations.format_status(registration.status)}",
+          timestamp: format_timestamp(registration.inserted_at)
+        }
+      end)
+
+    certificate_activities =
+      Enum.map(my_certificates, fn certificate ->
+        %{
+          sort_at: certificate.inserted_at,
+          icon: "hero-document-check",
+          tone: delivery_status_tone(certificate.delivery_status),
+          title: certificate.registration.training_activity.title,
+          detail:
+            "Certificate record: #{Certificates.format_delivery_status(certificate.delivery_status)}",
+          timestamp: format_timestamp(certificate.inserted_at)
+        }
+      end)
+
+    recent_activities(registration_activities ++ certificate_activities)
   end
 
   defp recent_activities(activities) do
@@ -661,8 +811,11 @@ defmodule TracmsWeb.PageController do
     end
   end
 
-  defp participant_action_path(registration, evaluation_submissions) do
+  defp participant_action_path(registration, evaluation_submissions, certificate) do
     cond do
+      certificate ->
+        ~p"/my/certificates/#{certificate.id}"
+
       registration.status == :approved and
         registration.training_activity.evaluation_required and
           not Map.has_key?(evaluation_submissions, registration.id) ->
@@ -686,6 +839,9 @@ defmodule TracmsWeb.PageController do
 
   defp manager_training_link(training, :attendance), do: ~p"/trainings/#{training.id}/attendance"
   defp manager_training_link(training, :completion), do: ~p"/trainings/#{training.id}/completion"
+
+  defp manager_training_link(training, :certificates),
+    do: ~p"/trainings/#{training.id}/certificates"
 
   defp monitoring_status(training, registration_count, today) do
     cond do
@@ -714,8 +870,39 @@ defmodule TracmsWeb.PageController do
     Enum.count(registrations, &(&1.status in [:submitted, :approved, :waitlisted]))
   end
 
+  defp count_unique_participants(registrations) do
+    registrations
+    |> Enum.map(& &1.registrant_user_id)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.uniq()
+    |> length()
+  end
+
+  defp count_created_in_month(items, today) do
+    Enum.count(items, &same_month?(&1.inserted_at, today))
+  end
+
   defp count_trainings(trainings, statuses) do
     Enum.count(trainings, &(&1.status in statuses))
+  end
+
+  defp count_upcoming_registrations(registrations, today) do
+    Enum.count(registrations, fn registration ->
+      registration.status in [:submitted, :approved, :waitlisted] and
+        future_or_today?(registration.training_activity.starts_on, today)
+    end)
+  end
+
+  defp count_closed_registrations(registrations) do
+    Enum.count(registrations, &(&1.status in [:rejected, :withdrawn]))
+  end
+
+  defp count_delivery_status(certificates, status) do
+    Enum.count(certificates, &(&1.delivery_status == status))
+  end
+
+  defp certificate_map_by_registration(certificates) do
+    Map.new(certificates, &{&1.registration_id, &1})
   end
 
   defp load_evaluation_submissions(registrations) do
@@ -728,10 +915,32 @@ defmodule TracmsWeb.PageController do
   end
 
   defp greeting_name(user) do
-    user
-    |> preferred_greeting_source()
-    |> String.split(~r/[\s@]+/, trim: true)
-    |> choose_greeting_token()
+    preferred_greeting_source(user)
+  end
+
+  defp dashboard_identity(scope) do
+    cond do
+      Scope.regional_admin?(scope) ->
+        {"Regional Administrator", "Regional Training Operations Overview"}
+
+      Scope.division_admin?(scope) ->
+        {"Division Administrator", "Division Training Operations Overview"}
+
+      Scope.coordinator?(scope) ->
+        {"Training Coordinator", "Training Operations Overview"}
+
+      true ->
+        {"Participant", "My Learning Record Overview"}
+    end
+  end
+
+  defp management_scope_label(scope) do
+    cond do
+      Scope.regional_admin?(scope) -> "Regional operations"
+      Scope.division_admin?(scope) -> "Division operations"
+      Scope.coordinator?(scope) -> "Coordinator operations"
+      true -> "Training operations"
+    end
   end
 
   defp format_dashboard_date(date) do
@@ -776,11 +985,36 @@ defmodule TracmsWeb.PageController do
   defp registration_tone(:withdrawn), do: "slate"
   defp registration_tone(_status), do: "slate"
 
+  defp delivery_status_tone(:downloaded), do: "green"
+  defp delivery_status_tone(:emailed), do: "blue"
+  defp delivery_status_tone(:available), do: "amber"
+  defp delivery_status_tone(_status), do: "slate"
+
+  defp participant_certificate_label(nil), do: "Awaiting issuance"
+
+  defp participant_certificate_label(certificate) do
+    "#{Certificates.format_delivery_status(certificate.delivery_status)} • #{certificate.certificate_number}"
+  end
+
   defp future_or_today?(nil, _today), do: false
   defp future_or_today?(%Date{} = date, today), do: Date.compare(date, today) != :lt
 
   defp future_or_today?(%DateTime{} = datetime, today),
     do: future_or_today?(DateTime.to_date(datetime), today)
+
+  defp same_month?(nil, _today), do: false
+
+  defp same_month?(%DateTime{} = datetime, today) do
+    same_month?(DateTime.to_date(datetime), today)
+  end
+
+  defp same_month?(%NaiveDateTime{} = datetime, today) do
+    same_month?(NaiveDateTime.to_date(datetime), today)
+  end
+
+  defp same_month?(%Date{} = date, today) do
+    date.year == today.year and date.month == today.month
+  end
 
   defp past_date?(nil, _today), do: false
   defp past_date?(date, today), do: Date.compare(date, today) == :lt
@@ -795,16 +1029,5 @@ defmodule TracmsWeb.PageController do
 
   defp preferred_greeting_source(%{full_name: full_name, email: email}) do
     if blank?(full_name), do: email || "User", else: full_name
-  end
-
-  defp choose_greeting_token([]), do: "User"
-  defp choose_greeting_token([single]), do: single
-
-  defp choose_greeting_token([first, second | _rest]) do
-    if first == String.upcase(first) and String.length(first) > 1 do
-      second
-    else
-      first
-    end
   end
 end

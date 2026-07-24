@@ -57,14 +57,13 @@ defmodule TracmsWeb.TrainingLive.Show do
       variant="dashboard"
       active_nav="trainings"
     >
-      <div class="space-y-6">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p class="eyebrow">Training details</p>
-            <h1 class="section-title">{@training_activity.title}</h1>
-            <p class="section-copy">{@training_activity.category}</p>
-          </div>
-          <div class="flex flex-wrap gap-3">
+      <div class="portal-page-shell">
+        <.portal_page_header
+          eyebrow="Training details"
+          title={@training_activity.title}
+          copy={"#{@training_activity.category} • #{@training_activity.training_type}"}
+        >
+          <:actions>
             <.button navigate={~p"/trainings"} variant="ghost">Back to list</.button>
             <.button navigate={~p"/trainings/#{@training_activity.id}/registrations"} variant="ghost">
               View registrations
@@ -76,6 +75,12 @@ defmodule TracmsWeb.TrainingLive.Show do
               Completion
             </.button>
             <.button
+              navigate={~p"/trainings/#{@training_activity.id}/certificates"}
+              variant="ghost"
+            >
+              Certificates
+            </.button>
+            <.button
               :if={Trainings.editable?(@training_activity)}
               navigate={~p"/trainings/#{@training_activity.id}/edit"}
               variant="secondary"
@@ -83,73 +88,134 @@ defmodule TracmsWeb.TrainingLive.Show do
               Edit training
             </.button>
             <.button :if={@next_action_label} phx-click="advance">{@next_action_label}</.button>
-          </div>
-        </div>
+          </:actions>
+        </.portal_page_header>
 
         <div class="content-grid">
-          <section class="panel">
-            <p class="eyebrow">Overview</p>
-            <div class="space-y-4">
+          <section class="panel portal-list-panel">
+            <.portal_panel_header
+              eyebrow="Overview"
+              title="Training narrative"
+              meta="Official description and objectives for this activity."
+            />
+
+            <div class="space-y-5">
               <div>
                 <h2 class="section-title">Description</h2>
                 <p class="section-copy whitespace-pre-line">{@training_activity.description}</p>
               </div>
 
+              <div>
+                <h2 class="section-title">Objectives</h2>
+                <p class="section-copy whitespace-pre-line">{@training_activity.objectives}</p>
+              </div>
+
               <div class="grid gap-4 md:grid-cols-2">
                 <div class="feature-card">
-                  <div class="feature-title">Organizer</div>
+                  <div class="feature-title">Implementing office</div>
                   <div class="feature-copy">{@training_activity.organizer}</div>
                 </div>
                 <div class="feature-card">
-                  <div class="feature-title">Venue</div>
-                  <div class="feature-copy">{@training_activity.venue}</div>
+                  <div class="feature-title">Training type</div>
+                  <div class="feature-copy">{@training_activity.training_type}</div>
                 </div>
                 <div class="feature-card">
                   <div class="feature-title">Modality</div>
-                  <div class="feature-copy">
-                    {@training_activity.modality
-                    |> Atom.to_string()
-                    |> String.replace("_", " ")
-                    |> String.capitalize()}
-                  </div>
+                  <div class="feature-copy">{format_modality(@training_activity.modality)}</div>
                 </div>
                 <div class="feature-card">
                   <div class="feature-title">Status</div>
                   <div class="feature-copy">{Trainings.format_status(@training_activity.status)}</div>
                 </div>
                 <div class="feature-card">
-                  <div class="feature-title">Minimum attendance</div>
-                  <div class="feature-copy">
-                    {@training_activity.minimum_attendance_percentage}%
+                  <div class="feature-title">Target participants</div>
+                  <div class="feature-copy whitespace-pre-line">
+                    {@training_activity.target_participants}
                   </div>
                 </div>
                 <div class="feature-card">
-                  <div class="feature-title">Evaluation required</div>
-                  <div class="feature-copy">
-                    {if @training_activity.evaluation_required, do: "Yes", else: "No"}
+                  <div class="feature-title">Participant qualification</div>
+                  <div class="feature-copy whitespace-pre-line">
+                    {@training_activity.participant_qualification}
                   </div>
                 </div>
               </div>
             </div>
           </section>
 
-          <section class="panel">
-            <p class="eyebrow">Schedule and ownership</p>
-            <div class="space-y-4">
+          <section class="panel portal-list-panel">
+            <.portal_panel_header
+              eyebrow="Schedule and delivery"
+              title="Program record"
+              meta="Operational settings used by registration, attendance, evaluation, and reporting."
+            />
+
+            <div class="grid gap-4 md:grid-cols-2">
               <div class="feature-card">
-                <div class="feature-title">Training dates</div>
+                <div class="feature-title">Training schedule</div>
                 <div class="feature-copy">
-                  {@training_activity.starts_on} to {@training_activity.ends_on}
+                  {format_date(@training_activity.starts_on)} to {format_date(
+                    @training_activity.ends_on
+                  )}
                 </div>
               </div>
               <div class="feature-card">
-                <div class="feature-title">Registration deadline</div>
-                <div class="feature-copy">{@training_activity.registration_deadline}</div>
+                <div class="feature-title">Duration</div>
+                <div class="feature-copy">
+                  {duration_days(@training_activity)} day(s) • {@training_activity.total_hours} hour(s)
+                </div>
+              </div>
+              <div class="feature-card">
+                <div class="feature-title">Registration period</div>
+                <div class="feature-copy">
+                  Opens {format_date(@training_activity.registration_opens_on)} • closes {format_datetime(
+                    @training_activity.registration_deadline
+                  )}
+                </div>
               </div>
               <div class="feature-card">
                 <div class="feature-title">Maximum capacity</div>
-                <div class="feature-copy">{@training_activity.max_capacity}</div>
+                <div class="feature-copy">{@training_activity.max_capacity} participants</div>
               </div>
+              <div class="feature-card">
+                <div class="feature-title">Training venue</div>
+                <div class="feature-copy">{@training_activity.venue}</div>
+              </div>
+              <div class="feature-card">
+                <div class="feature-title">Venue address</div>
+                <div class="feature-copy">{@training_activity.venue_address}</div>
+              </div>
+              <div class="feature-card">
+                <div class="feature-title">Attendance monitoring</div>
+                <div class="feature-copy">{@training_activity.attendance_monitoring_method}</div>
+              </div>
+              <div class="feature-card">
+                <div class="feature-title">Certificate type</div>
+                <div class="feature-copy">{@training_activity.certificate_type}</div>
+              </div>
+              <div class="feature-card">
+                <div class="feature-title">Minimum attendance</div>
+                <div class="feature-copy">
+                  {@training_activity.minimum_attendance_percentage}% of total training hours
+                </div>
+              </div>
+              <div class="feature-card">
+                <div class="feature-title">Evaluation required</div>
+                <div class="feature-copy">
+                  {if @training_activity.evaluation_required, do: "Yes", else: "No"}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel portal-list-panel">
+            <.portal_panel_header
+              eyebrow="Ownership"
+              title="Management context"
+              meta="DepEd ownership and record custody information."
+            />
+
+            <div class="grid gap-4 md:grid-cols-2">
               <div class="feature-card">
                 <div class="feature-title">Owning office</div>
                 <div class="feature-copy">
@@ -169,11 +235,24 @@ defmodule TracmsWeb.TrainingLive.Show do
                     "System"}
                 </div>
               </div>
+              <div class="feature-card">
+                <div class="feature-title">Published at</div>
+                <div class="feature-copy">
+                  {format_publication_date(@training_activity.published_at)}
+                </div>
+              </div>
             </div>
           </section>
         </div>
       </div>
     </Layouts.app>
     """
+  end
+
+  defp format_publication_date(nil), do: "Not yet published"
+  defp format_publication_date(datetime), do: format_datetime(datetime)
+
+  defp duration_days(training_activity) do
+    Date.diff(training_activity.ends_on, training_activity.starts_on) + 1
   end
 end

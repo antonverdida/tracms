@@ -58,52 +58,164 @@ defmodule TracmsWeb.TrainingLive.Form do
       variant="dashboard"
       active_nav="trainings"
     >
-      <div class="space-y-6">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p class="eyebrow">Training management</p>
-            <h1 class="section-title">{@page_title}</h1>
-          </div>
-          <.button navigate={~p"/trainings"} variant="ghost">Back to list</.button>
-        </div>
+      <div class="portal-page-shell">
+        <.portal_page_header
+          eyebrow="Training management"
+          title={@page_title}
+          copy="Capture the full training record needed for registration, attendance, evaluation, reporting, and future certification workflows."
+        >
+          <:actions>
+            <.button navigate={~p"/trainings"} variant="ghost">Back to list</.button>
+          </:actions>
+        </.portal_page_header>
 
-        <section class="panel">
+        <section class="panel portal-list-panel">
           <.form for={@form} id="training-form" phx-change="validate" phx-submit="save">
-            <div class="grid gap-5 md:grid-cols-2">
-              <.input field={@form[:title]} type="text" label="Training title" />
-              <.input field={@form[:category]} type="text" label="Category" />
-              <.input field={@form[:organizer]} type="text" label="Organizer" />
-              <.input
-                field={@form[:modality]}
-                type="select"
-                label="Modality"
-                options={TrainingActivity.modality_options()}
+            <div class="portal-form-section">
+              <.portal_panel_header
+                eyebrow="Training profile"
+                title="Basic information"
+                meta="Record the official title, category, type, and narrative for the training."
               />
-              <.input field={@form[:venue]} type="text" label="Venue" />
-              <.input field={@form[:max_capacity]} type="number" label="Maximum capacity" min="1" />
-              <.input field={@form[:starts_on]} type="date" label="Start date" />
-              <.input field={@form[:ends_on]} type="date" label="End date" />
-              <.input
-                field={@form[:minimum_attendance_percentage]}
-                type="number"
-                label="Minimum attendance percentage"
-                min="0"
-                max="100"
+
+              <div class="grid gap-5 md:grid-cols-2">
+                <.input field={@form[:title]} type="text" label="Training title" />
+                <.input
+                  field={@form[:category]}
+                  type="select"
+                  label="Training category"
+                  options={TrainingActivity.category_options()}
+                />
+                <.input
+                  field={@form[:training_type]}
+                  type="select"
+                  label="Training type"
+                  options={TrainingActivity.training_type_options()}
+                />
+                <.input field={@form[:organizer]} type="text" label="Implementing office" />
+                <div class="md:col-span-2">
+                  <.input
+                    field={@form[:description]}
+                    type="textarea"
+                    label="Training description"
+                    rows="6"
+                  />
+                </div>
+                <div class="md:col-span-2">
+                  <.input
+                    field={@form[:objectives]}
+                    type="textarea"
+                    label="Training objectives"
+                    rows="6"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="portal-form-section">
+              <.portal_panel_header
+                eyebrow="Schedule and registration"
+                title="Program schedule"
+                meta="Define the date range, training hours, and registration window."
               />
-              <.input
-                field={@form[:evaluation_required]}
-                type="checkbox"
-                label="Require participant evaluation before completion"
-              />
-              <div class="md:col-span-2">
+
+              <div class="grid gap-5 md:grid-cols-2">
+                <.input field={@form[:starts_on]} type="date" label="Start date" />
+                <.input field={@form[:ends_on]} type="date" label="End date" />
+                <.input
+                  field={@form[:total_hours]}
+                  type="number"
+                  label="Total training hours"
+                  min="1"
+                />
+                <.input
+                  field={@form[:max_capacity]}
+                  type="number"
+                  label="Target number of participants"
+                  min="1"
+                />
+                <.input
+                  field={@form[:registration_opens_on]}
+                  type="date"
+                  label="Registration opening date"
+                />
                 <.input
                   field={@form[:registration_deadline]}
                   type="datetime-local"
                   label="Registration deadline"
                 />
               </div>
-              <div class="md:col-span-2">
-                <.input field={@form[:description]} type="textarea" label="Description" rows="8" />
+            </div>
+
+            <div class="portal-form-section">
+              <.portal_panel_header
+                eyebrow="Venue and participants"
+                title="Delivery context"
+                meta="Capture where the training happens and who should attend."
+              />
+
+              <div class="grid gap-5 md:grid-cols-2">
+                <.input
+                  field={@form[:modality]}
+                  type="select"
+                  label="Training modality"
+                  options={TrainingActivity.modality_options()}
+                />
+                <.input field={@form[:venue]} type="text" label="Training venue" />
+                <div class="md:col-span-2">
+                  <.input field={@form[:venue_address]} type="text" label="Venue address" />
+                </div>
+                <div class="md:col-span-2">
+                  <.input
+                    field={@form[:target_participants]}
+                    type="textarea"
+                    label="Target participants"
+                    rows="4"
+                  />
+                </div>
+                <div class="md:col-span-2">
+                  <.input
+                    field={@form[:participant_qualification]}
+                    type="textarea"
+                    label="Participant qualification"
+                    rows="4"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="portal-form-section">
+              <.portal_panel_header
+                eyebrow="Attendance and certificate"
+                title="Completion requirements"
+                meta="Set the operational rules used later by attendance, evaluation, and certification."
+              />
+
+              <div class="grid gap-5 md:grid-cols-2">
+                <.input
+                  field={@form[:attendance_monitoring_method]}
+                  type="select"
+                  label="Attendance monitoring method"
+                  options={TrainingActivity.attendance_monitoring_method_options()}
+                />
+                <.input
+                  field={@form[:certificate_type]}
+                  type="select"
+                  label="Certificate type"
+                  options={TrainingActivity.certificate_type_options()}
+                />
+                <.input
+                  field={@form[:minimum_attendance_percentage]}
+                  type="number"
+                  label="Minimum attendance percentage"
+                  min="0"
+                  max="100"
+                />
+                <.input
+                  field={@form[:evaluation_required]}
+                  type="checkbox"
+                  label="Require participant evaluation before completion"
+                />
               </div>
             </div>
 

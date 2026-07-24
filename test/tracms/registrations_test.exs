@@ -42,6 +42,22 @@ defmodule Tracms.RegistrationsTest do
                &(&1.id == training_activity.id)
              )
     end
+
+    test "register_user_for_training/3 blocks registration before the opening date" do
+      participant = participant_scope_fixture()
+      manager = training_manager_scope_fixture("training_coordinator")
+
+      training_activity =
+        training_activity_fixture(manager.scope, %{
+          status: :published,
+          published_at: DateTime.utc_now(:second),
+          registration_opens_on: Date.add(Date.utc_today(), 3),
+          registration_deadline: DateTime.add(DateTime.utc_now(:second), 5, :day)
+        })
+
+      assert {:error, :registration_not_open} =
+               Registrations.register_user_for_training(participant.scope, training_activity.id)
+    end
   end
 
   describe "registration review" do

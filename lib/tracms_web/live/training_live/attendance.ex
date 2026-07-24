@@ -121,16 +121,13 @@ defmodule TracmsWeb.TrainingLive.Attendance do
       variant="dashboard"
       active_nav="trainings"
     >
-      <div class="space-y-6">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p class="eyebrow">Attendance management</p>
-            <h1 class="section-title">{@training_activity.title}</h1>
-            <p class="section-copy">
-              Create session-based attendance sheets and mark approved participants.
-            </p>
-          </div>
-          <div class="flex flex-wrap gap-3">
+      <div class="portal-page-shell">
+        <.portal_page_header
+          eyebrow="Attendance management"
+          title={@training_activity.title}
+          copy="Create session-based attendance sheets and mark approved participants."
+        >
+          <:actions>
             <.button navigate={~p"/trainings/#{@training_activity.id}"} variant="ghost">
               Back to training
             </.button>
@@ -146,16 +143,18 @@ defmodule TracmsWeb.TrainingLive.Attendance do
             >
               Completion
             </.button>
-          </div>
-        </div>
+          </:actions>
+        </.portal_page_header>
+
+        <.portal_stat_grid cards={@summary_cards} />
 
         <section class="content-grid">
-          <article class="panel">
-            <p class="eyebrow">New session</p>
-            <h2 class="section-title">Create attendance session</h2>
-            <p class="section-copy">
-              Use one session per training block, day, or attendance window.
-            </p>
+          <article class="panel portal-list-panel">
+            <.portal_panel_header
+              eyebrow="New session"
+              title="Create attendance session"
+              meta="Use one session per training block, day, or attendance window."
+            />
 
             <.form
               for={@session_form}
@@ -184,20 +183,21 @@ defmodule TracmsWeb.TrainingLive.Attendance do
             </.form>
           </article>
 
-          <article class="panel panel-muted">
-            <div class="dashboard-section-head">
-              <div>
-                <p class="eyebrow">Session list</p>
-                <h2 class="section-title">Attendance sessions</h2>
-              </div>
-            </div>
+          <article class="panel panel-muted portal-list-panel">
+            <.portal_panel_header
+              eyebrow="Session list"
+              title="Attendance sessions"
+              meta={session_caption(@attendance_sessions)}
+            />
 
             <%= if @attendance_sessions == [] do %>
-              <p class="section-copy">
-                Create the first attendance session to begin roster tracking.
-              </p>
+              <.portal_empty_state
+                icon="hero-calendar-days"
+                title="No attendance sessions yet"
+                copy="Create the first attendance session to begin roster tracking."
+              />
             <% else %>
-              <div class="session-list mt-6">
+              <div class="session-list">
                 <div
                   :for={session <- @attendance_sessions}
                   class={[
@@ -212,13 +212,15 @@ defmodule TracmsWeb.TrainingLive.Attendance do
                     >
                       <p class="feature-title">{session.name}</p>
                       <p class="feature-copy">
-                        {session.session_date} • {format_time(session.starts_at)} to {format_time(
+                        {format_date(session.session_date)} • {format_time(session.starts_at)} to {format_time(
                           session.ends_at
                         )}
                       </p>
                     </.link>
 
-                    <span class="badge-soft">{Attendance.format_status(session.status)}</span>
+                    <span class={["portal-chip", "portal-chip-#{session_status_tone(session.status)}"]}>
+                      {Attendance.format_status(session.status)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -227,17 +229,13 @@ defmodule TracmsWeb.TrainingLive.Attendance do
         </section>
 
         <%= if @selected_session do %>
-          <section class="panel space-y-5">
-            <div class="dashboard-section-head">
-              <div>
-                <p class="eyebrow">Selected session</p>
-                <h2 class="section-title">{@selected_session.name}</h2>
-                <p class="section-copy">
-                  Only approved registrations appear in this attendance roster.
-                </p>
-              </div>
-
-              <div class="flex flex-wrap gap-3">
+          <section class="panel portal-list-panel">
+            <.portal_panel_header
+              eyebrow="Selected session"
+              title={@selected_session.name}
+              meta={selected_session_meta(@selected_session)}
+            >
+              <:actions>
                 <.button
                   :if={@selected_session.status == :draft}
                   phx-click="open_session"
@@ -253,105 +251,111 @@ defmodule TracmsWeb.TrainingLive.Attendance do
                 >
                   Close session
                 </.button>
-                <span class="badge-soft">{Attendance.format_status(@selected_session.status)}</span>
-              </div>
-            </div>
+                <span class={[
+                  "portal-chip",
+                  "portal-chip-#{session_status_tone(@selected_session.status)}"
+                ]}>
+                  {Attendance.format_status(@selected_session.status)}
+                </span>
+              </:actions>
+            </.portal_panel_header>
 
-            <div class="dashboard-summary-grid attendance-summary-grid">
-              <article class="dashboard-summary-card">
-                <p class="dashboard-summary-label">Present</p>
-                <p class="dashboard-summary-value">{@summary.present}</p>
-              </article>
-              <article class="dashboard-summary-card">
-                <p class="dashboard-summary-label">Late</p>
-                <p class="dashboard-summary-value">{@summary.late}</p>
-              </article>
-              <article class="dashboard-summary-card">
-                <p class="dashboard-summary-label">Excused</p>
-                <p class="dashboard-summary-value">{@summary.excused}</p>
-              </article>
-              <article class="dashboard-summary-card">
-                <p class="dashboard-summary-label">Unmarked</p>
-                <p class="dashboard-summary-value">{@summary.unmarked}</p>
-              </article>
-            </div>
+            <p class="section-copy">
+              Only approved registrations appear in this attendance roster.
+            </p>
+
+            <.portal_stat_grid cards={@selected_session_cards} />
 
             <%= if @roster == [] do %>
-              <p class="section-copy">
-                No approved participants are available for attendance yet. Approve registrations first.
-              </p>
+              <.portal_empty_state
+                icon="hero-user-group"
+                title="No approved participants available"
+                copy="Approve registrations first before recording attendance for this session."
+              />
             <% else %>
-              <.table id="attendance-roster" rows={@roster}>
-                <:col :let={entry} label="Participant">
-                  <div class="font-semibold">{participant_name(entry.registration)}</div>
-                  <div class="text-sm text-[var(--tracms-text-muted)]">
-                    {entry.registration.registrant_user.email}
-                  </div>
-                </:col>
-                <:col :let={entry} label="Office">
-                  {(entry.registration.registrant_user.office &&
-                      entry.registration.registrant_user.office.name) || "Not assigned"}
-                </:col>
-                <:col :let={entry} label="Status">
-                  <span class="badge-soft">
-                    {if entry.record,
-                      do: Attendance.format_status(entry.record.status),
-                      else: "Not marked"}
-                  </span>
-                </:col>
-                <:action :let={entry}>
-                  <.button
-                    phx-click="mark_attendance"
-                    phx-value-registration_id={entry.registration.id}
-                    phx-value-status="present"
-                    variant={attendance_variant(entry.record, :present)}
-                    disabled={@selected_session.status != :open}
-                  >
-                    Present
-                  </.button>
-                </:action>
-                <:action :let={entry}>
-                  <.button
-                    phx-click="mark_attendance"
-                    phx-value-registration_id={entry.registration.id}
-                    phx-value-status="late"
-                    variant={attendance_variant(entry.record, :late)}
-                    disabled={@selected_session.status != :open}
-                  >
-                    Late
-                  </.button>
-                </:action>
-                <:action :let={entry}>
-                  <.button
-                    phx-click="mark_attendance"
-                    phx-value-registration_id={entry.registration.id}
-                    phx-value-status="excused"
-                    variant={attendance_variant(entry.record, :excused)}
-                    disabled={@selected_session.status != :open}
-                  >
-                    Excused
-                  </.button>
-                </:action>
-                <:action :let={entry}>
-                  <.button
-                    phx-click="mark_attendance"
-                    phx-value-registration_id={entry.registration.id}
-                    phx-value-status="absent"
-                    variant={attendance_variant(entry.record, :absent)}
-                    disabled={@selected_session.status != :open}
-                  >
-                    Absent
-                  </.button>
-                </:action>
-              </.table>
+              <div class="data-table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Participant</th>
+                      <th>Office</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr :for={entry <- @roster}>
+                      <td>
+                        <div class="portal-cell-title">{participant_name(entry.registration)}</div>
+                        <div class="portal-cell-meta">
+                          {entry.registration.registrant_user.email}
+                        </div>
+                      </td>
+                      <td>
+                        {(entry.registration.registrant_user.office &&
+                            entry.registration.registrant_user.office.name) || "Not assigned"}
+                      </td>
+                      <td>
+                        <span class={[
+                          "portal-chip",
+                          "portal-chip-#{attendance_status_tone(entry.record)}"
+                        ]}>
+                          {attendance_status_label(entry.record)}
+                        </span>
+                      </td>
+                      <td>
+                        <div class="flex flex-wrap gap-2">
+                          <.button
+                            phx-click="mark_attendance"
+                            phx-value-registration_id={entry.registration.id}
+                            phx-value-status="present"
+                            variant={attendance_variant(entry.record, :present)}
+                            disabled={@selected_session.status != :open}
+                          >
+                            Present
+                          </.button>
+                          <.button
+                            phx-click="mark_attendance"
+                            phx-value-registration_id={entry.registration.id}
+                            phx-value-status="late"
+                            variant={attendance_variant(entry.record, :late)}
+                            disabled={@selected_session.status != :open}
+                          >
+                            Late
+                          </.button>
+                          <.button
+                            phx-click="mark_attendance"
+                            phx-value-registration_id={entry.registration.id}
+                            phx-value-status="excused"
+                            variant={attendance_variant(entry.record, :excused)}
+                            disabled={@selected_session.status != :open}
+                          >
+                            Excused
+                          </.button>
+                          <.button
+                            phx-click="mark_attendance"
+                            phx-value-registration_id={entry.registration.id}
+                            phx-value-status="absent"
+                            variant={attendance_variant(entry.record, :absent)}
+                            disabled={@selected_session.status != :open}
+                          >
+                            Absent
+                          </.button>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             <% end %>
           </section>
         <% else %>
-          <section class="panel">
-            <h2 class="section-title">No attendance session selected</h2>
-            <p class="section-copy">
-              Create a session first, then open it when you are ready to record attendance.
-            </p>
+          <section class="panel portal-list-panel">
+            <.portal_empty_state
+              icon="hero-clipboard-document-check"
+              title="No attendance session selected"
+              copy="Create a session first, then open it when you are ready to record attendance."
+            />
           </section>
         <% end %>
       </div>
@@ -381,6 +385,8 @@ defmodule TracmsWeb.TrainingLive.Attendance do
     |> assign(:selected_session, selected_session)
     |> assign(:roster, roster)
     |> assign(:summary, summary)
+    |> assign(:summary_cards, attendance_summary_cards(attendance_sessions, roster))
+    |> assign(:selected_session_cards, selected_session_cards(summary, roster))
     |> assign(:session_form, build_session_form(training_activity))
   end
 
@@ -419,11 +425,69 @@ defmodule TracmsWeb.TrainingLive.Attendance do
     ~p"/trainings/#{training_id}/attendance?session_id=#{session_id}"
   end
 
+  defp attendance_summary_cards(attendance_sessions, roster) do
+    [
+      summary_card(
+        "Total sessions",
+        length(attendance_sessions),
+        "Attendance windows for this training"
+      ),
+      summary_card(
+        "Open sessions",
+        Enum.count(attendance_sessions, &(&1.status == :open)),
+        "Currently available for attendance marking"
+      ),
+      summary_card(
+        "Closed sessions",
+        Enum.count(attendance_sessions, &(&1.status == :closed)),
+        "Completed attendance sheets"
+      ),
+      summary_card(
+        "Approved roster",
+        length(roster),
+        "Participants available in the selected roster"
+      )
+    ]
+  end
+
+  defp selected_session_cards(summary, roster) do
+    [
+      summary_card("Present", summary.present, "Participants marked as present"),
+      summary_card("Late", summary.late, "Participants marked late"),
+      summary_card("Excused", summary.excused, "Participants marked with an excuse"),
+      summary_card("Unmarked", summary.unmarked, "#{length(roster)} participants in this roster")
+    ]
+  end
+
+  defp session_caption(attendance_sessions) do
+    count = length(attendance_sessions)
+    "Showing #{count} attendance #{if(count == 1, do: "session", else: "sessions")}."
+  end
+
+  defp selected_session_meta(session) do
+    "#{format_date(session.session_date)} • #{format_time(session.starts_at)} to #{format_time(session.ends_at)}"
+  end
+
   defp attendance_variant(%{status: status}, status), do: "primary"
   defp attendance_variant(_record, :present), do: "ghost"
   defp attendance_variant(_record, :late), do: "secondary"
   defp attendance_variant(_record, :excused), do: "ghost"
   defp attendance_variant(_record, :absent), do: "danger"
+
+  defp attendance_status_label(nil), do: "Not marked"
+  defp attendance_status_label(record), do: Attendance.format_status(record.status)
+
+  defp attendance_status_tone(nil), do: "slate"
+  defp attendance_status_tone(%{status: :present}), do: "green"
+  defp attendance_status_tone(%{status: :late}), do: "amber"
+  defp attendance_status_tone(%{status: :excused}), do: "blue"
+  defp attendance_status_tone(%{status: :absent}), do: "rose"
+  defp attendance_status_tone(_record), do: "slate"
+
+  defp session_status_tone(:draft), do: "amber"
+  defp session_status_tone(:open), do: "green"
+  defp session_status_tone(:closed), do: "blue"
+  defp session_status_tone(_status), do: "slate"
 
   defp participant_name(registration) do
     registration.registrant_user.full_name || registration.registrant_user.email

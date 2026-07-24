@@ -86,6 +86,9 @@ defmodule TracmsWeb do
       import Phoenix.HTML
       # Core UI components
       import TracmsWeb.CoreComponents
+      import TracmsWeb.CertificateComponents
+      import TracmsWeb.PortalComponents
+      import TracmsWeb.PortalHelpers
 
       # Common modules used in templates
       alias Phoenix.LiveView.JS
