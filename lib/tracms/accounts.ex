@@ -102,6 +102,23 @@ defmodule Tracms.Accounts do
   end
 
   @doc """
+  Returns a changeset for user-managed notification preferences.
+  """
+  def change_user_notification_preferences(user, attrs \\ %{}) do
+    User.notification_preferences_changeset(user, attrs)
+  end
+
+  @doc """
+  Updates the notification preferences for a user account.
+  """
+  def update_user_notification_preferences(user, attrs) do
+    user
+    |> User.notification_preferences_changeset(attrs)
+    |> Repo.update()
+    |> preload_user_context_result()
+  end
+
+  @doc """
   Approves a pending user and marks the account as active.
   """
   def approve_user(user) do
@@ -241,6 +258,17 @@ defmodule Tracms.Accounts do
     with {user, token_inserted_at} <- Repo.one(query) do
       {preload_user_context(user), token_inserted_at}
     end
+  end
+
+  @doc """
+  Lists active session records for the given user.
+  """
+  def list_user_sessions(%User{id: user_id}) do
+    UserToken
+    |> where([token], token.user_id == ^user_id and token.context == "session")
+    |> where([token], token.inserted_at > ago(^UserToken.session_validity_in_days(), "day"))
+    |> order_by([token], desc: token.inserted_at)
+    |> Repo.all()
   end
 
   @doc """

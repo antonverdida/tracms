@@ -90,5 +90,52 @@ defmodule Tracms.AttendanceTest do
       assert updated_record.id == attendance_record.id
       assert updated_record.status == :late
     end
+
+    test "sync_session_attendance_from_google_sheet/2 imports matching attendance rows" do
+      manager = training_manager_scope_fixture()
+
+      training_activity =
+        published_training_fixture_for_manager(manager.scope, %{
+          attendance_sheet_id: "attendance-sheet-main",
+          attendance_sheet_range: "Attendance!A:C"
+        })
+
+      registration =
+        approved_registration_fixture(
+          training_manager: manager,
+          training_activity: training_activity,
+          participant:
+            participant_scope_fixture(%{
+              email: "attendance.participant@example.com",
+              full_name: "Attendance Participant"
+            })
+        )
+
+      attendance_session =
+        attendance_session_fixture(
+          training_manager: manager,
+          training_activity: training_activity
+        )
+
+      assert {:ok, attendance_session} =
+               Attendance.open_session(manager.scope, attendance_session)
+
+      assert {:ok, result} =
+               Attendance.sync_session_attendance_from_google_sheet(
+                 manager.scope,
+                 attendance_session.id
+               )
+
+      assert result.updated_count == 1
+      assert result.skipped_count == 0
+      assert result.error_count == 1
+      assert [%{row: 3, message: _message}] = result.errors
+
+      roster = Attendance.list_session_roster(manager.scope, attendance_session.id)
+      synced_entry = Enum.find(roster, &(&1.registration.id == registration.id))
+
+      assert synced_entry.record.status == :present
+      assert synced_entry.record.notes == "Arrived on time"
+    end
   end
 end

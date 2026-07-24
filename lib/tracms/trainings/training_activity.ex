@@ -4,6 +4,7 @@ defmodule Tracms.Trainings.TrainingActivity do
 
   alias Tracms.Accounts.User
   alias Tracms.Organization.{Division, Office}
+  alias Tracms.Trainings.TrainingApproval
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -72,10 +73,21 @@ defmodule Tracms.Trainings.TrainingActivity do
     field :published_at, :utc_datetime
     field :minimum_attendance_percentage, :integer, default: 75
     field :evaluation_required, :boolean, default: false
+    field :registration_form_id, :string
+    field :registration_form_url, :string
+    field :attendance_form_id, :string
+    field :attendance_form_url, :string
+    field :registration_sheet_id, :string
+    field :registration_sheet_range, :string
+    field :registration_sheet_last_synced_at, :utc_datetime
+    field :attendance_sheet_id, :string
+    field :attendance_sheet_range, :string
+    field :attendance_sheet_last_synced_at, :utc_datetime
 
     belongs_to :creator_user, User
     belongs_to :office, Office
     belongs_to :division, Division
+    has_many :approval_entries, TrainingApproval
 
     timestamps(type: :utc_datetime)
   end
@@ -124,6 +136,16 @@ defmodule Tracms.Trainings.TrainingActivity do
       :published_at,
       :minimum_attendance_percentage,
       :evaluation_required,
+      :registration_form_id,
+      :registration_form_url,
+      :attendance_form_id,
+      :attendance_form_url,
+      :registration_sheet_id,
+      :registration_sheet_range,
+      :registration_sheet_last_synced_at,
+      :attendance_sheet_id,
+      :attendance_sheet_range,
+      :attendance_sheet_last_synced_at,
       :creator_user_id,
       :office_id,
       :division_id
@@ -164,6 +186,14 @@ defmodule Tracms.Trainings.TrainingActivity do
     |> validate_length(:participant_qualification, max: 3_000)
     |> validate_length(:attendance_monitoring_method, max: 120)
     |> validate_length(:certificate_type, max: 120)
+    |> validate_length(:registration_form_id, max: 255)
+    |> validate_length(:registration_form_url, max: 500)
+    |> validate_length(:attendance_form_id, max: 255)
+    |> validate_length(:attendance_form_url, max: 500)
+    |> validate_length(:registration_sheet_id, max: 255)
+    |> validate_length(:registration_sheet_range, max: 255)
+    |> validate_length(:attendance_sheet_id, max: 255)
+    |> validate_length(:attendance_sheet_range, max: 255)
     |> validate_number(:max_capacity, greater_than: 0, less_than_or_equal_to: 100_000)
     |> validate_number(:total_hours, greater_than: 0, less_than_or_equal_to: 1_000)
     |> validate_number(:minimum_attendance_percentage,
@@ -174,12 +204,60 @@ defmodule Tracms.Trainings.TrainingActivity do
     |> validate_inclusion(:training_type, @training_type_options)
     |> validate_inclusion(:certificate_type, @certificate_type_options)
     |> validate_inclusion(:attendance_monitoring_method, @attendance_monitoring_method_options)
+    |> validate_external_url(:registration_form_url)
+    |> validate_external_url(:attendance_form_url)
+    |> validate_google_sheet_sync_fields(
+      :registration_sheet_id,
+      :registration_sheet_range,
+      "registration"
+    )
+    |> validate_google_sheet_sync_fields(
+      :attendance_sheet_id,
+      :attendance_sheet_range,
+      "attendance"
+    )
     |> validate_registration_opening()
     |> validate_registration_deadline()
     |> validate_schedule_range()
     |> assoc_constraint(:creator_user)
     |> assoc_constraint(:office)
     |> assoc_constraint(:division)
+  end
+
+  def integration_changeset(training_activity, attrs) do
+    training_activity
+    |> cast(attrs, [
+      :registration_form_id,
+      :registration_form_url,
+      :attendance_form_id,
+      :attendance_form_url,
+      :registration_sheet_id,
+      :registration_sheet_range,
+      :registration_sheet_last_synced_at,
+      :attendance_sheet_id,
+      :attendance_sheet_range,
+      :attendance_sheet_last_synced_at
+    ])
+    |> validate_length(:registration_form_id, max: 255)
+    |> validate_length(:registration_form_url, max: 500)
+    |> validate_length(:attendance_form_id, max: 255)
+    |> validate_length(:attendance_form_url, max: 500)
+    |> validate_length(:registration_sheet_id, max: 255)
+    |> validate_length(:registration_sheet_range, max: 255)
+    |> validate_length(:attendance_sheet_id, max: 255)
+    |> validate_length(:attendance_sheet_range, max: 255)
+    |> validate_external_url(:registration_form_url)
+    |> validate_external_url(:attendance_form_url)
+    |> validate_google_sheet_sync_fields(
+      :registration_sheet_id,
+      :registration_sheet_range,
+      "registration"
+    )
+    |> validate_google_sheet_sync_fields(
+      :attendance_sheet_id,
+      :attendance_sheet_range,
+      "attendance"
+    )
   end
 
   defp validate_registration_deadline(changeset) do
@@ -240,6 +318,46 @@ defmodule Tracms.Trainings.TrainingActivity do
 
       Date.compare(ends_on, starts_on) == :lt ->
         add_error(changeset, :ends_on, "must be on or after the training start date")
+
+      true ->
+        changeset
+    end
+  end
+
+  defp validate_external_url(changeset, field) do
+    validate_change(changeset, field, fn ^field, value ->
+      case URI.parse(String.trim(value)) do
+        %URI{scheme: scheme, host: host}
+        when scheme in ["http", "https"] and is_binary(host) and host != "" ->
+          []
+
+        _ ->
+          [{field, "must be a valid HTTP or HTTPS URL"}]
+      end
+    end)
+  end
+
+  defp validate_google_sheet_sync_fields(changeset, id_field, range_field, label) do
+    sheet_id = get_field(changeset, id_field)
+    sheet_range = get_field(changeset, range_field)
+
+    cond do
+      is_nil(sheet_id) and is_nil(sheet_range) ->
+        changeset
+
+      is_nil(sheet_id) ->
+        add_error(
+          changeset,
+          id_field,
+          "is required when a #{label} Google Sheet range is set"
+        )
+
+      is_nil(sheet_range) ->
+        add_error(
+          changeset,
+          range_field,
+          "is required when a #{label} Google Sheet ID is set"
+        )
 
       true ->
         changeset

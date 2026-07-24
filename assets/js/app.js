@@ -37,6 +37,21 @@ topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 
+window.addEventListener("click", event => {
+  const trigger = event.target.closest("[data-print-certificate]")
+
+  if (!trigger) return
+
+  event.preventDefault()
+  window.print()
+})
+
+window.addEventListener("load", () => {
+  if (document.body?.dataset?.certificateAutoprint === "true") {
+    window.setTimeout(() => window.print(), 180)
+  }
+})
+
 // connect if there are any LiveViews on the page
 liveSocket.connect()
 
@@ -80,4 +95,3 @@ if (process.env.NODE_ENV === "development") {
     window.liveReloader = reloader
   })
 }
-

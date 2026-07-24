@@ -77,15 +77,15 @@ TRACMS will have real certificate records that can be issued for completed parti
 
 ## Next Implementation Slice
 
-The next certificate improvement should focus on certificate access instead of export complexity.
+The next certificate improvement should focus on controlled document output now that certificate access is already live.
 
 Implement:
 
-- a participant certificate view page that presents the issued record in a formal certificate-style layout
-- automatic acknowledgement of access when the participant opens the certificate view for the first time
-- a manager certificate preview page for operational verification
-- consistent action labels such as `View certificate` instead of a raw status-update button
-- dashboard and registration-page visibility for issued certificate records
+- a dedicated print-friendly certificate document page for participant and manager use
+- export of the certificate document as a downloadable HTML file instead of premature PDF generation
+- automatic acknowledgement of access when a participant opens either the certificate view or the print/export document route
+- consistent action labels such as `Print certificate` and `Export document`
+- document routes that stay inside authenticated participant and manager access boundaries
 
 Do not implement yet:
 

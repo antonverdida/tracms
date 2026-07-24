@@ -4,16 +4,24 @@ defmodule Tracms.Accounts.User do
 
   alias Tracms.Accounts.Role
   alias Tracms.Organization.Office
+  alias Tracms.Trainings.TrainingApproval
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
   @status_values [:pending, :active, :disabled]
+  @notification_preference_keys ~w(
+    training_announcements
+    registration_updates
+    certificate_availability
+    system_announcements
+  )
 
   schema "users" do
     field :email, :string
     field :full_name, :string
     field :employee_number, :string
+    field :notification_preferences, :map, default: %{}
     field :status, Ecto.Enum, values: @status_values, default: :pending
     field :approved_at, :utc_datetime
     field :password, :string, virtual: true, redact: true
@@ -23,6 +31,7 @@ defmodule Tracms.Accounts.User do
 
     belongs_to :role, Role
     belongs_to :office, Office
+    has_many :training_approval_entries, TrainingApproval, foreign_key: :acted_by_user_id
 
     timestamps(type: :utc_datetime)
   end
@@ -104,6 +113,57 @@ defmodule Tracms.Accounts.User do
     |> assoc_constraint(:role)
     |> assoc_constraint(:office)
   end
+
+  @doc """
+  A changeset for user-managed notification preferences.
+  """
+  def notification_preferences_changeset(user, attrs) do
+    notification_preferences =
+      user.notification_preferences
+      |> default_notification_preferences()
+      |> merge_notification_preferences(attrs)
+
+    user
+    |> cast(%{notification_preferences: notification_preferences}, [:notification_preferences])
+  end
+
+  def notification_preference_keys, do: @notification_preference_keys
+
+  def default_notification_preferences(preferences \\ %{})
+  def default_notification_preferences(nil), do: default_notification_preferences(%{})
+
+  def default_notification_preferences(preferences) when is_map(preferences) do
+    defaults = %{
+      "training_announcements" => true,
+      "registration_updates" => true,
+      "certificate_availability" => true,
+      "system_announcements" => true
+    }
+
+    Enum.reduce(@notification_preference_keys, defaults, fn key, acc ->
+      case Map.get(preferences, key) do
+        value when is_boolean(value) -> Map.put(acc, key, value)
+        _ -> acc
+      end
+    end)
+  end
+
+  defp merge_notification_preferences(current_preferences, %{"notification_preferences" => attrs}) do
+    merge_notification_preferences(current_preferences, attrs)
+  end
+
+  defp merge_notification_preferences(current_preferences, attrs) when is_map(attrs) do
+    Enum.reduce(@notification_preference_keys, current_preferences, fn key, acc ->
+      Map.put(acc, key, normalize_notification_value(Map.get(attrs, key, Map.get(acc, key))))
+    end)
+  end
+
+  defp merge_notification_preferences(current_preferences, _attrs), do: current_preferences
+
+  defp normalize_notification_value(value) when is_boolean(value), do: value
+  defp normalize_notification_value("true"), do: true
+  defp normalize_notification_value("false"), do: false
+  defp normalize_notification_value(_value), do: false
 
   @doc """
   Marks the account as approved and active.

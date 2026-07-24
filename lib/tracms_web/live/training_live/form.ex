@@ -219,6 +219,84 @@ defmodule TracmsWeb.TrainingLive.Form do
               </div>
             </div>
 
+            <div class="portal-form-section">
+              <.portal_panel_header
+                eyebrow="Collection workflow"
+                title="External forms"
+                meta="Optional official form links for trainings that collect registration or attendance outside TRACMS."
+              />
+
+              <div class="grid gap-5 md:grid-cols-2">
+                <div class="md:col-span-2">
+                  <.input
+                    field={@form[:registration_form_url]}
+                    type="url"
+                    label="Registration form URL"
+                    placeholder="https://forms.gle/..."
+                  />
+                </div>
+                <div class="md:col-span-2">
+                  <.input
+                    field={@form[:attendance_form_url]}
+                    type="url"
+                    label="Attendance form URL"
+                    placeholder="https://forms.gle/..."
+                  />
+                </div>
+              </div>
+
+              <p class="mt-4 text-sm text-slate-500">
+                Leave these fields blank when registration and attendance will be managed directly inside TRACMS.
+              </p>
+            </div>
+
+            <div class="portal-form-section">
+              <.portal_panel_header
+                eyebrow="Google Sheets synchronization"
+                title="Automatic intake source"
+                meta="Optional Google Sheet source used to pull external registration rows into the TRACMS intake queue."
+              />
+
+              <div class="grid gap-5 md:grid-cols-2">
+                <div>
+                  <.input
+                    field={@form[:registration_sheet_id]}
+                    type="text"
+                    label="Registration Google Sheet ID"
+                    placeholder="1AbCdEfGhIjKlMnOpQrStUvWxYz"
+                  />
+                </div>
+                <div>
+                  <.input
+                    field={@form[:registration_sheet_range]}
+                    type="text"
+                    label="Registration Google Sheet range"
+                    placeholder="Form Responses 1!A:F"
+                  />
+                </div>
+                <div>
+                  <.input
+                    field={@form[:attendance_sheet_id]}
+                    type="text"
+                    label="Attendance Google Sheet ID"
+                    placeholder="1AbCdEfGhIjKlMnOpQrStUvWxYz"
+                  />
+                </div>
+                <div>
+                  <.input
+                    field={@form[:attendance_sheet_range]}
+                    type="text"
+                    label="Attendance Google Sheet range"
+                    placeholder="Attendance!A:C"
+                  />
+                </div>
+              </div>
+
+              <p class="mt-4 text-sm text-slate-500">
+                Use a Google service account shared to each sheet and configure `GOOGLE_SERVICE_ACCOUNT_JSON` in the runtime environment before using sync.
+              </p>
+            </div>
+
             <div class="mt-6 flex flex-wrap justify-end gap-3">
               <.button navigate={~p"/trainings"} variant="ghost">Cancel</.button>
               <.button>

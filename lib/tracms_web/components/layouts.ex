@@ -173,6 +173,12 @@ defmodule TracmsWeb.Layouts do
           >
             Reports
           </.link>
+          <.link
+            navigate={~p"/users/settings"}
+            class={dashboard_menu_link_class(@active_nav, "settings")}
+          >
+            Settings
+          </.link>
         </nav>
       </div>
     </header>
