@@ -109,11 +109,11 @@ defmodule TracmsWeb.PageController do
           "blue",
           "Total Trainings",
           length(managed_trainings),
-          "Across your current management scope",
+          nil,
           [
-            "Active: #{active_training_count}",
-            "Completed: #{completed_training_count}",
-            "Draft or approval: #{approval_training_count}"
+            metric_detail("Active", active_training_count, "green"),
+            metric_detail("Completed", completed_training_count, "blue"),
+            metric_detail("Draft / Approval", approval_training_count, "amber")
           ]
         ),
         metric(
@@ -121,11 +121,11 @@ defmodule TracmsWeb.PageController do
           "green",
           "Participants",
           unique_participant_count,
-          "Users currently represented in your scope",
+          nil,
           [
-            "Active registrations: #{active_registration_count}",
-            "Awaiting review: #{submitted_registration_count}",
-            "Submitted this month: #{current_month_registration_count}"
+            metric_detail("Active Registrations", active_registration_count, "green"),
+            metric_detail("Awaiting Review", submitted_registration_count, "amber"),
+            metric_detail("This Month", current_month_registration_count, "blue")
           ]
         ),
         metric(
@@ -133,11 +133,11 @@ defmodule TracmsWeb.PageController do
           "amber",
           "Certificates Issued",
           issued_certificate_count,
-          "Issued training credentials in your current scope",
+          nil,
           [
-            "Available: #{available_certificate_count}",
-            "Acknowledged: #{downloaded_certificate_count}",
-            "Issued this month: #{issued_this_month_count}"
+            metric_detail("Available", available_certificate_count, "blue"),
+            metric_detail("Acknowledged", downloaded_certificate_count, "green"),
+            metric_detail("This Month", issued_this_month_count, "amber")
           ]
         ),
         metric(
@@ -145,11 +145,11 @@ defmodule TracmsWeb.PageController do
           "rose",
           "Pending Actions",
           pending_action_count,
-          "Items that still require management action",
+          nil,
           [
-            "Approval requests: #{approval_training_count}",
-            "Registration review: #{submitted_registration_count}",
-            "Waitlisted: #{waitlisted_registration_count}"
+            metric_detail("Approval Requests", approval_training_count, "amber"),
+            metric_detail("Registration Review", submitted_registration_count, "blue"),
+            metric_detail("Waitlisted", waitlisted_registration_count, "rose")
           ]
         )
       ],
@@ -210,9 +210,9 @@ defmodule TracmsWeb.PageController do
           upcoming_registration_count,
           "Submitted or approved activities on your schedule",
           [
-            "Open catalog: #{length(open_trainings)}",
-            "Approved: #{approved_registration_count}",
-            "Awaiting update: #{follow_up_registration_count}"
+            metric_detail("Open Catalog", length(open_trainings), "blue"),
+            metric_detail("Approved", approved_registration_count, "green"),
+            metric_detail("Awaiting Update", follow_up_registration_count, "amber")
           ]
         ),
         metric(
@@ -222,9 +222,13 @@ defmodule TracmsWeb.PageController do
           length(my_registrations),
           "Records currently saved in TRACMS",
           [
-            "Approved: #{approved_registration_count}",
-            "Follow-up required: #{follow_up_registration_count}",
-            "Rejected or withdrawn: #{count_closed_registrations(my_registrations)}"
+            metric_detail("Approved", approved_registration_count, "green"),
+            metric_detail("Follow-Up Required", follow_up_registration_count, "amber"),
+            metric_detail(
+              "Rejected / Withdrawn",
+              count_closed_registrations(my_registrations),
+              "rose"
+            )
           ]
         ),
         metric(
@@ -234,9 +238,9 @@ defmodule TracmsWeb.PageController do
           issued_certificate_count,
           "Issued certificate records connected to your trainings",
           [
-            "Available: #{available_certificate_count}",
-            "Acknowledged: #{downloaded_certificate_count}",
-            "Awaiting release: #{awaiting_certificate_count}"
+            metric_detail("Available", available_certificate_count, "blue"),
+            metric_detail("Acknowledged", downloaded_certificate_count, "green"),
+            metric_detail("Awaiting Release", awaiting_certificate_count, "amber")
           ]
         ),
         metric(
@@ -246,9 +250,9 @@ defmodule TracmsWeb.PageController do
           pending_action_count,
           "Registrations or evaluations that still need your attention",
           [
-            "Registration follow-up: #{follow_up_registration_count}",
-            "Pending evaluations: #{length(pending_evaluations)}",
-            "Open trainings: #{length(open_trainings)}"
+            metric_detail("Registration Follow-Up", follow_up_registration_count, "blue"),
+            metric_detail("Pending Evaluations", length(pending_evaluations), "rose"),
+            metric_detail("Open Trainings", length(open_trainings), "green")
           ]
         )
       ],
@@ -281,6 +285,10 @@ defmodule TracmsWeb.PageController do
 
   defp metric(icon, tone, label, value, meta, details) do
     %{icon: icon, tone: tone, label: label, value: value, meta: meta, details: details}
+  end
+
+  defp metric_detail(label, value, tone) do
+    %{label: label, value: value, tone: tone}
   end
 
   defp build_manager_upcoming_items(today, managed_trainings, registration_counts_by_training) do
@@ -368,30 +376,40 @@ defmodule TracmsWeb.PageController do
     total = max(length(managed_trainings), 1)
 
     [
-      status_item("Draft", counts[:draft] || 0, total, "New activities not yet submitted"),
+      status_item(
+        "Draft",
+        counts[:draft] || 0,
+        total,
+        "New activities not yet submitted",
+        "amber"
+      ),
       status_item(
         "For Approval",
         (counts[:pending_division_approval] || 0) + (counts[:pending_region_approval] || 0),
         total,
-        "Awaiting division or region action"
+        "Awaiting division or region action",
+        "blue"
       ),
       status_item(
         "Published",
         (counts[:published] || 0) + (counts[:registration_closed] || 0),
         total,
-        "Visible in the catalog or in registration delivery"
+        "Visible in the catalog or in registration delivery",
+        "indigo"
       ),
       status_item(
         "Ongoing",
         counts[:in_progress] || 0,
         total,
-        "Currently in delivery and attendance tracking"
+        "Currently in delivery and attendance tracking",
+        "green"
       ),
       status_item(
         "Completed",
         counts[:completed] || 0,
         total,
-        "Ready for completion review and records"
+        "Ready for completion review and records",
+        "slate"
       )
     ]
   end
@@ -405,27 +423,37 @@ defmodule TracmsWeb.PageController do
         "Submitted",
         counts[:submitted] || 0,
         total,
-        "Awaiting final review or confirmation"
+        "Awaiting final review or confirmation",
+        "blue"
       ),
       status_item(
         "Approved",
         counts[:approved] || 0,
         total,
-        "Ready for attendance and completion steps"
+        "Ready for attendance and completion steps",
+        "green"
       ),
       status_item(
         "Waitlisted",
         counts[:waitlisted] || 0,
         total,
-        "Queued until capacity becomes available"
+        "Queued until capacity becomes available",
+        "amber"
       ),
       status_item(
         "Rejected",
         counts[:rejected] || 0,
         total,
-        "Not approved for the selected activity"
+        "Not approved for the selected activity",
+        "rose"
       ),
-      status_item("Withdrawn", counts[:withdrawn] || 0, total, "Removed from your active records")
+      status_item(
+        "Withdrawn",
+        counts[:withdrawn] || 0,
+        total,
+        "Removed from your active records",
+        "slate"
+      )
     ]
   end
 
@@ -744,7 +772,7 @@ defmodule TracmsWeb.PageController do
     |> Enum.take(4)
   end
 
-  defp status_item(label, value, total, description) do
+  defp status_item(label, value, total, description, tone) do
     percent =
       if total == 0 do
         0
@@ -752,7 +780,7 @@ defmodule TracmsWeb.PageController do
         round(value * 100 / total)
       end
 
-    %{label: label, value: value, percent: percent, description: description}
+    %{label: label, value: value, percent: percent, description: description, tone: tone}
   end
 
   defp workflow_item(label, value, description, tone) do

@@ -1,8 +1,5 @@
 # TRACMS Login Government Portal Refresh
 
-Date: July 23, 2026
-Status: Planned for implementation
-
 ## Objective
 
 Refine the TRACMS login page so it feels like an official DepEd Region IX enterprise portal instead of a general SaaS authentication screen.

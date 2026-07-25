@@ -30,15 +30,15 @@
         <div class="dashboard-stat-content">
           <p class="dashboard-stat-label">{metric.label}</p>
           <p class="dashboard-stat-value">{metric.value}</p>
-          <p class="dashboard-stat-meta">{metric.meta}</p>
-          <div :if={metric.details != []} class="dashboard-stat-detail-list">
-            <p :for={detail <- metric.details} class="dashboard-stat-detail-item">{detail}</p>
-          </div>
+          <p :if={metric.meta && metric.meta != ""} class="dashboard-stat-meta">{metric.meta}</p>
         </div>
       </article>
     </section>
 
-    <section class="dashboard-portal-grid">
+    <section class={[
+      "dashboard-portal-grid",
+      @dashboard_mode == :manager && "dashboard-portal-grid-manager"
+    ]}>
       <article class="panel portal-panel portal-panel-upcoming">
         <div class="dashboard-section-head">
           <div>
@@ -106,10 +106,12 @@
               </div>
 
               <div class="portal-event-body">
-                <div class="badge-row">
-                  <span :for={badge <- item.badges} class="badge-soft">{badge}</span>
+                <div class="portal-event-header">
+                  <h3 class="portal-event-title">{item.title}</h3>
+                  <div class="badge-row portal-event-badges">
+                    <span :for={badge <- item.badges} class="badge-soft">{badge}</span>
+                  </div>
                 </div>
-                <h3 class="portal-event-title">{item.title}</h3>
                 <p class="portal-event-meta">{item.meta_primary}</p>
                 <p class="portal-event-submeta">{item.meta_secondary}</p>
               </div>
@@ -122,70 +124,71 @@
         <% end %>
       </article>
 
-      <article class="panel portal-panel portal-panel-status">
-        <div class="dashboard-section-head">
-          <div>
-            <p class="eyebrow">
-              {if @dashboard_mode == :manager, do: "Pipeline view", else: "Status overview"}
-            </p>
-            <h2 class="section-title">
-              {if @dashboard_mode == :manager,
-                do: "Training Workflow",
-                else: "My Registration Status"}
-            </h2>
-          </div>
-        </div>
-
-        <div class="portal-status-list">
-          <div :for={item <- @status_items} class="portal-status-item">
-            <div class="portal-status-head">
-              <div>
-                <p class="portal-status-label">{item.label}</p>
-                <p class="portal-status-copy">{item.description}</p>
-              </div>
-              <span class="portal-status-value">{item.value}</span>
-            </div>
-
-            <div class="portal-progress">
-              <span style={"width: #{item.percent}%"}></span>
-            </div>
-          </div>
-        </div>
-
-        <p class="portal-note">{@status_note}</p>
-      </article>
-
-      <article class="panel portal-panel portal-panel-workflow">
-        <div class="dashboard-section-head">
-          <div>
-            <p class="eyebrow">
-              {if @dashboard_mode == :manager, do: "Registration queue", else: "Evaluation status"}
-            </p>
-            <h2 class="section-title">
-              {if @dashboard_mode == :manager,
-                do: "Registration Status",
-                else: "Evaluation & Completion"}
-            </h2>
-          </div>
-
-          <.link navigate={@workflow_link} class="dashboard-panel-link">
-            {if @dashboard_mode == :manager, do: "Review queue", else: "Open records"}
-          </.link>
-        </div>
-
-        <div class="portal-workflow-list">
-          <div
-            :for={item <- @workflow_items}
-            class={["portal-workflow-item", "portal-workflow-item-#{item.tone}"]}
-          >
+      <%= if @dashboard_mode == :participant do %>
+        <article class="panel portal-panel portal-panel-status">
+          <div class="dashboard-section-head">
             <div>
-              <p class="portal-workflow-label">{item.label}</p>
-              <p class="portal-workflow-copy">{item.description}</p>
+              <p class="eyebrow">Status overview</p>
+              <h2 class="section-title">My Registration Status</h2>
             </div>
-            <span class="portal-workflow-value">{item.value}</span>
           </div>
-        </div>
-      </article>
+
+          <div class="portal-status-list">
+            <div
+              :for={item <- @status_items}
+              class={["portal-status-item", "portal-status-item-#{item.tone}"]}
+            >
+              <div class="portal-status-head">
+                <div>
+                  <p class="portal-status-label">{item.label}</p>
+                  <p class="portal-status-copy">{item.description}</p>
+                </div>
+                <span class={["portal-status-value", "portal-status-value-#{item.tone}"]}>
+                  {item.value}
+                </span>
+              </div>
+
+              <div class="portal-progress">
+                <span
+                  class={["portal-progress-bar", "portal-progress-bar-#{item.tone}"]}
+                  style={"width: #{item.percent}%"}
+                >
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <p class="portal-note">{@status_note}</p>
+        </article>
+      <% end %>
+
+      <%= if @dashboard_mode == :participant do %>
+        <article class="panel portal-panel portal-panel-workflow">
+          <div class="dashboard-section-head">
+            <div>
+              <p class="eyebrow">Evaluation status</p>
+              <h2 class="section-title">Evaluation & Completion</h2>
+            </div>
+
+            <.link navigate={@workflow_link} class="dashboard-panel-link">
+              Open records
+            </.link>
+          </div>
+
+          <div class="portal-workflow-list">
+            <div
+              :for={item <- @workflow_items}
+              class={["portal-workflow-item", "portal-workflow-item-#{item.tone}"]}
+            >
+              <div>
+                <p class="portal-workflow-label">{item.label}</p>
+                <p class="portal-workflow-copy">{item.description}</p>
+              </div>
+              <span class="portal-workflow-value">{item.value}</span>
+            </div>
+          </div>
+        </article>
+      <% end %>
 
       <article class="panel portal-panel portal-panel-monitor">
         <div class="dashboard-section-head">

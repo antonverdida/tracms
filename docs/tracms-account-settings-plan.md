@@ -1,8 +1,5 @@
 # TRACMS Account Settings Plan
 
-Date: July 24, 2026
-Status: Phase 1 implemented, Phase 2 in progress
-
 ## Goal
 
 Redesign the TRACMS account settings page so it feels like a professional government portal settings center while staying aligned with the current domain model and authentication flow.

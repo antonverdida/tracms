@@ -1,8 +1,5 @@
 # TRACMS Auth UI Refresh
 
-Date: July 23, 2026
-Status: Planned and ready for implementation
-
 ## Objective
 
 Refresh the TRACMS login experience so it feels simple, professional, and government-ready while keeping the existing Phoenix authentication flow intact.

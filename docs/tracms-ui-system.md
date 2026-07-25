@@ -1,8 +1,5 @@
 # TRACMS UI System
 
-Date: July 23, 2026
-Status: Initial standard
-
 ## Design Goal
 
 TRACMS should look like a professional government information system:

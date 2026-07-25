@@ -1,8 +1,5 @@
 # TRACMS Evaluation And Completion MVP
 
-Date: July 23, 2026
-Status: Planned for implementation
-
 ## Objective
 
 Extend the attendance module so TRACMS can compute participant completion status using attendance rules and evaluation submission requirements.
@@ -32,7 +29,7 @@ A participant is `completed` only when:
 
 ## Data Model
 
-### Training activity additions
+### Training Activity Additions
 
 - `minimum_attendance_percentage`
 - `evaluation_required`

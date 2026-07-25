@@ -1,8 +1,5 @@
 # TRACMS Attendance MVP
 
-Date: July 23, 2026
-Status: Planned for implementation
-
 ## Objective
 
 Implement the first attendance module for TRACMS using a simple, professional, and auditable workflow that fits the current training and registration features.

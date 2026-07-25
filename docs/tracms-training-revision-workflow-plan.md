@@ -1,8 +1,5 @@
 # TRACMS Training Revision Workflow Plan
 
-Date: July 24, 2026
-Status: In progress
-
 ## Goal
 
 Add a real return-for-revision workflow for training approvals so managers can send a training record back for correction with an auditable reason.

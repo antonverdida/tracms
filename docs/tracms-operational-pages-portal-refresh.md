@@ -1,8 +1,5 @@
 # TRACMS Operational Pages Portal Refresh
 
-Date: July 24, 2026
-Status: Implemented
-
 ## Goal
 
 Extend the shared portal design system into the next authenticated operational pages that are already implemented in TRACMS.

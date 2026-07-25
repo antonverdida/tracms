@@ -1,8 +1,5 @@
 # TRACMS Training Approval Audit Plan
 
-Date: July 24, 2026
-Status: In progress
-
 ## Goal
 
 Add a real approval history for training workflow transitions so the training details page can show who created, submitted, reviewed, and published a training record.

@@ -23,7 +23,11 @@ defmodule TracmsWeb.CertificateComponents do
       <div class="certificate-sheet-inner">
         <header class="certificate-sheet-header">
           <div class="certificate-brand-block">
-            <img src={~p"/images/tracms-logo.svg"} alt="TRACMS logo" class="certificate-brand-logo" />
+            <img
+              src={~p"/images/tracms-region-ix-logo.png"}
+              alt="TRACMS Region IX logo"
+              class="certificate-brand-logo"
+            />
             <div>
               <p class="certificate-brand-eyebrow">Department of Education</p>
               <h1 class="certificate-brand-title">Region IX</h1>

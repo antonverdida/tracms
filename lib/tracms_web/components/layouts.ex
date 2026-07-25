@@ -69,16 +69,17 @@ defmodule TracmsWeb.Layouts do
       class={["app-header", @variant == "auth" && "app-header-auth"]}
     >
       <div class="topbar">
-        <.link navigate={~p"/"} class="brand-lockup">
-          <img src={~p"/images/tracms-logo.svg"} alt="TRACMS logo" class="brand-logo" />
+        <div class="brand-lockup brand-lockup-static">
+          <img
+            src={~p"/images/tracms-region-ix-logo.png"}
+            alt="TRACMS Region IX logo"
+            class="brand-logo"
+          />
           <span class="brand-copy">
             <span class="eyebrow">DepEd Region IX</span>
             <span class="brand-title">TRACMS</span>
-            <span class="brand-subtitle">
-              Training, Registration, Attendance, and Certification Management System
-            </span>
           </span>
-        </.link>
+        </div>
 
         <nav class="nav-links" aria-label="Primary">
           <%= if @current_scope && @current_scope.user do %>
@@ -108,26 +109,25 @@ defmodule TracmsWeb.Layouts do
     <header :if={@variant == "dashboard"} class="dashboard-header">
       <div class="dashboard-topbar-shell">
         <div class="dashboard-topbar">
-          <.link navigate={~p"/dashboard"} class="brand-lockup">
-            <img src={~p"/images/tracms-logo.svg"} alt="TRACMS logo" class="brand-logo" />
-            <span class="brand-copy">
-              <span class="eyebrow">Department of Education • Region IX</span>
-              <span class="brand-title">TRACMS Portal</span>
-              <span class="brand-subtitle">
-                Training, Registration, Attendance, and Certification Management System
-              </span>
+          <div class="dashboard-brand-block">
+            <img
+              src={~p"/images/tracms-region-ix-logo.png"}
+              alt="TRACMS Region IX logo"
+              class="brand-logo"
+            />
+            <span class="dashboard-brand-copy">
+              <span class="dashboard-brand-eyebrow">Department of Education • Region IX</span>
+              <span class="dashboard-brand-title">TRACMS Portal</span>
             </span>
-          </.link>
+          </div>
 
           <div class="dashboard-topbar-actions">
             <div class="dashboard-profile-card">
               <div class="dashboard-profile-avatar">{user_initials(@current_scope.user)}</div>
               <div class="dashboard-profile-copy">
                 <span class="dashboard-profile-name">{user_display_name(@current_scope.user)}</span>
-                <span class="dashboard-profile-role">{dashboard_role_label(@current_scope)}</span>
               </div>
             </div>
-            <.button navigate={~p"/users/settings"} variant="ghost">Settings</.button>
             <.button href={~p"/users/log-out"} method="delete" variant="ghost">Log out</.button>
           </div>
         </div>
@@ -202,16 +202,6 @@ defmodule TracmsWeb.Layouts do
     |> Enum.take(2)
     |> Enum.map_join("", &String.first/1)
     |> String.upcase()
-  end
-
-  defp dashboard_role_label(scope) do
-    case scope.role_key do
-      "regional_admin" -> "Regional Administrator"
-      "division_admin" -> "Division Administrator"
-      "training_coordinator" -> "Training Coordinator"
-      "participant" -> "Participant"
-      _ -> "Authorized User"
-    end
   end
 
   @doc """

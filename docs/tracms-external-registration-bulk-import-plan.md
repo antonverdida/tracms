@@ -1,8 +1,5 @@
 # TRACMS External Registration Bulk Import Plan
 
-Date: July 24, 2026
-Status: In progress
-
 ## Goal
 
 Reduce manager encoding work for external registration workflows by allowing batch staging of spreadsheet rows into the TRACMS external intake queue.

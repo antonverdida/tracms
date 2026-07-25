@@ -1,8 +1,5 @@
 # TRACMS Dashboard Remediation Plan
 
-Date: July 23, 2026
-Status: Implemented
-
 ## Purpose
 
 Correct the dashboard panel implementation so it matches the intended TRACMS portal experience more accurately.
@@ -181,10 +178,13 @@ No additional messaging is needed.
 Current problem:
 
 - empty state is too dominant
+- a full-width layout creates too much unused horizontal space when only a few activities exist
 
 Correction:
 
-- keep this panel tall enough for real content
+- keep this panel prominent, but not stretched wider than needed
+- prefer a medium-wide primary panel instead of a full-width band when the dashboard has companion panels that can share the row
+- display activities as stacked horizontal rows inside the panel, not as separate wide cards across the page
 - when empty, show one short neutral empty message
 - keep only one clear action
 
@@ -194,6 +194,17 @@ When data exists:
 - title
 - one or two metadata lines
 - one action button or link
+
+Recommended desktop treatment:
+
+- `Upcoming Training Activities` should sit in the primary row as the larger left panel
+- target width should feel like `7/12` or `8/12` of the row, not `12/12`
+- `Latest Updates` or another compact operational panel should occupy the remaining space
+- each activity should read like one concise operational row:
+  - fixed date badge
+  - title and metadata in the center
+  - one aligned action on the right
+- keep row height compact and consistent so the panel feels operational, not promotional
 
 ### Training Status Pipeline
 
