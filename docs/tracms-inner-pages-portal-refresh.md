@@ -1,8 +1,5 @@
 # TRACMS Inner Pages Portal Refresh
 
-Date: July 24, 2026
-Status: Implemented
-
 ## Goal
 
 Apply the same portal design discipline used on the dashboard to the main authenticated inner pages:

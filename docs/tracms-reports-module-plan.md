@@ -1,8 +1,5 @@
 # TRACMS Reports Module Plan
 
-Date: July 24, 2026
-Status: In progress
-
 ## Goal
 
 Implement the first real reporting module backed by current TRACMS data so the dashboard can eventually point to an actual Reports page instead of a placeholder concept.

@@ -1,8 +1,5 @@
 # TRACMS Domain Model
 
-Date: July 23, 2026
-Status: Initial foundation
-
 ## Purpose
 
 This document records the first domain entities added after the Phoenix scaffold and authentication setup.

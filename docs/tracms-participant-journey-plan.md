@@ -1,8 +1,5 @@
 # TRACMS Participant Journey Plan
 
-Date: July 24, 2026
-Status: In progress
-
 ## Goal
 
 Make the participant journey feel like a real DepEd employee workflow:

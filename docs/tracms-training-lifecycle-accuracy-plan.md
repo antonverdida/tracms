@@ -1,8 +1,5 @@
 # TRACMS Training Lifecycle Accuracy Plan
 
-Date: July 24, 2026
-Status: In progress
-
 ## Goal
 
 Make the manager-facing training lifecycle pages read more like a real DepEd operational workflow without forcing unfinished backend features into the UI.
@@ -18,7 +15,7 @@ Improve the pages that already exist in the workflow:
 
 ## What To Improve Now
 
-### Training details
+### Training Details
 
 - add a stronger government-style record section
 - show a clear workflow path from draft to archived

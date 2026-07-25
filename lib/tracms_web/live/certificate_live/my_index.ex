@@ -8,6 +8,7 @@ defmodule TracmsWeb.CertificateLive.MyIndex do
     {:ok,
      socket
      |> assign(:page_title, "My Certificates")
+     |> assign(:sample_certificate, sample_certificate())
      |> load_certificates()}
   end
 
@@ -35,11 +36,28 @@ defmodule TracmsWeb.CertificateLive.MyIndex do
 
         <section class="panel portal-list-panel">
           <%= if @certificates == [] do %>
-            <.portal_empty_state
-              icon="hero-document-check"
-              title="No certificates available yet"
-              copy="Certificates will appear here once your completed training records are issued by the authorized office."
-            />
+            <div class="portal-panel-stack">
+              <.portal_empty_state
+                icon="hero-document-check"
+                title="No certificates available yet"
+                copy="Certificates will appear here once your completed training records are issued by the authorized office."
+              />
+
+              <div class="certificate-sample-shell">
+                <.portal_panel_header
+                  eyebrow="Sample preview"
+                  title="Demo Certificate"
+                  meta="Reference layout shown until the first real certificate record is issued."
+                />
+
+                <.certificate_sheet
+                  certificate={@sample_certificate}
+                  participant_name="TRACMS Administrator"
+                  issued_by_name="DepEd Region IX Training Office"
+                  scope_label="DepEd Region IX"
+                />
+              </div>
+            </div>
           <% else %>
             <.portal_panel_header
               eyebrow="Issued records"
@@ -136,4 +154,30 @@ defmodule TracmsWeb.CertificateLive.MyIndex do
   defp delivery_status_tone(:emailed), do: "blue"
   defp delivery_status_tone(:available), do: "amber"
   defp delivery_status_tone(_status), do: "slate"
+
+  defp sample_certificate do
+    %{
+      certificate_number: "DEPED9-2026-000001",
+      certificate_type: "Certificate of Completion",
+      issued_on: ~D[2026-07-24],
+      delivery_status: :available,
+      registration: %{
+        training_activity: %{
+          title: "Regional Training Management Orientation",
+          starts_on: ~D[2026-08-10],
+          ends_on: ~D[2026-08-12],
+          office: %{name: "DepEd Region IX Training Office"},
+          division: nil
+        },
+        registrant_user: %{
+          full_name: "TRACMS Administrator",
+          email: "admin@tracms.local"
+        }
+      },
+      issued_by_user: %{
+        full_name: "DepEd Region IX Training Office",
+        email: "training.office@deped.gov.ph"
+      }
+    }
+  end
 end

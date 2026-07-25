@@ -1,8 +1,5 @@
 # TRACMS Schema Health Plan
 
-Date: July 24, 2026
-Status: In progress
-
 ## Goal
 
 Add a repeatable schema-health check so TRACMS can detect missing critical tables or columns before runtime errors appear in the UI.

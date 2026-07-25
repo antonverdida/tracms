@@ -1,8 +1,5 @@
 # TRACMS Certificates Module Plan
 
-Date: July 24, 2026
-Status: Version 1 implementation in progress
-
 ## Goal
 
 Implement the first real certificate record flow so TRACMS can move from completion readiness into actual issued certificate data.
@@ -34,7 +31,7 @@ Each certificate record should store:
 
 ## Route Placement
 
-### Manager certificates
+### Manager Certificates
 
 Place manager certificate pages inside the existing `live_session :training_management` block because:
 
@@ -42,7 +39,7 @@ Place manager certificate pages inside the existing `live_session :training_mana
 - they belong with training operations
 - they need the existing training-manager authorization and `@current_scope`
 
-### Participant certificates
+### Participant Certificates
 
 Place participant certificate pages inside the existing authenticated user session because:
 

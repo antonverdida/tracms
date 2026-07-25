@@ -1,8 +1,5 @@
 # TRACMS External Registration Intake Plan
 
-Date: July 24, 2026
-Status: In progress
-
 ## Goal
 
 Implement the next accurate phase after external registration links:

@@ -1,8 +1,5 @@
 # TRACMS Google Workspace Integration Plan
 
-Date: July 24, 2026
-Status: In progress
-
 ## Goal
 
 Refocus TRACMS so Google Workspace handles participant-facing data collection while TRACMS remains the official training governance, validation, monitoring, completion, and certification system.

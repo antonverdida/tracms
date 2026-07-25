@@ -1,8 +1,5 @@
 # TRACMS Phase 0 Foundation
 
-Date: July 23, 2026
-Status: Implemented in repository
-
 ## Purpose
 
 Phase 0 exists to make the project stable before domain features are added. The goal is to avoid a fast but messy start.

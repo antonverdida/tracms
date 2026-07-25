@@ -1,8 +1,5 @@
 # TRACMS Training Record Enhancement Plan
 
-Date: July 24, 2026
-Status: In progress
-
 ## Goal
 
 Strengthen the training record so it captures the core government-style information needed by TRACMS for:
@@ -17,7 +14,7 @@ Strengthen the training record so it captures the core government-style informat
 
 Implement the most valuable record enhancements that fit the current TRACMS architecture without overreaching into certificate generation yet.
 
-## Fields to Add
+## Fields To Add
 
 - training type
 - training objectives

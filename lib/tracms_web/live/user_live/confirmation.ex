@@ -10,7 +10,11 @@ defmodule TracmsWeb.UserLive.Confirmation do
       <section class="auth-stage auth-portal-stage">
         <article class="auth-brand-panel auth-portal-brand-panel">
           <div class="auth-portal-brand-top">
-            <img src={~p"/images/tracms-logo.svg"} alt="TRACMS logo" class="auth-portal-brand-logo" />
+            <img
+              src={~p"/images/tracms-region-ix-logo.png"}
+              alt="TRACMS Region IX logo"
+              class="auth-portal-brand-logo"
+            />
             <div class="auth-portal-brand-lockup">
               <p class="auth-portal-brand-overline">Department of Education</p>
               <p class="auth-portal-brand-region">Region IX</p>
