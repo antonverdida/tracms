@@ -271,7 +271,7 @@ defmodule TracmsWeb.RegistrationLive.Show do
                 </.button>
                 <.button
                   :if={@certificate}
-                  navigate={~p"/my/certificates/#{@certificate.id}"}
+                  navigate={~p"/certificates/#{@certificate.id}"}
                 >
                   View certificate
                 </.button>

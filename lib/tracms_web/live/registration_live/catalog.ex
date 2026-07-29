@@ -18,7 +18,7 @@ defmodule TracmsWeb.RegistrationLive.Catalog do
       flash={@flash}
       current_scope={@current_scope}
       variant="dashboard"
-      active_nav="catalog"
+      active_nav="registrations"
     >
       <div class="portal-page-shell">
         <.portal_page_header

@@ -406,11 +406,11 @@ defmodule TracmsWeb.TrainingLive.Reports do
         ~p"/trainings/#{first.id}/registrations"
       ),
       quick_action(
-        "hero-qr-code",
+        "hero-document-check",
         "blue",
-        "Attendance Summary",
-        "Check session operations and rosters.",
-        ~p"/trainings/#{first.id}/attendance"
+        "Certificates",
+        "Open issued certificate records.",
+        ~p"/certificates/trainings/#{first.id}"
       ),
       quick_action(
         "hero-clipboard-document-check",

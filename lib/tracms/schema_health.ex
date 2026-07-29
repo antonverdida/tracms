@@ -19,7 +19,10 @@ defmodule Tracms.SchemaHealth do
       id title description category training_type organizer modality venue venue_address status
       registration_opens_on registration_deadline max_capacity starts_on ends_on total_hours
       objectives target_participants participant_qualification attendance_monitoring_method
-      certificate_type published_at minimum_attendance_percentage evaluation_required
+      certificate_type certificate_layout_style certificate_accent_color
+      certificate_header_title certificate_header_subtitle certificate_body_intro
+      certificate_completion_statement certificate_signature_label
+      certificate_issuing_office_label published_at minimum_attendance_percentage evaluation_required
       registration_form_id registration_form_url attendance_form_id attendance_form_url
       registration_sheet_id registration_sheet_range registration_sheet_last_synced_at
       attendance_sheet_id attendance_sheet_range attendance_sheet_last_synced_at creator_user_id
@@ -53,6 +56,11 @@ defmodule Tracms.SchemaHealth do
     "certificate_records" => ~w(
       id certificate_number certificate_type issued_on delivery_status emailed_at downloaded_at
       registration_id issued_by_user_id inserted_at updated_at
+    ),
+    "certificate_layout_settings" => ~w(
+      id scope_key certificate_size layout_style accent_color header_title header_subtitle body_intro
+      completion_statement signature_label issuing_office_label asset_path asset_name
+      asset_content_type inserted_at updated_at
     )
   }
 

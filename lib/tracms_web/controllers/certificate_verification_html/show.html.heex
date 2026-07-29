@@ -1,0 +1,149 @@
+<Layouts.app flash={@flash} current_scope={@current_scope}>
+  <div class="page-grid">
+    <%= if @certificate do %>
+      <section class="panel">
+        <div class="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+          <div class="max-w-3xl space-y-3">
+            <p class="eyebrow">PUBLIC VERIFIER</p>
+            <h1 class="section-title text-3xl font-semibold text-slate-900 sm:text-4xl">
+              VERIFIED CERTIFICATE RECORD
+            </h1>
+            <p class="section-copy max-w-2xl">
+              This certificate number is recorded in the DepEd Region IX TRACMS portal.
+            </p>
+          </div>
+
+          <div class="inline-flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-900 shadow-sm">
+            <.icon name="hero-shield-check" class="size-5" /> VERIFIED
+          </div>
+        </div>
+      </section>
+
+      <section class="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_22rem]">
+        <article class="panel space-y-6">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+              <p class="text-xs font-semibold tracking-[0.2em] text-slate-500">PARTICIPANT</p>
+              <p class="mt-2 text-lg font-semibold text-slate-900">{@participant_name}</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+              <p class="text-xs font-semibold tracking-[0.2em] text-slate-500">
+                CERTIFICATE NUMBER
+              </p>
+              <p class="mt-2 text-lg font-semibold text-slate-900">
+                {@certificate.certificate_number}
+              </p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+              <p class="text-xs font-semibold tracking-[0.2em] text-slate-500">TRAINING TITLE</p>
+              <p class="mt-2 text-lg font-semibold text-slate-900">
+                {@certificate.registration.training_activity.title}
+              </p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+              <p class="text-xs font-semibold tracking-[0.2em] text-slate-500">
+                TRAINING MODALITY
+              </p>
+              <p class="mt-2 text-lg font-semibold text-slate-900">
+                {@certificate.registration.training_activity.modality}
+              </p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+              <p class="text-xs font-semibold tracking-[0.2em] text-slate-500">
+                TRAINING SCHEDULE
+              </p>
+              <p class="mt-2 text-lg font-semibold text-slate-900">
+                {format_date(@certificate.registration.training_activity.starts_on)} to {format_date(
+                  @certificate.registration.training_activity.ends_on
+                )}
+              </p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+              <p class="text-xs font-semibold tracking-[0.2em] text-slate-500">ISSUED ON</p>
+              <p class="mt-2 text-lg font-semibold text-slate-900">
+                {format_date(@certificate.issued_on)}
+              </p>
+            </div>
+          </div>
+
+          <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+            <.certificate_sheet
+              certificate={@certificate}
+              participant_name={@participant_name}
+              issued_by_name={@issued_by_name}
+              scope_label={@scope_label}
+              layout_settings={@layout_settings}
+            />
+          </div>
+        </article>
+
+        <aside class="space-y-6">
+          <article class="panel space-y-4">
+            <div>
+              <p class="eyebrow">RECORD STATUS</p>
+              <h2 class="section-title">Official Registry Match</h2>
+            </div>
+            <p class="section-copy">
+              The QR code and certificate number match an existing TRACMS certificate record.
+            </p>
+            <dl class="space-y-3">
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <dt class="text-xs font-semibold tracking-[0.18em] text-slate-500">
+                  CERTIFICATE TYPE
+                </dt>
+                <dd class="mt-1 text-sm font-semibold text-slate-900">
+                  {@certificate.certificate_type}
+                </dd>
+              </div>
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <dt class="text-xs font-semibold tracking-[0.18em] text-slate-500">
+                  DELIVERY STATUS
+                </dt>
+                <dd class="mt-1 text-sm font-semibold text-slate-900">
+                  {String.replace(to_string(@certificate.delivery_status), "_", " ")
+                  |> String.upcase()}
+                </dd>
+              </div>
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <dt class="text-xs font-semibold tracking-[0.18em] text-slate-500">ISSUED BY</dt>
+                <dd class="mt-1 text-sm font-semibold text-slate-900">{@issued_by_name}</dd>
+              </div>
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <dt class="text-xs font-semibold tracking-[0.18em] text-slate-500">
+                  ISSUING OFFICE
+                </dt>
+                <dd class="mt-1 text-sm font-semibold text-slate-900">{@scope_label}</dd>
+              </div>
+            </dl>
+          </article>
+
+          <article class="panel panel-muted space-y-3">
+            <p class="eyebrow">LOOKUP</p>
+            <h2 class="section-title">Verify Another Certificate</h2>
+            <p class="section-copy">
+              Need to validate a different document? Use the public verifier search page.
+            </p>
+            <.button navigate={~p"/verify/certificates"} variant="secondary">
+              Open Verifier
+            </.button>
+          </article>
+        </aside>
+      </section>
+    <% else %>
+      <section class="panel max-w-4xl">
+        <div class="space-y-4">
+          <p class="eyebrow">PUBLIC VERIFIER</p>
+          <h1 class="section-title text-3xl font-semibold text-slate-900">
+            CERTIFICATE NOT FOUND
+          </h1>
+          <p class="section-copy">
+            No TRACMS certificate record was found for certificate number <span class="font-semibold text-slate-900">{@certificate_number}</span>.
+          </p>
+          <div class="flex flex-wrap items-center gap-3">
+            <.button navigate={~p"/verify/certificates"}>Back To Verifier</.button>
+          </div>
+        </div>
+      </section>
+    <% end %>
+  </div>
+</Layouts.app>

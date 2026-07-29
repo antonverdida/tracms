@@ -6,6 +6,7 @@ defmodule Tracms.Certificates do
   import Ecto.Query, warn: false
 
   alias Tracms.Accounts.Scope
+  alias Tracms.Certificates.CertificateLayoutSetting
   alias Tracms.Certificates.CertificateRecord
   alias Tracms.Evaluations
   alias Tracms.Registrations.Registration
@@ -17,6 +18,8 @@ defmodule Tracms.Certificates do
     registration: [training_activity: [:office, :division], registrant_user: [:office, :role]],
     issued_by_user: []
   ]
+  @layout_fields CertificateLayoutSetting.editable_fields() ++
+                   CertificateLayoutSetting.asset_fields()
 
   def list_training_certificates(scope, training_id) do
     training_activity = Trainings.get_training_activity!(scope, training_id)
@@ -100,6 +103,23 @@ defmodule Tracms.Certificates do
     |> Repo.one()
   end
 
+  def get_certificate_by_number(certificate_number) when is_binary(certificate_number) do
+    certificate_number
+    |> String.trim()
+    |> case do
+      "" ->
+        nil
+
+      normalized_number ->
+        CertificateRecord
+        |> where([certificate], certificate.certificate_number == ^normalized_number)
+        |> preload(^@preloads)
+        |> Repo.one()
+    end
+  end
+
+  def get_certificate_by_number(_certificate_number), do: nil
+
   def list_issueable_entries(scope, training_id) do
     entries = Evaluations.list_training_completion(scope, training_id)
     registration_ids = Enum.map(entries, & &1.registration.id)
@@ -178,6 +198,138 @@ defmodule Tracms.Certificates do
     CertificateRecord
     |> Repo.get_by(registration_id: registration_id)
     |> maybe_preload_certificate()
+  end
+
+  def certificate_layout_style_options do
+    CertificateLayoutSetting.layout_style_options()
+  end
+
+  def certificate_size_options do
+    CertificateLayoutSetting.certificate_size_options()
+  end
+
+  def certificate_accent_color_options do
+    CertificateLayoutSetting.accent_color_options()
+  end
+
+  def get_default_certificate_layout_setting do
+    Repo.get_by(CertificateLayoutSetting, scope_key: "default") ||
+      struct(CertificateLayoutSetting, CertificateLayoutSetting.defaults())
+  end
+
+  def change_default_certificate_layout(attrs \\ %{}) do
+    get_default_certificate_layout_setting()
+    |> CertificateLayoutSetting.changeset(attrs)
+  end
+
+  def update_default_certificate_layout(scope, attrs) do
+    if Scope.system_admin?(scope) do
+      layout_setting = get_default_certificate_layout_setting()
+      changeset = CertificateLayoutSetting.changeset(layout_setting, attrs)
+
+      case layout_setting.id do
+        nil -> Repo.insert(changeset)
+        _id -> Repo.update(changeset)
+      end
+    else
+      {:error, :unauthorized}
+    end
+  end
+
+  def default_certificate_layout do
+    default_certificate_layout(get_default_certificate_layout_setting())
+  end
+
+  def default_certificate_layout(%CertificateLayoutSetting{} = layout_setting) do
+    CertificateLayoutSetting.defaults()
+    |> Map.take(@layout_fields)
+    |> Map.merge(layout_value_map(layout_setting))
+  end
+
+  def effective_layout_settings(%TrainingActivity{} = training_activity) do
+    Map.merge(default_certificate_layout(), training_layout_overrides(training_activity))
+  end
+
+  def effective_layout_settings(%CertificateRecord{
+        registration: %{training_activity: %TrainingActivity{} = training_activity}
+      }) do
+    effective_layout_settings(training_activity)
+  end
+
+  def effective_layout_settings(%{
+        registration: %{training_activity: %TrainingActivity{} = training_activity}
+      }) do
+    effective_layout_settings(training_activity)
+  end
+
+  def effective_layout_settings(_data) do
+    default_certificate_layout()
+  end
+
+  def custom_layout_override?(%TrainingActivity{} = training_activity) do
+    training_layout_overrides(training_activity) != %{}
+  end
+
+  def sample_preview_certificate do
+    sample_preview_certificate(nil)
+  end
+
+  def sample_preview_certificate(%TrainingActivity{} = training_activity) do
+    today = Date.utc_today()
+    starts_on = training_activity.starts_on || Date.add(today, 14)
+    ends_on = training_activity.ends_on || Date.add(starts_on, 2)
+
+    %{
+      certificate_number: "DEPED9-#{today.year}-000001",
+      certificate_type: training_activity.certificate_type || "Certificate of Completion",
+      issued_on: today,
+      delivery_status: :available,
+      registration: %{
+        training_activity: %{
+          title: training_activity.title || "Regional Learning and Development Program",
+          starts_on: starts_on,
+          ends_on: ends_on,
+          office: training_activity.office || %{name: "DepEd Region IX"},
+          division: training_activity.division
+        },
+        registrant_user: %{
+          full_name: "Juan Dela Cruz",
+          email: "juan.delacruz@deped.gov.ph"
+        }
+      },
+      issued_by_user: %{
+        full_name: "TRACMS Administrator",
+        email: "admin@tracms.local"
+      }
+    }
+  end
+
+  def sample_preview_certificate(nil) do
+    today = Date.utc_today()
+
+    %{
+      certificate_number: "DEPED9-#{today.year}-000001",
+      certificate_type: "Certificate of Completion",
+      issued_on: today,
+      delivery_status: :available,
+      registration: %{
+        training_activity: %{
+          title: "Regional Training Management Orientation",
+          starts_on: Date.add(today, 14),
+          ends_on: Date.add(today, 16),
+          office: %{name: "DepEd Region IX Training Office"},
+          division: nil
+        },
+        registrant_user: %{
+          full_name: "Juan Dela Cruz",
+          email: "juan.delacruz@deped.gov.ph"
+        }
+      },
+      issued_by_user: %{
+        full_name: "TRACMS Administrator",
+        email: "admin@tracms.local"
+      }
+    }
   end
 
   def format_delivery_status(status) when is_atom(status) do
@@ -267,4 +419,26 @@ defmodule Tracms.Certificates do
 
   defp preload_result({:ok, certificate}), do: {:ok, Repo.preload(certificate, @preloads)}
   defp preload_result(other), do: other
+
+  defp training_layout_overrides(training_activity) do
+    %{
+      layout_style: training_activity.certificate_layout_style,
+      accent_color: training_activity.certificate_accent_color,
+      header_title: training_activity.certificate_header_title,
+      header_subtitle: training_activity.certificate_header_subtitle,
+      body_intro: training_activity.certificate_body_intro,
+      completion_statement: training_activity.certificate_completion_statement,
+      signature_label: training_activity.certificate_signature_label,
+      issuing_office_label: training_activity.certificate_issuing_office_label
+    }
+    |> Enum.reject(fn {_key, value} -> value in [nil, ""] end)
+    |> Map.new()
+  end
+
+  defp layout_value_map(layout_setting) do
+    layout_setting
+    |> Map.take(@layout_fields)
+    |> Enum.reject(fn {_key, value} -> value in [nil, ""] end)
+    |> Map.new()
+  end
 end

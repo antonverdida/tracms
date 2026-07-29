@@ -132,7 +132,7 @@ defmodule TracmsWeb.RegistrationLive.MyIndex do
                         </.button>
                         <.button
                           :if={certificate = Map.get(@certificate_map, registration.id)}
-                          navigate={~p"/my/certificates/#{certificate.id}"}
+                          navigate={~p"/certificates/#{certificate.id}"}
                           variant="secondary"
                         >
                           View certificate

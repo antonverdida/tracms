@@ -24,10 +24,10 @@ defmodule TracmsWeb.TrainingLive.Index do
         <.portal_page_header
           eyebrow="Training management"
           title="Training Activities"
-          copy="Create, review, and monitor training activities for DepEd Region IX."
+          copy="Review and manage training records for DepEd Region IX."
         >
           <:actions>
-            <.button navigate={~p"/trainings/new"}>Create training</.button>
+            <.button navigate={~p"/trainings/new"} variant="secondary">Create training</.button>
           </:actions>
         </.portal_page_header>
 
@@ -67,13 +67,15 @@ defmodule TracmsWeb.TrainingLive.Index do
                     <th>Registration</th>
                     <th>Modality</th>
                     <th>Status</th>
-                    <th>Actions</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr :for={training <- @trainings}>
                     <td>
-                      <div class="portal-cell-title">{training.title}</div>
+                      <.link navigate={~p"/trainings/#{training.id}"} class="portal-table-link">
+                        <div class="portal-cell-title">{training.title}</div>
+                      </.link>
                       <div class="portal-cell-meta">{training.category}</div>
                     </td>
                     <td>
@@ -93,18 +95,7 @@ defmodule TracmsWeb.TrainingLive.Index do
                       </span>
                     </td>
                     <td>
-                      <div class="portal-inline-links">
-                        <.link navigate={~p"/trainings/#{training.id}"} class="portal-table-link">
-                          View
-                        </.link>
-                        <.link
-                          :if={Trainings.editable?(training)}
-                          navigate={~p"/trainings/#{training.id}/edit"}
-                          class="portal-table-link"
-                        >
-                          Edit
-                        </.link>
-                      </div>
+                      <.button navigate={~p"/trainings/#{training.id}"}>View</.button>
                     </td>
                   </tr>
                 </tbody>
@@ -128,31 +119,32 @@ defmodule TracmsWeb.TrainingLive.Index do
 
   defp training_summary_cards(trainings) do
     [
-      summary_card("Total trainings", length(trainings), "Records within your current scope"),
+      summary_card("Total trainings", length(trainings), "Training records in your scope"),
       summary_card(
         "In workflow",
         Enum.count(
           trainings,
           &(&1.status in [:draft, :pending_division_approval, :pending_region_approval])
         ),
-        "Draft or approval-stage activities"
+        "Draft and approval-stage records"
       ),
       summary_card(
         "Published",
         Enum.count(trainings, &(&1.status in [:published, :registration_closed, :in_progress])),
-        "Currently active for delivery or registration"
+        "Open or active training records"
       ),
       summary_card(
         "Completed",
         Enum.count(trainings, &(&1.status in [:completed, :archived])),
-        "Finished or archived activities"
+        "Finished training records"
       )
     ]
   end
 
   defp managed_training_caption(trainings) do
     count = length(trainings)
-    "Showing #{count} managed training #{if(count == 1, do: "activity", else: "activities")}."
+
+    "#{count} training #{if(count == 1, do: "record", else: "records")}. Use View to open the full training details."
   end
 
   defp training_status_tone(status) do

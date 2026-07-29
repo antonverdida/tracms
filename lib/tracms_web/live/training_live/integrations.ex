@@ -97,12 +97,6 @@ defmodule TracmsWeb.TrainingLive.Integrations do
               Registration management
             </.button>
             <.button
-              navigate={~p"/trainings/#{@training_activity.id}/attendance"}
-              variant="ghost"
-            >
-              Attendance management
-            </.button>
-            <.button
               navigate={~p"/trainings/#{@training_activity.id}/completion"}
               variant="ghost"
             >
@@ -304,12 +298,6 @@ defmodule TracmsWeb.TrainingLive.Integrations do
                   Link a response sheet in Google Forms, then add the range here for attendance sync.
                 </p>
               </div>
-
-              <div class="mt-4 flex flex-wrap gap-3">
-                <.button navigate={~p"/trainings/#{@training_activity.id}/attendance"}>
-                  Manage attendance sync
-                </.button>
-              </div>
             </article>
 
             <article class="feature-card">
@@ -359,7 +347,7 @@ defmodule TracmsWeb.TrainingLive.Integrations do
 
               <div class="mt-4">
                 <.button
-                  navigate={~p"/trainings/#{@training_activity.id}/certificates"}
+                  navigate={~p"/certificates/trainings/#{@training_activity.id}"}
                   variant="ghost"
                 >
                   Review certificates
