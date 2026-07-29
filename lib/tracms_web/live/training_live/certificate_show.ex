@@ -22,7 +22,7 @@ defmodule TracmsWeb.TrainingLive.CertificateShow do
       flash={@flash}
       current_scope={@current_scope}
       variant="dashboard"
-      active_nav="trainings"
+      active_nav="certificates"
     >
       <div class="portal-page-shell">
         <.portal_page_header
@@ -31,11 +31,11 @@ defmodule TracmsWeb.TrainingLive.CertificateShow do
           copy="Operational preview of the issued certificate record for verification and review."
         >
           <:actions>
-            <.button navigate={~p"/trainings/#{@training_activity.id}/certificates"} variant="ghost">
-              Back to certificate register
+            <.button navigate={~p"/certificates/trainings/#{@training_activity.id}"} variant="ghost">
+              Back to Certificates List
             </.button>
             <.button
-              href={~p"/trainings/#{@training_activity.id}/certificates/#{@certificate.id}/print"}
+              href={~p"/certificates/trainings/#{@training_activity.id}/#{@certificate.id}/print"}
               target="_blank"
               rel="noopener"
               variant="secondary"
@@ -43,7 +43,7 @@ defmodule TracmsWeb.TrainingLive.CertificateShow do
               Print certificate
             </.button>
             <.button
-              href={~p"/trainings/#{@training_activity.id}/certificates/#{@certificate.id}/export"}
+              href={~p"/certificates/trainings/#{@training_activity.id}/#{@certificate.id}/export"}
               variant="primary"
             >
               Export document
@@ -62,6 +62,7 @@ defmodule TracmsWeb.TrainingLive.CertificateShow do
             certificate={@certificate}
             participant_name={CertificateComponents.certificate_participant_name(@certificate)}
             issued_by_name={CertificateComponents.certificate_issued_by_name(@certificate)}
+            layout_settings={@layout_settings}
           />
         </section>
       </div>
@@ -85,6 +86,7 @@ defmodule TracmsWeb.TrainingLive.CertificateShow do
         socket
         |> assign(:training_activity, training_activity)
         |> assign(:certificate, certificate)
+        |> assign(:layout_settings, Certificates.effective_layout_settings(certificate))
     end
   end
 end

@@ -83,16 +83,40 @@ defmodule TracmsWeb.Layouts do
 
         <nav class="nav-links" aria-label="Primary">
           <%= if @current_scope && @current_scope.user do %>
-            <.link navigate={~p"/"} class="nav-link">Home</.link>
-            <.link navigate={~p"/catalog/trainings"} class="nav-link">Catalog</.link>
-            <.link navigate={~p"/my/registrations"} class="nav-link">My registrations</.link>
+            <.link navigate={~p"/dashboard"} class="nav-link">Dashboard</.link>
             <.link
               :if={Tracms.Accounts.Scope.training_manager?(@current_scope)}
               navigate={~p"/trainings"}
               class="nav-link"
             >
-              Trainings
+              Training Management
             </.link>
+            <.link
+              navigate={
+                if Tracms.Accounts.Scope.training_manager?(@current_scope),
+                  do: ~p"/registrations",
+                  else: ~p"/catalog/trainings"
+              }
+              class="nav-link"
+            >
+              Registrations
+            </.link>
+            <.link navigate={~p"/certificates"} class="nav-link">Certificates</.link>
+            <.link
+              :if={Tracms.Accounts.Scope.training_manager?(@current_scope)}
+              navigate={~p"/reports"}
+              class="nav-link"
+            >
+              Reports
+            </.link>
+            <.link
+              :if={Tracms.Accounts.Scope.training_manager?(@current_scope)}
+              navigate={~p"/google-integration"}
+              class="nav-link"
+            >
+              Google Integration
+            </.link>
+            <.link navigate={~p"/documents"} class="nav-link">Documents</.link>
             <.link navigate={~p"/users/settings"} class="nav-link">Settings</.link>
             <span class="nav-user">{@current_scope.user.email}</span>
             <.button href={~p"/users/log-out"} method="delete" variant="ghost">Log out</.button>
@@ -142,24 +166,6 @@ defmodule TracmsWeb.Layouts do
             Dashboard
           </.link>
           <.link
-            navigate={~p"/catalog/trainings"}
-            class={dashboard_menu_link_class(@active_nav, "catalog")}
-          >
-            Registration
-          </.link>
-          <.link
-            navigate={~p"/my/registrations"}
-            class={dashboard_menu_link_class(@active_nav, "registrations")}
-          >
-            My Records
-          </.link>
-          <.link
-            navigate={~p"/my/certificates"}
-            class={dashboard_menu_link_class(@active_nav, "certificates")}
-          >
-            Certificates
-          </.link>
-          <.link
             :if={Tracms.Accounts.Scope.training_manager?(@current_scope)}
             navigate={~p"/trainings"}
             class={dashboard_menu_link_class(@active_nav, "trainings")}
@@ -167,11 +173,40 @@ defmodule TracmsWeb.Layouts do
             Training Management
           </.link>
           <.link
+            navigate={
+              if Tracms.Accounts.Scope.training_manager?(@current_scope),
+                do: ~p"/registrations",
+                else: ~p"/catalog/trainings"
+            }
+            class={dashboard_menu_link_class(@active_nav, "registrations")}
+          >
+            Registrations
+          </.link>
+          <.link
+            navigate={~p"/certificates"}
+            class={dashboard_menu_link_class(@active_nav, "certificates")}
+          >
+            Certificates
+          </.link>
+          <.link
             :if={Tracms.Accounts.Scope.training_manager?(@current_scope)}
             navigate={~p"/reports"}
             class={dashboard_menu_link_class(@active_nav, "reports")}
           >
             Reports
+          </.link>
+          <.link
+            :if={Tracms.Accounts.Scope.training_manager?(@current_scope)}
+            navigate={~p"/google-integration"}
+            class={dashboard_menu_link_class(@active_nav, "google_integration")}
+          >
+            Google Integration
+          </.link>
+          <.link
+            navigate={~p"/documents"}
+            class={dashboard_menu_link_class(@active_nav, "documents")}
+          >
+            Documents
           </.link>
           <.link
             navigate={~p"/users/settings"}

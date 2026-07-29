@@ -95,6 +95,34 @@ defmodule Tracms.Trainings do
     end
   end
 
+  def change_training_certificate_layout(%TrainingActivity{} = training_activity, attrs \\ %{}) do
+    TrainingActivity.certificate_layout_changeset(training_activity, attrs)
+  end
+
+  def update_training_certificate_layout(scope, %TrainingActivity{} = training_activity, attrs) do
+    if Scope.training_manager?(scope) and accessible_to_scope?(scope, training_activity) do
+      training_activity
+      |> TrainingActivity.certificate_layout_changeset(attrs)
+      |> Repo.update()
+      |> preload_result()
+    else
+      {:error, :unauthorized}
+    end
+  end
+
+  def reset_training_certificate_layout(scope, %TrainingActivity{} = training_activity) do
+    update_training_certificate_layout(scope, training_activity, %{
+      "certificate_layout_style" => "",
+      "certificate_accent_color" => "",
+      "certificate_header_title" => "",
+      "certificate_header_subtitle" => "",
+      "certificate_body_intro" => "",
+      "certificate_completion_statement" => "",
+      "certificate_signature_label" => "",
+      "certificate_issuing_office_label" => ""
+    })
+  end
+
   def generate_google_form(scope, %TrainingActivity{} = training_activity, kind) do
     with true <- Scope.training_manager?(scope),
          true <- accessible_to_scope?(scope, training_activity),

@@ -33,11 +33,8 @@ defmodule TracmsWeb.TrainingLive.Completion do
             <.button navigate={~p"/trainings/#{@training_activity.id}"} variant="ghost">
               Back to training
             </.button>
-            <.button navigate={~p"/trainings/#{@training_activity.id}/attendance"} variant="ghost">
-              Attendance
-            </.button>
             <.button
-              navigate={~p"/trainings/#{@training_activity.id}/certificates"}
+              navigate={~p"/certificates/trainings/#{@training_activity.id}"}
               variant="ghost"
             >
               Certificates

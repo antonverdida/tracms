@@ -289,14 +289,218 @@ a {
 }
 
 .certificate-sheet {
+  --certificate-primary: #003366;
+  --certificate-primary-strong: #0f2747;
+  --certificate-accent: #c69214;
+  --certificate-accent-soft: rgba(198, 146, 20, 0.16);
+  --certificate-surface-top: rgba(234, 243, 255, 0.72);
+  --certificate-surface-bottom: rgba(255, 255, 255, 0.98);
+  --certificate-sheet-max-width: 72rem;
+  --certificate-sheet-aspect-ratio: 1.414 / 1;
   position: relative;
+  width: 100%;
+  max-width: var(--certificate-sheet-max-width);
+  margin-inline: auto;
   overflow: hidden;
   border: 1px solid rgba(18, 58, 104, 0.12);
   border-radius: 1.5rem;
+  aspect-ratio: var(--certificate-sheet-aspect-ratio);
   background:
-    linear-gradient(180deg, rgba(234, 243, 255, 0.62), rgba(255, 255, 255, 0.96)),
-    linear-gradient(120deg, rgba(255, 193, 7, 0.08), rgba(18, 58, 104, 0.04));
+    linear-gradient(180deg, var(--certificate-surface-top), var(--certificate-surface-bottom)),
+    linear-gradient(120deg, var(--certificate-accent-soft), rgba(18, 58, 104, 0.04));
   box-shadow: var(--tracms-shadow-md);
+}
+
+.certificate-sheet-artwork {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.certificate-sheet-artwork-image {
+  position: absolute;
+  inset: 1.25rem;
+  width: calc(100% - 2.5rem);
+  height: calc(100% - 2.5rem);
+  object-fit: contain;
+  opacity: 0.34;
+  filter: saturate(0.95);
+}
+
+.certificate-sheet-has-custom-art .certificate-sheet-inner {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.92));
+}
+
+.certificate-brand-logo-custom {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1.25rem;
+  background: rgba(0, 51, 102, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(0, 51, 102, 0.12);
+}
+
+.certificate-brand-logo-badge {
+  padding: 0.55rem 0.85rem;
+  border-radius: 999px;
+  background: var(--certificate-primary);
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.certificate-sheet-custom-layout {
+  aspect-ratio: auto;
+  padding: 1.1rem;
+  background: linear-gradient(180deg, #f8fbff, rgba(255, 255, 255, 0.98));
+}
+
+.certificate-sheet-custom-layout::before,
+.certificate-sheet-custom-layout::after {
+  display: none;
+}
+
+.certificate-sheet-custom-visual {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(18, 58, 104, 0.1);
+  border-radius: 1.15rem;
+  background: white;
+  aspect-ratio: var(--certificate-sheet-aspect-ratio);
+  box-shadow: 0 14px 30px rgba(15, 34, 56, 0.08);
+}
+
+.certificate-sheet-custom-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #fff;
+}
+
+.certificate-sheet-custom-nameplate {
+  position: absolute;
+  top: 50.3%;
+  left: 50%;
+  width: min(70%, 42rem);
+  transform: translate(-50%, -50%);
+  text-align: center;
+  padding: 0.08rem 0.35rem;
+}
+
+.certificate-sheet-custom-nameplate-standard {
+  width: min(70%, 42rem);
+}
+
+.certificate-sheet-custom-nameplate-long {
+  width: min(76%, 46rem);
+}
+
+.certificate-sheet-custom-nameplate-very-long {
+  width: min(82%, 50rem);
+  padding-inline: 0.2rem;
+}
+
+.certificate-sheet-custom-nameplate-ultra-long {
+  width: min(88%, 54rem);
+  padding-inline: 0.15rem;
+}
+
+.certificate-sheet-custom-name {
+  margin: 0;
+  color: #113a69;
+  font-size: clamp(1.8rem, 3vw, 3rem);
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 10px rgba(255, 255, 255, 0.7);
+  overflow-wrap: anywhere;
+}
+
+.certificate-sheet-custom-name-standard {
+  font-size: clamp(1.8rem, 3vw, 3rem);
+}
+
+.certificate-sheet-custom-name-long {
+  font-size: clamp(1.55rem, 2.55vw, 2.45rem);
+  line-height: 1.06;
+}
+
+.certificate-sheet-custom-name-very-long {
+  font-size: clamp(1.28rem, 2.15vw, 2rem);
+  line-height: 1.08;
+  letter-spacing: 0.015em;
+}
+
+.certificate-sheet-custom-name-ultra-long {
+  font-size: clamp(1.02rem, 1.7vw, 1.55rem);
+  line-height: 1.12;
+  letter-spacing: 0.01em;
+}
+
+.certificate-sheet-custom-qr-card {
+  position: absolute;
+  right: 2rem;
+  bottom: 1.8rem;
+  display: grid;
+  justify-items: center;
+  gap: 0.45rem;
+  width: min(19%, 9.4rem);
+  padding: 0.7rem;
+  border: 1px solid rgba(18, 58, 104, 0.14);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 14px 28px rgba(15, 34, 56, 0.12);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.certificate-sheet-custom-qr-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 32px rgba(15, 34, 56, 0.16);
+}
+
+.certificate-sheet-custom-qr-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  background: white;
+}
+
+.certificate-sheet-custom-qr-copy {
+  text-align: center;
+}
+
+.certificate-sheet-custom-qr-label {
+  margin: 0;
+  color: rgba(17, 58, 105, 0.78);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.certificate-sheet-custom-qr-value {
+  margin: 0.25rem 0 0;
+  color: #113a69;
+  font-size: 0.84rem;
+  font-weight: 800;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.certificate-sheet-formal {
+  border-radius: 1rem;
+}
+
+.certificate-sheet-modern {
+  border-radius: 1.75rem;
 }
 
 .certificate-sheet::before,
@@ -312,7 +516,7 @@ a {
   right: -4rem;
   width: 16rem;
   height: 16rem;
-  background: radial-gradient(circle, rgba(18, 58, 104, 0.16), transparent 70%);
+  background: radial-gradient(circle, var(--certificate-accent-soft), transparent 70%);
 }
 
 .certificate-sheet::after {
@@ -320,13 +524,14 @@ a {
   left: -5rem;
   width: 18rem;
   height: 18rem;
-  background: radial-gradient(circle, rgba(156, 31, 52, 0.1), transparent 70%);
+  background: radial-gradient(circle, rgba(0, 51, 102, 0.12), transparent 70%);
 }
 
 .certificate-sheet-inner {
   position: relative;
   z-index: 1;
   display: grid;
+  min-height: 100%;
   gap: 2rem;
   padding: 2rem;
 }
@@ -358,7 +563,7 @@ a {
 .certificate-kicker,
 .certificate-detail-label,
 .certificate-meta-label {
-  color: var(--tracms-accent);
+  color: var(--certificate-accent);
   font-size: 0.74rem;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -367,7 +572,7 @@ a {
 
 .certificate-brand-title {
   margin: 0.2rem 0;
-  color: var(--tracms-primary);
+  color: var(--certificate-primary);
   font-size: 1.45rem;
   font-weight: 800;
 }
@@ -393,7 +598,7 @@ a {
   border: 1px solid rgba(18, 58, 104, 0.14);
   border-radius: 1.25rem;
   background: rgba(255, 255, 255, 0.7);
-  color: var(--tracms-primary);
+  color: var(--certificate-primary);
   box-shadow: var(--tracms-shadow-sm);
 }
 
@@ -410,7 +615,7 @@ a {
 
 .certificate-title {
   margin: 0;
-  color: var(--tracms-primary);
+  color: var(--certificate-primary);
   font-size: clamp(1.8rem, 3vw, 2.8rem);
   font-weight: 900;
   letter-spacing: -0.03em;
@@ -427,7 +632,7 @@ a {
 .certificate-training-title {
   max-width: 44rem;
   margin: 0;
-  color: var(--tracms-primary-strong);
+  color: var(--certificate-primary-strong);
   font-size: 1.2rem;
   font-weight: 700;
 }
@@ -456,7 +661,7 @@ a {
 
 .certificate-body-note {
   padding: 1rem 1.1rem;
-  border-left: 4px solid rgba(18, 58, 104, 0.24);
+  border-left: 4px solid var(--certificate-accent);
   border-radius: 0 1rem 1rem 0;
   background: rgba(255, 255, 255, 0.55);
   font-size: 0.95rem;
@@ -599,6 +804,29 @@ a {
     grid-template-columns: 1fr;
   }
 
+  .certificate-sheet-custom-nameplate {
+    top: 49.9%;
+    width: min(76%, 36rem);
+  }
+
+  .certificate-sheet-custom-nameplate-long {
+    width: min(80%, 38rem);
+  }
+
+  .certificate-sheet-custom-nameplate-very-long {
+    width: min(86%, 40rem);
+  }
+
+  .certificate-sheet-custom-nameplate-ultra-long {
+    width: min(90%, 42rem);
+  }
+
+  .certificate-sheet-custom-qr-card {
+    right: 1.35rem;
+    bottom: 1.35rem;
+    width: min(24%, 7.8rem);
+  }
+
   .certificate-meta-block {
     justify-items: start;
     text-align: left;
@@ -616,6 +844,35 @@ a {
 @media (max-width: 640px) {
   .certificate-sheet-inner {
     padding: 1.25rem;
+  }
+
+  .certificate-sheet-custom-layout {
+    padding: 0.8rem;
+  }
+
+  .certificate-sheet-custom-nameplate {
+    top: 49.4%;
+    width: min(82%, 26rem);
+    padding: 0.05rem 0.25rem;
+  }
+
+  .certificate-sheet-custom-nameplate-long {
+    width: min(86%, 28rem);
+  }
+
+  .certificate-sheet-custom-nameplate-very-long {
+    width: min(90%, 29rem);
+  }
+
+  .certificate-sheet-custom-nameplate-ultra-long {
+    width: min(94%, 30rem);
+  }
+
+  .certificate-sheet-custom-qr-card {
+    right: 0.8rem;
+    bottom: 0.8rem;
+    width: min(29%, 6rem);
+    padding: 0.45rem;
   }
 
   .certificate-brand-logo,
@@ -2300,6 +2557,76 @@ a {
   display: grid;
   gap: 1rem;
   padding-top: 0.25rem;
+}
+
+.certificate-layout-asset-preview {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.certificate-layout-upload-state {
+  display: grid;
+  gap: 0.2rem;
+  min-height: 3rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(18, 58, 104, 0.1);
+  border-radius: 1rem;
+  background: rgba(248, 251, 255, 0.92);
+}
+
+.certificate-layout-upload-name {
+  color: var(--tracms-text);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.certificate-layout-upload-link,
+.certificate-layout-upload-pending,
+.certificate-layout-upload-placeholder {
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.certificate-layout-upload-link {
+  color: var(--tracms-primary);
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.certificate-layout-upload-link:hover {
+  text-decoration: underline;
+}
+
+.certificate-layout-upload-pending {
+  color: var(--tracms-text-muted);
+}
+
+.certificate-layout-upload-placeholder {
+  color: var(--tracms-text-muted);
+}
+
+.certificate-layout-asset-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 14rem;
+  padding: 0.9rem;
+  border: 1px solid rgba(18, 58, 104, 0.12);
+  border-radius: 1.1rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(234, 243, 255, 0.9)),
+    linear-gradient(135deg, rgba(0, 51, 102, 0.05), rgba(198, 146, 20, 0.06));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.72);
+}
+
+.certificate-layout-asset-image {
+  width: 100%;
+  max-height: 20rem;
+  object-fit: contain;
+  border-radius: 0.85rem;
+  box-shadow: 0 18px 40px rgba(15, 39, 71, 0.12);
 }
 
 .portal-form-section {

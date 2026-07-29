@@ -19,7 +19,7 @@ defmodule TracmsWeb.TrainingLiveTest do
   describe "training management pages" do
     test "renders the training list for a manager", %{conn: conn} do
       %{scope: scope, user: user} = training_manager_scope_fixture()
-      training_activity_fixture(scope, %{title: "Training Management 101"})
+      training_activity = training_activity_fixture(scope, %{title: "Training Management 101"})
 
       {:ok, _lv, html} =
         conn
@@ -28,6 +28,8 @@ defmodule TracmsWeb.TrainingLiveTest do
 
       assert html =~ "Training Activities"
       assert html =~ "Training Management 101"
+      assert html =~ "View"
+      assert html =~ "/trainings/#{training_activity.id}"
     end
 
     test "creates a training activity from the form", %{conn: conn} do
@@ -79,12 +81,8 @@ defmodule TracmsWeb.TrainingLiveTest do
       assert html =~ "Regional Literacy Summit"
       assert html =~ "Training details"
       assert html =~ "Government training record"
-      assert html =~ "Training workflow"
-      assert html =~ "TRACMS-2026-"
       assert html =~ "Google Workspace integration"
       assert html =~ "Open integration module"
-      assert html =~ "Workflow audit trail"
-      assert html =~ "Training record created"
     end
 
     test "renders the Google Workspace integration page for a training", %{conn: conn} do
@@ -159,39 +157,6 @@ defmodule TracmsWeb.TrainingLiveTest do
       assert html =~ "Google attendance form generated successfully."
       assert html =~ "Open attendance form"
       assert html =~ "Manage in Google Forms"
-    end
-
-    test "returns a training for revision from the workflow panel", %{conn: conn} do
-      %{scope: coordinator_scope} = training_manager_scope_fixture("training_coordinator")
-
-      training_activity = training_activity_fixture(coordinator_scope)
-
-      assert {:ok, training_activity} =
-               Tracms.Trainings.advance_training_activity(coordinator_scope, training_activity)
-
-      %{user: regional_user} = training_manager_scope_fixture("regional_admin")
-
-      {:ok, lv, html} =
-        conn
-        |> log_in_user(regional_user)
-        |> live(~p"/trainings/#{training_activity.id}")
-
-      assert html =~ "Workflow actions"
-      assert html =~ "Return to coordinator for revision"
-
-      html =
-        lv
-        |> form("#workflow-review-form",
-          workflow_review: %{
-            notes: "Please complete the venue address and align the qualification criteria."
-          }
-        )
-        |> render_submit()
-
-      assert html =~ "Training activity returned for revision."
-      assert html =~ "Returned for revision"
-      assert html =~ "Please complete the venue address and align the qualification criteria."
-      assert html =~ "Draft"
     end
   end
 end

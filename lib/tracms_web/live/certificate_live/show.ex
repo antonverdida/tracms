@@ -29,16 +29,16 @@ defmodule TracmsWeb.CertificateLive.Show do
           copy="Official certificate view for your completed training record."
         >
           <:actions>
-            <.button navigate={~p"/my/certificates"} variant="ghost">Back to certificates</.button>
+            <.button navigate={~p"/certificates"} variant="ghost">Back to certificates</.button>
             <.button
-              href={~p"/my/certificates/#{@certificate.id}/print"}
+              href={~p"/certificates/#{@certificate.id}/print"}
               target="_blank"
               rel="noopener"
               variant="secondary"
             >
               Print certificate
             </.button>
-            <.button href={~p"/my/certificates/#{@certificate.id}/export"} variant="primary">
+            <.button href={~p"/certificates/#{@certificate.id}/export"} variant="primary">
               Export document
             </.button>
           </:actions>
@@ -55,6 +55,7 @@ defmodule TracmsWeb.CertificateLive.Show do
             certificate={@certificate}
             participant_name={CertificateComponents.certificate_participant_name(@certificate)}
             issued_by_name={CertificateComponents.certificate_issued_by_name(@certificate)}
+            layout_settings={@layout_settings}
           />
         </section>
       </div>
@@ -68,7 +69,9 @@ defmodule TracmsWeb.CertificateLive.Show do
            socket.assigns.certificate_id
          ) do
       {:ok, certificate} ->
-        assign(socket, :certificate, certificate)
+        socket
+        |> assign(:certificate, certificate)
+        |> assign(:layout_settings, Certificates.effective_layout_settings(certificate))
 
       {:error, :not_found} ->
         raise Ecto.NoResultsError, queryable: Tracms.Certificates.CertificateRecord

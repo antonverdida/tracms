@@ -3,6 +3,7 @@ defmodule Tracms.Trainings.TrainingActivity do
   import Ecto.Changeset
 
   alias Tracms.Accounts.User
+  alias Tracms.Certificates.CertificateLayoutSetting
   alias Tracms.Organization.{Division, Office}
   alias Tracms.Trainings.TrainingApproval
 
@@ -70,6 +71,14 @@ defmodule Tracms.Trainings.TrainingActivity do
     field :participant_qualification, :string
     field :attendance_monitoring_method, :string
     field :certificate_type, :string
+    field :certificate_layout_style, :string
+    field :certificate_accent_color, :string
+    field :certificate_header_title, :string
+    field :certificate_header_subtitle, :string
+    field :certificate_body_intro, :string
+    field :certificate_completion_statement, :string
+    field :certificate_signature_label, :string
+    field :certificate_issuing_office_label, :string
     field :published_at, :utc_datetime
     field :minimum_attendance_percentage, :integer, default: 75
     field :evaluation_required, :boolean, default: false
@@ -133,6 +142,14 @@ defmodule Tracms.Trainings.TrainingActivity do
       :participant_qualification,
       :attendance_monitoring_method,
       :certificate_type,
+      :certificate_layout_style,
+      :certificate_accent_color,
+      :certificate_header_title,
+      :certificate_header_subtitle,
+      :certificate_body_intro,
+      :certificate_completion_statement,
+      :certificate_signature_label,
+      :certificate_issuing_office_label,
       :published_at,
       :minimum_attendance_percentage,
       :evaluation_required,
@@ -204,6 +221,7 @@ defmodule Tracms.Trainings.TrainingActivity do
     |> validate_inclusion(:training_type, @training_type_options)
     |> validate_inclusion(:certificate_type, @certificate_type_options)
     |> validate_inclusion(:attendance_monitoring_method, @attendance_monitoring_method_options)
+    |> CertificateLayoutSetting.override_changeset()
     |> validate_external_url(:registration_form_url)
     |> validate_external_url(:attendance_form_url)
     |> validate_google_sheet_sync_fields(
@@ -258,6 +276,21 @@ defmodule Tracms.Trainings.TrainingActivity do
       :attendance_sheet_range,
       "attendance"
     )
+  end
+
+  def certificate_layout_changeset(training_activity, attrs) do
+    training_activity
+    |> cast(attrs, [
+      :certificate_layout_style,
+      :certificate_accent_color,
+      :certificate_header_title,
+      :certificate_header_subtitle,
+      :certificate_body_intro,
+      :certificate_completion_statement,
+      :certificate_signature_label,
+      :certificate_issuing_office_label
+    ])
+    |> CertificateLayoutSetting.override_changeset()
   end
 
   defp validate_registration_deadline(changeset) do

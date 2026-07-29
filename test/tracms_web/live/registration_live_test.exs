@@ -1,5 +1,5 @@
 defmodule TracmsWeb.RegistrationLiveTest do
-  use TracmsWeb.ConnCase, async: true
+  use TracmsWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
   import Tracms.RegistrationsFixtures

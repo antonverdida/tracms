@@ -1,0 +1,63 @@
+<Layouts.app flash={@flash} current_scope={@current_scope}>
+  <div class="page-grid">
+    <section class="panel">
+      <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div class="max-w-3xl space-y-3">
+          <p class="eyebrow">PUBLIC VERIFIER</p>
+          <h1 class="section-title text-3xl font-semibold text-slate-900 sm:text-4xl">
+            CERTIFICATE VERIFICATION
+          </h1>
+          <p class="section-copy max-w-2xl">
+            Enter the certificate number to confirm whether the training certificate is recorded in
+            the DepEd Region IX TRACMS portal.
+          </p>
+        </div>
+
+        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-900 shadow-sm">
+          Official record lookup for issued TRACMS certificates.
+        </div>
+      </div>
+    </section>
+
+    <section class="panel max-w-4xl">
+      <.form
+        for={%{}}
+        as={:certificate_lookup}
+        action={~p"/verify/certificates"}
+        method="get"
+        class="space-y-5"
+      >
+        <div class="space-y-2">
+          <label
+            for="certificate_lookup_certificate_number"
+            class="text-sm font-semibold text-slate-800"
+          >
+            Certificate Number
+          </label>
+          <input
+            id="certificate_lookup_certificate_number"
+            name="certificate_number"
+            type="text"
+            value={@certificate_number}
+            placeholder="TRACMS-2026-000001"
+            class="h-13 w-full rounded-2xl border border-slate-200 bg-white px-4 text-base text-slate-900 shadow-sm outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+          />
+        </div>
+
+        <div
+          :if={assigns[:lookup_error]}
+          class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800"
+        >
+          {@lookup_error}
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+          <.button type="submit">Verify Certificate</.button>
+          <p class="text-sm text-slate-500">
+            Use the exact certificate number printed on the document or encoded in the QR.
+          </p>
+        </div>
+      </.form>
+    </section>
+  </div>
+</Layouts.app>

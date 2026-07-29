@@ -616,13 +616,6 @@ defmodule TracmsWeb.PageController do
         manager_training_link(first_training, :registrations)
       ),
       quick_action(
-        "hero-qr-code",
-        "rose",
-        "Attendance Tracking",
-        "Open attendance sessions.",
-        manager_training_link(first_training, :attendance)
-      ),
-      quick_action(
         "hero-clipboard-document-check",
         "slate",
         "Completion Review",
@@ -674,7 +667,7 @@ defmodule TracmsWeb.PageController do
         "green",
         "My Certificates",
         "Open issued training credentials.",
-        ~p"/my/certificates"
+        ~p"/certificates"
       ),
       quick_action(
         "hero-cog-6-tooth",
@@ -842,7 +835,7 @@ defmodule TracmsWeb.PageController do
   defp participant_action_path(registration, evaluation_submissions, certificate) do
     cond do
       certificate ->
-        ~p"/my/certificates/#{certificate.id}"
+        ~p"/certificates/#{certificate.id}"
 
       registration.status == :approved and
         registration.training_activity.evaluation_required and
@@ -865,11 +858,10 @@ defmodule TracmsWeb.PageController do
   defp manager_training_link(training, :registrations),
     do: ~p"/trainings/#{training.id}/registrations"
 
-  defp manager_training_link(training, :attendance), do: ~p"/trainings/#{training.id}/attendance"
   defp manager_training_link(training, :completion), do: ~p"/trainings/#{training.id}/completion"
 
   defp manager_training_link(training, :certificates),
-    do: ~p"/trainings/#{training.id}/certificates"
+    do: ~p"/certificates/trainings/#{training.id}"
 
   defp monitoring_status(training, registration_count, today) do
     cond do
