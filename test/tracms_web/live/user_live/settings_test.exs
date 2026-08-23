@@ -6,6 +6,16 @@ defmodule TracmsWeb.UserLive.SettingsTest do
   import Tracms.AccountsFixtures
 
   describe "Settings page" do
+    test "renders profile page", %{conn: conn} do
+      {:ok, _lv, html} =
+        conn
+        |> log_in_user(user_fixture())
+        |> live(~p"/profile")
+
+      assert html =~ "Administrator"
+      assert html =~ "Profile"
+    end
+
     test "renders settings page", %{conn: conn} do
       {:ok, _lv, html} =
         conn

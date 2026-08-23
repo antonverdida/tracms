@@ -1,0 +1,1 @@
+web: /app/bin/tracms eval "Tracms.Release.migrate" && /app/bin/tracms $GIGALIXIR_COMMAND

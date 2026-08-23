@@ -37,7 +37,7 @@ defmodule TracmsWeb.PageController do
         :error,
         "TRACMS is available only to administrator and training management accounts."
       )
-      |> redirect(to: ~p"/")
+      |> redirect(to: ~p"/profile")
     end
   end
 

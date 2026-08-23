@@ -22,6 +22,8 @@ config :tracms, :scopes,
 
 config :tracms,
   ecto_repos: [Tracms.Repo],
+  api_allowed_origins: [],
+  public_api_rate_limit: [limit: 60, window_ms: 60_000],
   generators: [timestamp_type: :utc_datetime, binary_id: true]
 
 # Configure the endpoint

@@ -29,6 +29,10 @@ defmodule TracmsWeb.PortalLiveTest do
       assert html =~ "View Registrations"
       assert html =~ "Record Attendance"
       assert html =~ "Generate Certificates"
+      assert html =~ "Profile Information"
+      assert html =~ "Account &amp; Security"
+      assert html =~ "Cancel"
+      assert html =~ "Log Out"
     end
 
     test "non-manager users are redirected away from the admin dashboard", %{conn: conn} do
@@ -39,7 +43,7 @@ defmodule TracmsWeb.PortalLiveTest do
         |> log_in_user(user)
         |> get(~p"/dashboard")
 
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/profile"
     end
   end
 end

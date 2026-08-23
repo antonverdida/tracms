@@ -15,6 +15,12 @@ defmodule TracmsWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug TracmsWeb.Plugs.ApiCors
+    plug TracmsWeb.Plugs.ApiSecurityHeaders
+  end
+
+  pipeline :public_api_rate_limited do
+    plug TracmsWeb.Plugs.ApiRateLimit
   end
 
   pipeline :require_training_manager do
@@ -29,10 +35,24 @@ defmodule TracmsWeb.Router do
     get "/verify/certificates/:certificate_number", CertificateVerificationController, :show
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", TracmsWeb do
-  #   pipe_through :api
-  # end
+  scope "/", TracmsWeb do
+    pipe_through :api
+
+    get "/health", HealthController, :liveness
+    get "/health/ready", HealthController, :readiness
+  end
+
+  scope "/api/v1", TracmsWeb do
+    pipe_through [:api, :public_api_rate_limited]
+
+    get "/certificates", ApiV1.CertificateVerificationController, :show_by_certificate_number
+
+    get "/certificates/verify/:verification_code",
+        ApiV1.CertificateVerificationController,
+        :show_by_verification_code
+
+    options "/*path", ApiV1Controller, :options
+  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:tracms, :dev_routes) do
@@ -61,6 +81,7 @@ defmodule TracmsWeb.Router do
 
     live_session :require_authenticated_user,
       on_mount: [{TracmsWeb.UserAuth, :require_authenticated}] do
+      live "/profile", UserLive.Profile, :index
       live "/users/settings", UserLive.Settings, :edit
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
     end
@@ -89,7 +110,6 @@ defmodule TracmsWeb.Router do
       live "/attendance", TrainingLive.AttendanceIndex, :index
       live "/registrations", TrainingLive.RegistrationManagement, :index
       live "/certificates", TrainingLive.Certificates, :index
-      live "/reports", TrainingLive.Reports, :index
       live "/trainings/new", TrainingLive.Form, :new
       live "/trainings/:id/edit", TrainingLive.Form, :edit
       live "/trainings/:id", TrainingLive.Show, :show

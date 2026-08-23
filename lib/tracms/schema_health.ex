@@ -18,7 +18,8 @@ defmodule Tracms.SchemaHealth do
     "training_activities" => ~w(
       id title description category training_type organizer modality venue venue_address status
       registration_opens_on registration_deadline max_capacity starts_on ends_on total_hours
-      objectives target_participants participant_qualification attendance_monitoring_method
+      start_time end_time resource_speaker objectives target_participants participant_qualification
+      attendance_monitoring_method
       certificate_type certificate_layout_style certificate_accent_color
       certificate_header_title certificate_header_subtitle certificate_body_intro
       certificate_completion_statement certificate_signature_label
@@ -34,7 +35,8 @@ defmodule Tracms.SchemaHealth do
     ),
     "registrations" => ~w(
       id status special_requirements review_notes submitted_at reviewed_at training_activity_id
-      registrant_user_id reviewer_user_id inserted_at updated_at
+      registrant_user_id reviewer_user_id manual_participant_name manual_participant_email
+      inserted_at updated_at
     ),
     "external_registration_submissions" => ~w(
       id full_name email employee_number office_name source_reference special_requirements

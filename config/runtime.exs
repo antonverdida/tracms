@@ -53,12 +53,30 @@ if config_env() == :prod do
       You can generate one by calling: mix phx.gen.secret
       """
 
-  host = System.get_env("PHX_HOST") || "example.com"
+  host =
+    System.get_env("PHX_HOST") ||
+      raise "environment variable PHX_HOST is missing. Set it to your public domain."
+
+  scheme = System.get_env("PHX_SCHEME") || "https"
+
+  url_port =
+    String.to_integer(
+      System.get_env("PHX_URL_PORT") || if(scheme == "https", do: "443", else: "80")
+    )
 
   config :tracms, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
+  config :tracms,
+    api_allowed_origins:
+      System.get_env("API_ALLOWED_ORIGINS", "")
+      |> String.split(",", trim: true),
+    public_api_rate_limit: [
+      limit: String.to_integer(System.get_env("PUBLIC_API_RATE_LIMIT", "60")),
+      window_ms: String.to_integer(System.get_env("PUBLIC_API_RATE_WINDOW_MS", "60000"))
+    ]
+
   config :tracms, TracmsWeb.Endpoint,
-    url: [host: host, port: 443, scheme: "https"],
+    url: [host: host, port: url_port, scheme: scheme],
     http: [
       # Enable IPv6 and bind on all interfaces.
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.

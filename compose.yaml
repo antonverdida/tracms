@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: tracms_prod
+      POSTGRES_USER: tracms
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tracms -d tracms_prod"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build:
+      context: .
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["/bin/sh", "-c", "/app/bin/migrate && exec /app/bin/server"]
+    environment:
+      DATABASE_URL: ecto://tracms:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db/tracms_prod
+      PHX_HOST: ${PHX_HOST:-localhost}
+      PHX_SCHEME: ${PHX_SCHEME:-http}
+      PHX_URL_PORT: ${PHX_URL_PORT:-4000}
+      PORT: 4000
+      POOL_SIZE: 10
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?Set SECRET_KEY_BASE in .env}
+      API_ALLOWED_ORIGINS: ${API_ALLOWED_ORIGINS:-}
+      PUBLIC_API_RATE_LIMIT: ${PUBLIC_API_RATE_LIMIT:-60}
+      PUBLIC_API_RATE_WINDOW_MS: ${PUBLIC_API_RATE_WINDOW_MS:-60000}
+    ports:
+      - "4000:4000"
+    volumes:
+      - uploads_data:/app/priv/static/uploads
+
+volumes:
+  postgres_data:
+  uploads_data:
