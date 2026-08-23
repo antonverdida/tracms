@@ -4,6 +4,7 @@ defmodule Tracms.Trainings.TrainingApproval do
 
   alias Tracms.Accounts.User
   alias Tracms.Trainings.TrainingActivity
+  alias Tracms.Trainings.TrainingStatus
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -26,8 +27,8 @@ defmodule Tracms.Trainings.TrainingApproval do
   schema "training_approvals" do
     field :action, Ecto.Enum, values: @action_values
     field :actor_role_key, :string
-    field :from_status, Ecto.Enum, values: TrainingActivity.status_values()
-    field :to_status, Ecto.Enum, values: TrainingActivity.status_values()
+    field :from_status, Ecto.Enum, values: TrainingStatus.values()
+    field :to_status, Ecto.Enum, values: TrainingStatus.values()
     field :notes, :string
 
     belongs_to :training_activity, TrainingActivity

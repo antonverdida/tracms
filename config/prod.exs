@@ -11,10 +11,13 @@ config :tracms, TracmsWeb.Endpoint, cache_static_manifest: "priv/static/cache_ma
 # known as HSTS. If you have a health check endpoint, you may want to exclude it below.
 # Note `:force_ssl` is required to be set at compile-time.
 config :tracms, TracmsWeb.Endpoint,
-  force_ssl: [rewrite_on: [:x_forwarded_proto]],
-  exclude: [
-    # paths: ["/health"],
-    hosts: ["localhost", "127.0.0.1"]
+  force_ssl: [
+    rewrite_on: [:x_forwarded_proto],
+    hsts: true,
+    exclude: [
+      paths: ["/health", "/health/ready"],
+      hosts: ["localhost", "127.0.0.1"]
+    ]
   ]
 
 # Configure Swoosh API Client

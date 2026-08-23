@@ -1,0 +1,11 @@
+.git
+.env
+_build
+deps
+doc
+docs
+test
+tmp
+erl_crash.dump
+priv/static/assets
+priv/static/cache_manifest.json

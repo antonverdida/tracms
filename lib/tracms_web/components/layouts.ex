@@ -70,42 +70,56 @@ defmodule TracmsWeb.Layouts do
     >
       <div class="topbar">
         <div class="brand-lockup brand-lockup-static">
-          <img
-            src={~p"/images/tracms-region-ix-logo.png"}
-            alt="TRACMS Region IX logo"
-            class="brand-logo"
-          />
+          <div class="brand-pill">
+            <img
+              src={~p"/images/tracms-region-ix-logo.png"}
+              alt="TRACMS Region IX logo"
+              class="brand-logo"
+            />
+          </div>
+
           <span class="brand-copy">
             <span class="eyebrow">DepEd Region IX</span>
             <span class="brand-title">TRACMS</span>
           </span>
         </div>
 
-        <nav class="nav-links" aria-label="Primary">
+        <div class="header-utility">
+          <nav class="nav-links" aria-label="Primary">
+            <%= if @current_scope && @current_scope.user do %>
+              <.link navigate={~p"/dashboard"} class={nav_link_class(@active_nav, "dashboard")}>
+                Dashboard
+              </.link>
+              <.link navigate={~p"/trainings"} class={nav_link_class(@active_nav, "trainings")}>
+                Training Management
+              </.link>
+              <.link
+                navigate={~p"/registrations"}
+                class={nav_link_class(@active_nav, "registrations")}
+              >
+                Registrations
+              </.link>
+              <.link navigate={~p"/attendance"} class={nav_link_class(@active_nav, "attendance")}>
+                Attendance
+              </.link>
+              <.link navigate={~p"/certificates"} class={nav_link_class(@active_nav, "certificates")}>
+                Certificates
+              </.link>
+              <.link navigate={~p"/users/settings"} class={nav_link_class(@active_nav, "settings")}>
+                Settings
+              </.link>
+            <% else %>
+              <.link navigate={~p"/"} class="nav-link">Home</.link>
+              <.button :if={@variant != "auth"} navigate={~p"/users/log-in"} variant="secondary">
+                Log In
+              </.button>
+            <% end %>
+          </nav>
+
           <%= if @current_scope && @current_scope.user do %>
-            <.link navigate={~p"/dashboard"} class="nav-link">Dashboard</.link>
-            <.link navigate={~p"/trainings"} class="nav-link">
-              Training Management
-            </.link>
-            <.link navigate={~p"/registrations"} class="nav-link">
-              Registrations
-            </.link>
-            <.link navigate={~p"/attendance"} class="nav-link">
-              Attendance
-            </.link>
-            <.link navigate={~p"/certificates"} class="nav-link">
-              Certificates
-            </.link>
-            <.link navigate={~p"/users/settings"} class="nav-link">Settings</.link>
-            <span class="nav-user">{@current_scope.user.email}</span>
-            <.button href={~p"/users/log-out"} method="delete" variant="ghost">Log Out</.button>
-          <% else %>
-            <.link navigate={~p"/"} class="nav-link">Home</.link>
-            <.button :if={@variant != "auth"} navigate={~p"/users/log-in"} variant="secondary">
-              Log In
-            </.button>
+            <.account_menu current_scope={@current_scope} variant="default" />
           <% end %>
-        </nav>
+        </div>
       </div>
     </header>
 
@@ -113,11 +127,13 @@ defmodule TracmsWeb.Layouts do
       <div class="dashboard-topbar-shell">
         <div class="dashboard-topbar">
           <div class="dashboard-brand-block">
-            <img
-              src={~p"/images/tracms-region-ix-logo.png"}
-              alt="TRACMS Region IX logo"
-              class="brand-logo"
-            />
+            <div class="brand-pill dashboard-brand-pill">
+              <img
+                src={~p"/images/tracms-region-ix-logo.png"}
+                alt="TRACMS Region IX logo"
+                class="brand-logo"
+              />
+            </div>
             <span class="dashboard-brand-copy">
               <span class="dashboard-brand-eyebrow">Department of Education • Region IX</span>
               <span class="dashboard-brand-title">TRACMS Portal</span>
@@ -125,13 +141,7 @@ defmodule TracmsWeb.Layouts do
           </div>
 
           <div class="dashboard-topbar-actions">
-            <div class="dashboard-profile-card">
-              <div class="dashboard-profile-avatar">{user_initials(@current_scope.user)}</div>
-              <div class="dashboard-profile-copy">
-                <span class="dashboard-profile-name">{user_display_name(@current_scope.user)}</span>
-              </div>
-            </div>
-            <.button href={~p"/users/log-out"} method="delete" variant="ghost">Log Out</.button>
+            <.account_menu current_scope={@current_scope} variant="dashboard" />
           </div>
         </div>
       </div>
@@ -177,11 +187,72 @@ defmodule TracmsWeb.Layouts do
     """
   end
 
+  defp nav_link_class(active_nav, nav) do
+    [
+      "nav-link",
+      active_nav == nav && "nav-link-active"
+    ]
+  end
+
   defp dashboard_menu_link_class(active_nav, nav) do
     [
       "dashboard-menu-link",
       active_nav == nav && "dashboard-menu-link-active"
     ]
+  end
+
+  attr :current_scope, :map, required: true
+  attr :variant, :string, required: true, values: ~w(default dashboard)
+
+  defp account_menu(assigns) do
+    ~H"""
+    <details id={"account-menu-#{@variant}"} class={"account-menu account-menu-#{@variant}"}>
+      <summary class="account-menu-trigger">
+        <span class="account-menu-avatar">{user_initials(@current_scope.user)}</span>
+        <span class="account-menu-trigger-copy">
+          <span class="account-menu-trigger-name">{user_display_name(@current_scope.user)}</span>
+          <span class="account-menu-trigger-role">{account_role_label(@current_scope)}</span>
+        </span>
+        <.icon name="hero-chevron-down" class="account-menu-chevron size-4" />
+      </summary>
+
+      <div class="account-menu-popover">
+        <div class="account-menu-identity">
+          <span class="account-menu-avatar account-menu-avatar-large">
+            {user_initials(@current_scope.user)}
+          </span>
+          <div class="account-menu-identity-copy">
+            <p class="account-menu-name">{user_display_name(@current_scope.user)}</p>
+            <p class="account-menu-role">{account_role_label(@current_scope)}</p>
+            <p class="account-menu-email">{@current_scope.user.email}</p>
+          </div>
+        </div>
+
+        <nav class="account-menu-actions" aria-label="Account menu">
+          <.link navigate={~p"/profile"} class="account-menu-action">
+            <.icon name="hero-user-circle" class="size-5" /> Profile Information
+          </.link>
+          <.link navigate={~p"/users/settings"} class="account-menu-action">
+            <.icon name="hero-shield-check" class="size-5" /> Account &amp; Security
+          </.link>
+        </nav>
+
+        <div class="account-menu-footer">
+          <button type="button" class="account-menu-cancel" data-account-menu-cancel>
+            Cancel
+          </button>
+          <.button
+            href={~p"/users/log-out"}
+            method="delete"
+            variant="ghost"
+            class="account-menu-logout"
+          >
+            <.icon name="hero-arrow-right-on-rectangle" class="size-5" /> Log Out
+          </.button>
+        </div>
+      </div>
+    </details>
+    """
   end
 
   defp user_display_name(%{full_name: full_name, email: email}) do
@@ -195,6 +266,11 @@ defmodule TracmsWeb.Layouts do
     |> Enum.map_join("", &String.first/1)
     |> String.upcase()
   end
+
+  defp account_role_label(%{role_key: "regional_admin"}), do: "Regional Administrator"
+  defp account_role_label(%{role_key: "division_admin"}), do: "Division Administrator"
+  defp account_role_label(%{role_key: "training_coordinator"}), do: "Training Coordinator"
+  defp account_role_label(_scope), do: "Administrator"
 
   @doc """
   Shows the flash group with standard titles and content.

@@ -10,6 +10,7 @@ defmodule Tracms.Application do
     children = [
       TracmsWeb.Telemetry,
       Tracms.Repo,
+      TracmsWeb.ApiRateLimiter,
       {DNSCluster, query: Application.get_env(:tracms, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Tracms.PubSub},
       # Start a worker by calling: Tracms.Worker.start_link(arg)

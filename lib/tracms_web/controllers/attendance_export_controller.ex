@@ -128,6 +128,7 @@ defmodule TracmsWeb.AttendanceExportController do
 
   defp chrome_path! do
     System.find_executable("google-chrome") ||
+      System.find_executable("chromium") ||
       "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
   end
 

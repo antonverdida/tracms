@@ -91,12 +91,6 @@ defmodule TracmsWeb.TrainingLive.Show do
           <:actions>
             <.button navigate={~p"/trainings"} variant="ghost">Back to Trainings</.button>
             <.button
-              navigate={~p"/registrations?training_id=#{@training_activity.id}&view=manage"}
-              variant="ghost"
-            >
-              Manage Registrations
-            </.button>
-            <.button
               :if={Trainings.editable?(@training_activity)}
               navigate={~p"/trainings/#{@training_activity.id}/edit"}
               variant="secondary"

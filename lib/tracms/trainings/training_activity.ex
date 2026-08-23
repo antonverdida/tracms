@@ -6,21 +6,10 @@ defmodule Tracms.Trainings.TrainingActivity do
   alias Tracms.Certificates.CertificateLayoutSetting
   alias Tracms.Organization.{Division, Office}
   alias Tracms.Trainings.TrainingApproval
+  alias Tracms.Trainings.TrainingStatus
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
-
-  @status_values [
-    :draft,
-    :pending_division_approval,
-    :pending_region_approval,
-    :published,
-    :registration_closed,
-    :in_progress,
-    :completed,
-    :cancelled,
-    :archived
-  ]
 
   @modality_values [:face_to_face, :online, :hybrid]
   @category_options [
@@ -61,7 +50,7 @@ defmodule Tracms.Trainings.TrainingActivity do
     field :venue, :string
     field :venue_address, :string
     field :resource_speaker, :string
-    field :status, Ecto.Enum, values: @status_values, default: :draft
+    field :status, Ecto.Enum, values: TrainingStatus.values(), default: :draft
     field :registration_opens_on, :date
     field :registration_deadline, :utc_datetime
     field :max_capacity, :integer
@@ -105,7 +94,7 @@ defmodule Tracms.Trainings.TrainingActivity do
     timestamps(type: :utc_datetime)
   end
 
-  def status_values, do: @status_values
+  def status_values, do: TrainingStatus.values()
   def modality_values, do: @modality_values
   def category_options, do: Enum.map(@category_options, &{&1, &1})
   def training_type_options, do: Enum.map(@training_type_options, &{&1, &1})

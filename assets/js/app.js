@@ -46,6 +46,27 @@ window.addEventListener("click", event => {
   window.print()
 })
 
+window.addEventListener("click", event => {
+  const cancel = event.target.closest("[data-account-menu-cancel]")
+
+  if (cancel) {
+    cancel.closest("details.account-menu")?.removeAttribute("open")
+    return
+  }
+
+  document.querySelectorAll("details.account-menu[open]").forEach(menu => {
+    if (!menu.contains(event.target)) menu.removeAttribute("open")
+  })
+})
+
+window.addEventListener("keydown", event => {
+  if (event.key !== "Escape") return
+
+  document.querySelectorAll("details.account-menu[open]").forEach(menu => {
+    menu.removeAttribute("open")
+  })
+})
+
 window.addEventListener("load", () => {
   if (document.body?.dataset?.certificateAutoprint === "true") {
     window.setTimeout(() => window.print(), 180)

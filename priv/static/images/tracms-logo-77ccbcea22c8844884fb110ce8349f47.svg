@@ -1,0 +1,52 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="tracms-bg" x1="36" y1="28" x2="220" y2="228" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#123A68" />
+      <stop offset="1" stop-color="#1D5A98" />
+    </linearGradient>
+    <linearGradient id="tracms-accent" x1="98" y1="146" x2="176" y2="200" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F3B4BE" />
+      <stop offset="1" stop-color="#9C1F34" />
+    </linearGradient>
+  </defs>
+  <rect x="24" y="24" width="208" height="208" rx="56" fill="url(#tracms-bg)" />
+  <path
+    d="M74 76C74 68.268 80.268 62 88 62H168C175.732 62 182 68.268 182 76V136C182 143.732 175.732 150 168 150H126L103 172V150H88C80.268 150 74 143.732 74 136V76Z"
+    fill="white"
+    fill-opacity="0.12"
+  />
+  <path
+    d="M90 89.5C90 86.462 92.4624 84 95.5 84H160.5C163.538 84 166 86.4624 166 89.5V128.5C166 131.538 163.538 134 160.5 134H123.5L103 153.5V134H95.5C92.4624 134 90 131.538 90 128.5V89.5Z"
+    fill="white"
+  />
+  <path
+    d="M107 98H149"
+    stroke="#123A68"
+    stroke-width="8"
+    stroke-linecap="round"
+  />
+  <path
+    d="M107 112H149"
+    stroke="#123A68"
+    stroke-width="8"
+    stroke-linecap="round"
+  />
+  <path
+    d="M107 126H136"
+    stroke="#123A68"
+    stroke-width="8"
+    stroke-linecap="round"
+  />
+  <path
+    d="M150 148C162.703 148 173 158.297 173 171V178C173 180.761 170.761 183 168 183H134C131.239 183 129 180.761 129 178V171C129 158.297 139.297 148 152 148H150Z"
+    fill="url(#tracms-accent)"
+  />
+  <path
+    d="M151 165L158 172L174 156"
+    stroke="white"
+    stroke-width="8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <text x="69" y="201" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="700" letter-spacing="4">TRACMS</text>
+</svg>
