@@ -11,7 +11,8 @@ defmodule TracmsWeb.TrainingLive.Integrations do
      socket
      |> assign(:page_title, "Google Workspace Integration")
      |> assign(:training_id, training_id)
-     |> assign(:registration_sync_result, nil)}
+     |> assign(:registration_sync_result, nil)
+     |> assign(:configuring_integrations?, false)}
   end
 
   @impl true
@@ -71,6 +72,47 @@ defmodule TracmsWeb.TrainingLive.Integrations do
     end
   end
 
+  def handle_event("configure_integrations", _params, socket) do
+    {:noreply, assign(socket, :configuring_integrations?, true)}
+  end
+
+  def handle_event("cancel_integration_configuration", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:configuring_integrations?, false)
+     |> assign_integration_form(socket.assigns.training_activity)}
+  end
+
+  def handle_event("validate_integrations", %{"training_activity" => params}, socket) do
+    changeset =
+      socket.assigns.training_activity
+      |> Trainings.change_training_integration(params)
+      |> Map.put(:action, :validate)
+
+    {:noreply, assign(socket, :integration_form, to_form(changeset))}
+  end
+
+  def handle_event("save_integrations", %{"training_activity" => params}, socket) do
+    case Trainings.update_training_integration(
+           socket.assigns.current_scope,
+           socket.assigns.training_activity,
+           params
+         ) do
+      {:ok, _training_activity} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Registration and attendance integrations updated.")
+         |> assign(:configuring_integrations?, false)
+         |> load_page()}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, :integration_form, to_form(changeset, action: :validate))}
+
+      {:error, :unauthorized} ->
+        {:noreply, put_flash(socket, :error, "You are not allowed to update these integrations.")}
+    end
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -81,29 +123,30 @@ defmodule TracmsWeb.TrainingLive.Integrations do
       active_nav="trainings"
     >
       <div class="portal-page-shell">
-        <.portal_page_header
-          eyebrow="Google Workspace integration"
+        <.training_workspace_header
+          eyebrow="Training workspace"
           title={@training_activity.title}
-          copy="Centralize external registration and attendance collection while keeping TRACMS as the official monitoring, validation, and certification record."
+          copy="Manage Google Workspace integration, forms, and sheets connected to this training while keeping TRACMS as the official record."
+          nav_items={training_workspace_nav_items(@training_activity.id, :integrations)}
         >
           <:actions>
-            <.button navigate={~p"/trainings/#{@training_activity.id}"} variant="ghost">
-              Back to training
+            <.button navigate={~p"/trainings"} variant="ghost">
+              Back to Trainings
             </.button>
             <.button
-              navigate={~p"/trainings/#{@training_activity.id}/registrations"}
+              navigate={~p"/registrations?training_id=#{@training_activity.id}&view=manage"}
               variant="ghost"
             >
-              Registration management
+              Registration Management
             </.button>
             <.button
               navigate={~p"/trainings/#{@training_activity.id}/completion"}
               variant="ghost"
             >
-              Completion tracking
+              Completion Tracking
             </.button>
           </:actions>
-        </.portal_page_header>
+        </.training_workspace_header>
 
         <.portal_stat_grid cards={@summary_cards} />
 
@@ -112,7 +155,71 @@ defmodule TracmsWeb.TrainingLive.Integrations do
             eyebrow="Integration control center"
             title="Google services"
             meta="Review connected forms, response sheets, and operational readiness for this training."
-          />
+          >
+            <:actions>
+              <.button
+                :if={not @configuring_integrations?}
+                type="button"
+                phx-click="configure_integrations"
+                variant="secondary"
+              >
+                Configure Integrations
+              </.button>
+            </:actions>
+          </.portal_panel_header>
+
+          <.form
+            :if={@configuring_integrations?}
+            for={@integration_form}
+            id="integration-configuration-form"
+            phx-change="validate_integrations"
+            phx-submit="save_integrations"
+            class="rounded-[28px] border border-slate-200 bg-slate-50/80 p-5"
+          >
+            <div class="grid gap-5 md:grid-cols-2">
+              <.input
+                field={@integration_form[:registration_form_url]}
+                type="url"
+                label="Registration Form URL"
+                placeholder="https://forms.google.com/..."
+              />
+              <.input
+                field={@integration_form[:attendance_form_url]}
+                type="url"
+                label="Attendance Form URL"
+                placeholder="https://forms.google.com/..."
+              />
+              <.input
+                field={@integration_form[:registration_sheet_id]}
+                type="text"
+                label="Registration Sheet ID"
+              />
+              <.input
+                field={@integration_form[:registration_sheet_range]}
+                type="text"
+                label="Registration Sheet Range"
+                placeholder="Form Responses 1!A:F"
+              />
+              <.input
+                field={@integration_form[:attendance_sheet_id]}
+                type="text"
+                label="Attendance Sheet ID"
+              />
+              <.input
+                field={@integration_form[:attendance_sheet_range]}
+                type="text"
+                label="Attendance Sheet Range"
+                placeholder="Attendance!A:C"
+              />
+            </div>
+
+            <div class="mt-6 flex flex-wrap justify-end gap-3">
+              <.button type="button" phx-click="cancel_integration_configuration" variant="ghost">
+                Cancel
+              </.button>
+              <.button phx-disable-with="Saving Integrations...">Save Integrations</.button>
+            </div>
+          </.form>
 
           <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <article class="feature-card">
@@ -145,15 +252,15 @@ defmodule TracmsWeb.TrainingLive.Integrations do
                   rel="noreferrer"
                   variant="secondary"
                 >
-                  Open registration form
+                  Open Registration Form
                 </.button>
               </div>
 
               <div class="mt-4 flex flex-wrap gap-3">
                 <.button phx-click="generate_registration_form">
                   {if @registration_form_connected?,
-                    do: "Regenerate registration form",
-                    else: "Generate registration form"}
+                    do: "Regenerate Registration Form",
+                    else: "Generate Registration Form"}
                 </.button>
                 <.button
                   :if={@training_activity.registration_form_id}
@@ -204,13 +311,13 @@ defmodule TracmsWeb.TrainingLive.Integrations do
                   :if={@registration_sheet_connected?}
                   phx-click="sync_registration_sheet"
                 >
-                  Sync registration intake
+                  Sync Registration Intake
                 </.button>
                 <.button
-                  navigate={~p"/trainings/#{@training_activity.id}/registrations"}
+                  navigate={~p"/registrations?training_id=#{@training_activity.id}&view=manage"}
                   variant="ghost"
                 >
-                  Review intake queue
+                  Review Intake Queue
                 </.button>
               </div>
             </article>
@@ -245,15 +352,15 @@ defmodule TracmsWeb.TrainingLive.Integrations do
                   rel="noreferrer"
                   variant="secondary"
                 >
-                  Open attendance form
+                  Open Attendance Form
                 </.button>
               </div>
 
               <div class="mt-4 flex flex-wrap gap-3">
                 <.button phx-click="generate_attendance_form">
                   {if @attendance_form_connected?,
-                    do: "Regenerate attendance form",
-                    else: "Generate attendance form"}
+                    do: "Regenerate Attendance Form",
+                    else: "Generate Attendance Form"}
                 </.button>
                 <.button
                   :if={@training_activity.attendance_form_id}
@@ -325,7 +432,7 @@ defmodule TracmsWeb.TrainingLive.Integrations do
                   navigate={~p"/trainings/#{@training_activity.id}/completion"}
                   variant="ghost"
                 >
-                  Review completion rules
+                  Review Completion Rules
                 </.button>
               </div>
             </article>
@@ -350,7 +457,7 @@ defmodule TracmsWeb.TrainingLive.Integrations do
                   navigate={~p"/certificates/trainings/#{@training_activity.id}"}
                   variant="ghost"
                 >
-                  Review certificates
+                  Review Certificates
                 </.button>
               </div>
             </article>
@@ -493,6 +600,7 @@ defmodule TracmsWeb.TrainingLive.Integrations do
     |> assign(:registration_sheet_connected?, registration_sheet_connected?)
     |> assign(:attendance_form_connected?, attendance_form_connected?)
     |> assign(:attendance_sheet_connected?, attendance_sheet_connected?)
+    |> assign_integration_form(training_activity)
     |> assign(:summary_cards, summary_cards(training_activity, attendance_sessions))
     |> assign(
       :configured_steps,
@@ -501,6 +609,14 @@ defmodule TracmsWeb.TrainingLive.Integrations do
         attendance_sessions,
         external_submissions
       )
+    )
+  end
+
+  defp assign_integration_form(socket, training_activity) do
+    assign(
+      socket,
+      :integration_form,
+      to_form(Trainings.change_training_integration(training_activity))
     )
   end
 

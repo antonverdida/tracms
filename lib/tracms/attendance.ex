@@ -8,6 +8,7 @@ defmodule Tracms.Attendance do
   alias Tracms.Accounts.Scope
   alias Tracms.Attendance.{AttendanceRecord, AttendanceSession}
   alias Tracms.GoogleSheets
+  alias Tracms.Registrations
   alias Tracms.Registrations.Registration
   alias Tracms.Repo
   alias Tracms.Trainings
@@ -47,6 +48,52 @@ defmodule Tracms.Attendance do
       |> Repo.all()
     else
       _ -> []
+    end
+  end
+
+  def get_training_attendance(scope, training_id, requested_session_id \\ nil) do
+    with {:ok, training_activity} <- fetch_manageable_training(scope, training_id) do
+      attendance_sessions = list_sessions(scope, training_activity.id)
+      attendance_session = select_management_session(attendance_sessions, requested_session_id)
+
+      entries =
+        scope
+        |> list_approved_registrations(training_activity.id)
+        |> build_management_entries(attendance_session)
+
+      {:ok,
+       %{
+         training_activity: training_activity,
+         attendance_session: attendance_session,
+         attendance_sessions: attendance_sessions,
+         entries: entries
+       }}
+    end
+  end
+
+  def filter_training_attendance_entries(entries, search) do
+    case normalize_optional_string(search) do
+      nil ->
+        entries
+
+      search_term ->
+        normalized_search = String.downcase(search_term)
+
+        Enum.filter(entries, fn entry ->
+          searchable_attendance_text(entry)
+          |> String.downcase()
+          |> String.contains?(normalized_search)
+        end)
+    end
+  end
+
+  def save_training_attendance(scope, training_id, entries_params, session_id \\ nil) do
+    with {:ok, training_activity} <- fetch_manageable_training(scope, training_id),
+         {:ok, normalized_entries} <- normalize_management_entries(entries_params),
+         :ok <- ensure_attendance_selected(normalized_entries),
+         {:ok, attendance_session} <-
+           management_session_for_save(scope, training_activity, session_id) do
+      save_management_entries(scope, attendance_session, normalized_entries)
     end
   end
 
@@ -142,8 +189,11 @@ defmodule Tracms.Attendance do
          {:ok, normalized_headers} <- normalize_attendance_sync_headers(headers) do
       registrations_by_email =
         list_approved_registrations(scope, session.training_activity_id)
-        |> Map.new(fn registration ->
-          {normalize_email(registration.registrant_user.email), registration}
+        |> Enum.reduce(%{}, fn registration, registrations_by_email ->
+          case Registrations.participant_email(registration) |> normalize_email() do
+            nil -> registrations_by_email
+            email -> Map.put(registrations_by_email, email, registration)
+          end
         end)
 
       result =
@@ -212,6 +262,10 @@ defmodule Tracms.Attendance do
     |> Enum.map_join(" ", &String.capitalize/1)
   end
 
+  def manual_status(nil), do: nil
+  def manual_status(%AttendanceRecord{status: :absent}), do: :absent
+  def manual_status(%AttendanceRecord{}), do: :present
+
   defp transition_session(scope, %AttendanceSession{} = attendance_session, target_status) do
     session = get_session!(scope, attendance_session.id)
 
@@ -260,6 +314,182 @@ defmodule Tracms.Attendance do
     else
       []
     end
+  end
+
+  defp build_management_entries(registrations, attendance_session) do
+    records_by_registration_id =
+      case attendance_session do
+        %AttendanceSession{} = session ->
+          AttendanceRecord
+          |> where([record], record.attendance_session_id == ^session.id)
+          |> preload(^@record_preloads)
+          |> Repo.all()
+          |> Map.new(&{&1.registration_id, &1})
+
+        nil ->
+          %{}
+      end
+
+    Enum.map(registrations, fn registration ->
+      %{registration: registration, record: Map.get(records_by_registration_id, registration.id)}
+    end)
+  end
+
+  defp searchable_attendance_text(entry) do
+    [
+      Registrations.participant_name(entry.registration),
+      Registrations.participant_email(entry.registration),
+      Registrations.participant_organization(entry.registration),
+      entry.registration.training_activity.title
+    ]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join(" ")
+  end
+
+  defp normalize_management_entries(entries_params) when is_list(entries_params) do
+    normalized_entries =
+      Enum.map(entries_params, fn params ->
+        %{
+          registration_id: Map.get(params, "registration_id"),
+          status:
+            params
+            |> Map.get("status")
+            |> normalize_optional_string()
+            |> normalize_management_status(),
+          notes: normalize_optional_string(Map.get(params, "notes"))
+        }
+      end)
+
+    {:ok, normalized_entries}
+  end
+
+  defp normalize_management_entries(entries_params) when is_map(entries_params) do
+    entries_params
+    |> Enum.sort_by(fn {key, _value} -> key end)
+    |> Enum.map(fn {_key, value} -> value end)
+    |> normalize_management_entries()
+  end
+
+  defp normalize_management_entries(_entries_params), do: {:ok, []}
+
+  defp normalize_management_status("present"), do: :present
+  defp normalize_management_status("absent"), do: :absent
+  defp normalize_management_status(_status), do: nil
+
+  defp ensure_attendance_selected(entries) do
+    if Enum.any?(entries, &(&1.status in [:present, :absent])) do
+      :ok
+    else
+      {:error, :no_attendance_selected}
+    end
+  end
+
+  defp ensure_management_session(scope, %TrainingActivity{} = training_activity) do
+    session =
+      scope
+      |> list_sessions(training_activity.id)
+      |> pick_management_session()
+
+    case session do
+      %AttendanceSession{status: :open} = attendance_session ->
+        {:ok, attendance_session}
+
+      %AttendanceSession{status: :draft} = attendance_session ->
+        open_session(scope, attendance_session)
+
+      %AttendanceSession{status: :closed} = attendance_session ->
+        reopen_session(scope, attendance_session)
+
+      nil ->
+        with {:ok, attendance_session} <-
+               create_session(
+                 scope,
+                 training_activity.id,
+                 default_management_session_attrs(training_activity)
+               ),
+             {:ok, open_session} <- open_session(scope, attendance_session) do
+          {:ok, open_session}
+        end
+    end
+  end
+
+  defp management_session_for_save(scope, training_activity, nil) do
+    ensure_management_session(scope, training_activity)
+  end
+
+  defp management_session_for_save(scope, training_activity, session_id) do
+    session =
+      scope
+      |> list_sessions(training_activity.id)
+      |> Enum.find(&(&1.id == session_id))
+
+    case session do
+      %AttendanceSession{status: :open} = attendance_session -> {:ok, attendance_session}
+      %AttendanceSession{} -> {:error, :session_not_open}
+      nil -> {:error, :attendance_session_not_found}
+    end
+  end
+
+  defp reopen_session(scope, %AttendanceSession{} = attendance_session) do
+    session = get_session!(scope, attendance_session.id)
+
+    session
+    |> AttendanceSession.changeset(%{status: :open, opened_by_user_id: scope.user.id})
+    |> Repo.update()
+    |> preload_session_result()
+  end
+
+  defp default_management_session_attrs(training_activity) do
+    %{
+      "name" => "General Attendance",
+      "session_date" => training_activity.starts_on || Date.utc_today(),
+      "starts_at" => ~T[08:00:00],
+      "ends_at" => ~T[17:00:00]
+    }
+  end
+
+  defp save_management_entries(scope, attendance_session, normalized_entries) do
+    normalized_entries
+    |> Enum.filter(&(&1.status in [:present, :absent]))
+    |> Enum.reduce_while({:ok, []}, fn entry, {:ok, records} ->
+      case mark_attendance(scope, attendance_session.id, entry.registration_id, %{
+             status: entry.status,
+             notes: entry.notes
+           }) do
+        {:ok, attendance_record} ->
+          {:cont, {:ok, [attendance_record | records]}}
+
+        {:error, reason} ->
+          {:halt, {:error, reason}}
+      end
+    end)
+    |> case do
+      {:ok, records} ->
+        {:ok,
+         %{
+           attendance_session: attendance_session,
+           attendance_records: Enum.reverse(records),
+           saved_count: length(records)
+         }}
+
+      other ->
+        other
+    end
+  end
+
+  defp pick_management_session([]), do: nil
+
+  defp pick_management_session(attendance_sessions) do
+    reversed_sessions = Enum.reverse(attendance_sessions)
+
+    Enum.find(reversed_sessions, &(&1.status == :open)) ||
+      Enum.find(reversed_sessions, &(&1.status == :draft)) ||
+      List.last(attendance_sessions)
+  end
+
+  defp select_management_session(attendance_sessions, requested_session_id) do
+    Enum.find(attendance_sessions, &(&1.id == requested_session_id)) ||
+      pick_management_session(attendance_sessions)
   end
 
   defp fetch_approved_registration(scope, training_id, registration_id) do

@@ -11,6 +11,8 @@ defmodule Tracms.TrainingsFixtures do
   import Tracms.OrganizationFixtures
 
   def training_activity_fixture(scope, attrs \\ %{}) do
+    today = Date.utc_today()
+
     attrs =
       Enum.into(attrs, %{
         title: "Training #{System.unique_integer([:positive])}",
@@ -21,15 +23,18 @@ defmodule Tracms.TrainingsFixtures do
         modality: :face_to_face,
         venue: "Regional Learning Center",
         venue_address: "Pagadian City, Zamboanga del Sur",
+        resource_speaker: "Regional Learning and Development Team",
         total_hours: 24,
+        start_time: ~T[08:00:00],
+        end_time: ~T[17:00:00],
         objectives: "Strengthen core competencies and deliver practical school-based outputs.",
         target_participants: "Teachers, school heads, and DepEd personnel.",
         participant_qualification: "Must be endorsed by the appropriate office or school head.",
-        registration_opens_on: Date.add(Date.utc_today(), -5),
-        registration_deadline: ~U[2026-08-01 09:00:00Z],
+        registration_opens_on: Date.add(today, -5),
+        registration_deadline: DateTime.add(DateTime.utc_now(:second), 7, :day),
         max_capacity: 120,
-        starts_on: ~D[2026-08-10],
-        ends_on: ~D[2026-08-12],
+        starts_on: Date.add(today, 14),
+        ends_on: Date.add(today, 16),
         attendance_monitoring_method: "QR Code and Manual Verification",
         certificate_type: "Certificate of Participation"
       })
@@ -52,5 +57,19 @@ defmodule Tracms.TrainingsFixtures do
       })
 
     %{user: user, role: role, office: office, scope: Scope.for_user(user)}
+  end
+
+  def completed_training_fixture_for_manager(scope, attrs \\ %{}) do
+    training_activity_fixture(
+      scope,
+      %{
+        status: :completed,
+        registration_opens_on: ~D[2026-06-20],
+        registration_deadline: ~U[2026-07-05 09:00:00Z],
+        starts_on: ~D[2026-07-10],
+        ends_on: ~D[2026-07-12]
+      }
+      |> Map.merge(Enum.into(attrs, %{}))
+    )
   end
 end

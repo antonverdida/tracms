@@ -26,16 +26,34 @@ defmodule TracmsWeb.UserLive.SettingsTest do
       assert %{"error" => "You must log in to access this page."} = flash
     end
 
-    test "redirects if user is not in sudo mode", %{conn: conn} do
-      {:ok, conn} =
+    test "renders settings when the sign-in is older than the sudo window", %{conn: conn} do
+      {:ok, _lv, html} =
         conn
         |> log_in_user(user_fixture(),
           token_authenticated_at: DateTime.add(DateTime.utc_now(:second), -11, :minute)
         )
         |> live(~p"/users/settings")
-        |> follow_redirect(conn, ~p"/users/log-in")
 
-      assert conn.resp_body =~ "You must re-authenticate to access this page."
+      assert html =~ "Profile Information"
+    end
+
+    test "keeps an older session on settings when a sensitive update is submitted", %{conn: conn} do
+      user = user_fixture()
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(user,
+          token_authenticated_at: DateTime.add(DateTime.utc_now(:second), -11, :minute)
+        )
+        |> live(~p"/users/settings")
+
+      result =
+        lv
+        |> form("#email_form", %{"user" => %{"email" => unique_user_email()}})
+        |> render_submit()
+
+      assert result =~ "Profile Information"
+      assert has_element?(lv, "#email_form")
     end
   end
 

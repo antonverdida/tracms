@@ -1,8 +1,6 @@
 defmodule TracmsWeb.UserLive.Settings do
   use TracmsWeb, :live_view
 
-  on_mount {TracmsWeb.UserAuth, :require_sudo_mode}
-
   alias Tracms.Accounts
   alias Tracms.Accounts.Scope
   alias Tracms.Certificates
@@ -25,7 +23,7 @@ defmodule TracmsWeb.UserLive.Settings do
           copy="Manage your profile, access, and security settings."
         >
           <:actions>
-            <.button navigate={~p"/dashboard"} variant="ghost">Back to dashboard</.button>
+            <.button navigate={~p"/dashboard"} variant="ghost">Back to Dashboard</.button>
           </:actions>
         </.portal_page_header>
 
@@ -46,7 +44,7 @@ defmodule TracmsWeb.UserLive.Settings do
                 <.input
                   field={@profile_form[:full_name]}
                   type="text"
-                  label="Full name"
+                  label="Full Name"
                   autocomplete="name"
                   placeholder="Juan Dela Cruz"
                 />
@@ -68,13 +66,13 @@ defmodule TracmsWeb.UserLive.Settings do
                   <div class="feature-copy">{division_name(@current_scope.user)}</div>
                 </div>
                 <div class="feature-card">
-                  <div class="feature-title">Current email</div>
+                  <div class="feature-title">Current Email</div>
                   <div class="feature-copy">{@current_email}</div>
                 </div>
               </div>
 
               <div class="mt-6 flex justify-end">
-                <.button variant="primary" phx-disable-with="Saving...">Save profile</.button>
+                <.button variant="primary" phx-disable-with="Saving...">Save Profile</.button>
               </div>
             </.form>
 
@@ -98,13 +96,13 @@ defmodule TracmsWeb.UserLive.Settings do
                     <.input
                       field={@email_form[:email]}
                       type="email"
-                      label="New email address"
+                      label="New Email Address"
                       autocomplete="username"
                       spellcheck="false"
                       required
                     />
                     <div class="mt-4 flex justify-end">
-                      <.button variant="primary" phx-disable-with="Changing...">Change email</.button>
+                      <.button variant="primary" phx-disable-with="Changing...">Change Email</.button>
                     </div>
                   </.form>
                 </div>
@@ -133,7 +131,7 @@ defmodule TracmsWeb.UserLive.Settings do
                       <.input
                         field={@password_form[:password]}
                         type="password"
-                        label="New password"
+                        label="New Password"
                         autocomplete="new-password"
                         spellcheck="false"
                         required
@@ -141,14 +139,14 @@ defmodule TracmsWeb.UserLive.Settings do
                       <.input
                         field={@password_form[:password_confirmation]}
                         type="password"
-                        label="Confirm new password"
+                        label="Confirm New Password"
                         autocomplete="new-password"
                         spellcheck="false"
                       />
                     </div>
                     <div class="mt-4 flex justify-end">
                       <.button variant="primary" phx-disable-with="Saving...">
-                        Update password
+                        Update Password
                       </.button>
                     </div>
                   </.form>
@@ -158,8 +156,9 @@ defmodule TracmsWeb.UserLive.Settings do
           </section>
 
           <section
-            :if={Scope.system_admin?(@current_scope)}
-            class="panel portal-list-panel md:col-span-2"
+            :if={false}
+            class="hidden"
+            aria-hidden="true"
           >
             <.portal_panel_header
               eyebrow="Certificates"
@@ -178,7 +177,7 @@ defmodule TracmsWeb.UserLive.Settings do
                     <.input
                       field={@certificate_layout_form[:certificate_size]}
                       type="select"
-                      label="Certificate size"
+                      label="Certificate Size"
                       options={Certificates.certificate_size_options()}
                     />
                   </div>
@@ -260,7 +259,7 @@ defmodule TracmsWeb.UserLive.Settings do
                         variant="ghost"
                         phx-click="remove_certificate_layout_asset"
                       >
-                        Remove current photo
+                        Remove Current Photo
                       </.button>
                     </div>
                   </div>
@@ -446,21 +445,24 @@ defmodule TracmsWeb.UserLive.Settings do
   def handle_event("update_email", params, socket) do
     %{"user" => user_params} = params
     user = socket.assigns.current_scope.user
-    true = Accounts.sudo_mode?(user)
 
-    case Accounts.change_user_email(user, user_params) do
-      %{valid?: true} = changeset ->
-        Accounts.deliver_user_update_email_instructions(
-          Ecto.Changeset.apply_action!(changeset, :insert),
-          user.email,
-          &url(~p"/users/settings/confirm-email/#{&1}")
-        )
+    if Accounts.sudo_mode?(user) do
+      case Accounts.change_user_email(user, user_params) do
+        %{valid?: true} = changeset ->
+          Accounts.deliver_user_update_email_instructions(
+            Ecto.Changeset.apply_action!(changeset, :insert),
+            user.email,
+            &url(~p"/users/settings/confirm-email/#{&1}")
+          )
 
-        info = "A link to confirm your email change has been sent to the new address."
-        {:noreply, socket |> put_flash(:info, info)}
+          info = "A link to confirm your email change has been sent to the new address."
+          {:noreply, socket |> put_flash(:info, info)}
 
-      changeset ->
-        {:noreply, assign(socket, :email_form, to_form(changeset, action: :insert))}
+        changeset ->
+          {:noreply, assign(socket, :email_form, to_form(changeset, action: :insert))}
+      end
+    else
+      {:noreply, require_recent_sign_in(socket)}
     end
   end
 
@@ -479,15 +481,22 @@ defmodule TracmsWeb.UserLive.Settings do
   def handle_event("update_password", params, socket) do
     %{"user" => user_params} = params
     user = socket.assigns.current_scope.user
-    true = Accounts.sudo_mode?(user)
 
-    case Accounts.change_user_password(user, user_params) do
-      %{valid?: true} = changeset ->
-        {:noreply, assign(socket, trigger_submit: true, password_form: to_form(changeset))}
+    if Accounts.sudo_mode?(user) do
+      case Accounts.change_user_password(user, user_params) do
+        %{valid?: true} = changeset ->
+          {:noreply, assign(socket, trigger_submit: true, password_form: to_form(changeset))}
 
-      changeset ->
-        {:noreply, assign(socket, password_form: to_form(changeset, action: :insert))}
+        changeset ->
+          {:noreply, assign(socket, password_form: to_form(changeset, action: :insert))}
+      end
+    else
+      {:noreply, require_recent_sign_in(socket)}
     end
+  end
+
+  defp require_recent_sign_in(socket) do
+    put_flash(socket, :error, "Please sign in again before changing your email or password.")
   end
 
   defp profile_attrs(user_params) do

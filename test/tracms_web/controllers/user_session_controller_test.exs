@@ -2,10 +2,15 @@ defmodule TracmsWeb.UserSessionControllerTest do
   use TracmsWeb.ConnCase, async: true
 
   import Tracms.AccountsFixtures
+  import Tracms.OrganizationFixtures
+
   alias Tracms.Accounts
 
   setup do
-    %{unconfirmed_user: unconfirmed_user_fixture(), user: user_fixture()}
+    %{
+      unconfirmed_user: training_manager_user_fixture(false),
+      user: training_manager_user_fixture(true)
+    }
   end
 
   describe "POST /users/log-in - email and password" do
@@ -23,7 +28,7 @@ defmodule TracmsWeb.UserSessionControllerTest do
       # Now do a logged in request and assert on the menu
       conn = get(conn, ~p"/dashboard")
       response = html_response(conn, 200)
-      assert response =~ user.email
+      assert response =~ user.full_name
       assert response =~ ~p"/users/settings"
       assert response =~ ~p"/users/log-out"
     end
@@ -87,7 +92,7 @@ defmodule TracmsWeb.UserSessionControllerTest do
       # Now do a logged in request and assert on the menu
       conn = get(conn, ~p"/dashboard")
       response = html_response(conn, 200)
-      assert response =~ user.email
+      assert response =~ user.full_name
       assert response =~ ~p"/users/settings"
       assert response =~ ~p"/users/log-out"
     end
@@ -111,7 +116,7 @@ defmodule TracmsWeb.UserSessionControllerTest do
       # Now do a logged in request and assert on the menu
       conn = get(conn, ~p"/dashboard")
       response = html_response(conn, 200)
-      assert response =~ user.email
+      assert response =~ user.full_name
       assert response =~ ~p"/users/settings"
       assert response =~ ~p"/users/log-out"
     end
@@ -143,5 +148,27 @@ defmodule TracmsWeb.UserSessionControllerTest do
       refute get_session(conn, :user_token)
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Logged out successfully"
     end
+  end
+
+  defp training_manager_user_fixture(confirmed?) do
+    role = named_role_fixture("training_coordinator")
+    office = office_fixture()
+
+    user =
+      if confirmed? do
+        user_fixture()
+      else
+        unconfirmed_user_fixture()
+      end
+
+    {:ok, user} =
+      Accounts.update_user_profile(user, %{
+        role_id: role.id,
+        office_id: office.id,
+        status: :active,
+        full_name: "Manager #{System.unique_integer([:positive])}"
+      })
+
+    user
   end
 end

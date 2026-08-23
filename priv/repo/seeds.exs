@@ -383,7 +383,7 @@ instructional_coaching_program =
 
 learning_recovery_bootcamp =
   ensure_training.(%{
-    title: "Learning Recovery Bootcamp",
+    title: "Learning Recovery and Acceleration Program",
     description:
       "Completed regional intervention program on learning recovery strategies, remediation planning, and classroom monitoring.",
     objectives:
@@ -729,7 +729,7 @@ Enum.each(
     %{
       attendance_session_id: bootcamp_day_1.id,
       registration_id:
-        registration_for.("Learning Recovery Bootcamp", "juan.cruz@deped.gov.ph").id,
+        registration_for.("Learning Recovery and Acceleration Program", "juan.cruz@deped.gov.ph").id,
       marked_by_user_id: coordinator_user.id,
       marked_at: ~U[2026-07-01 08:03:00Z],
       status: :present
@@ -737,7 +737,10 @@ Enum.each(
     %{
       attendance_session_id: bootcamp_day_1.id,
       registration_id:
-        registration_for.("Learning Recovery Bootcamp", "maria.santos@deped.gov.ph").id,
+        registration_for.(
+          "Learning Recovery and Acceleration Program",
+          "maria.santos@deped.gov.ph"
+        ).id,
       marked_by_user_id: coordinator_user.id,
       marked_at: ~U[2026-07-01 08:06:00Z],
       status: :present
@@ -745,7 +748,10 @@ Enum.each(
     %{
       attendance_session_id: bootcamp_day_1.id,
       registration_id:
-        registration_for.("Learning Recovery Bootcamp", "pedro.garcia@deped.gov.ph").id,
+        registration_for.(
+          "Learning Recovery and Acceleration Program",
+          "pedro.garcia@deped.gov.ph"
+        ).id,
       marked_by_user_id: coordinator_user.id,
       marked_at: ~U[2026-07-01 08:25:00Z],
       status: :absent
@@ -753,7 +759,7 @@ Enum.each(
     %{
       attendance_session_id: bootcamp_day_2.id,
       registration_id:
-        registration_for.("Learning Recovery Bootcamp", "juan.cruz@deped.gov.ph").id,
+        registration_for.("Learning Recovery and Acceleration Program", "juan.cruz@deped.gov.ph").id,
       marked_by_user_id: coordinator_user.id,
       marked_at: ~U[2026-07-02 08:02:00Z],
       status: :present
@@ -761,7 +767,10 @@ Enum.each(
     %{
       attendance_session_id: bootcamp_day_2.id,
       registration_id:
-        registration_for.("Learning Recovery Bootcamp", "maria.santos@deped.gov.ph").id,
+        registration_for.(
+          "Learning Recovery and Acceleration Program",
+          "maria.santos@deped.gov.ph"
+        ).id,
       marked_by_user_id: coordinator_user.id,
       marked_at: ~U[2026-07-02 08:09:00Z],
       status: :late
@@ -769,7 +778,10 @@ Enum.each(
     %{
       attendance_session_id: bootcamp_day_2.id,
       registration_id:
-        registration_for.("Learning Recovery Bootcamp", "pedro.garcia@deped.gov.ph").id,
+        registration_for.(
+          "Learning Recovery and Acceleration Program",
+          "pedro.garcia@deped.gov.ph"
+        ).id,
       marked_by_user_id: coordinator_user.id,
       marked_at: ~U[2026-07-02 08:20:00Z],
       status: :absent
@@ -796,7 +808,7 @@ Enum.each(
   [
     %{
       registration_id:
-        registration_for.("Learning Recovery Bootcamp", "juan.cruz@deped.gov.ph").id,
+        registration_for.("Learning Recovery and Acceleration Program", "juan.cruz@deped.gov.ph").id,
       submitted_by_user_id: Enum.at(participant_users, 0).id,
       submitted_at: ~U[2026-07-03 13:00:00Z],
       overall_rating: 5,
@@ -805,7 +817,10 @@ Enum.each(
     },
     %{
       registration_id:
-        registration_for.("Learning Recovery Bootcamp", "maria.santos@deped.gov.ph").id,
+        registration_for.(
+          "Learning Recovery and Acceleration Program",
+          "maria.santos@deped.gov.ph"
+        ).id,
       submitted_by_user_id: Enum.at(participant_users, 1).id,
       submitted_at: ~U[2026-07-03 13:15:00Z],
       overall_rating: 4,
@@ -835,7 +850,7 @@ Enum.each(
   [
     %{
       registration_id:
-        registration_for.("Learning Recovery Bootcamp", "juan.cruz@deped.gov.ph").id,
+        registration_for.("Learning Recovery and Acceleration Program", "juan.cruz@deped.gov.ph").id,
       issued_by_user_id: coordinator_user.id,
       certificate_number: "DEPED9-DEMO-0001",
       certificate_type: "Certificate of Completion",
@@ -844,7 +859,10 @@ Enum.each(
     },
     %{
       registration_id:
-        registration_for.("Learning Recovery Bootcamp", "maria.santos@deped.gov.ph").id,
+        registration_for.(
+          "Learning Recovery and Acceleration Program",
+          "maria.santos@deped.gov.ph"
+        ).id,
       issued_by_user_id: coordinator_user.id,
       certificate_number: "DEPED9-DEMO-0002",
       certificate_type: "Certificate of Completion",
@@ -873,6 +891,6 @@ Additional sample accounts:
 Sample trainings created or refreshed:
   - Digital Education Trends (published)
   - Instructional Coaching Program (in progress)
-  - Learning Recovery Bootcamp (completed)
+  - Learning Recovery and Acceleration Program (completed)
   - Regional ICT Planning Workshop (draft)
 """)

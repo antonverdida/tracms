@@ -27,6 +27,45 @@ defmodule TracmsWeb.PortalComponents do
     """
   end
 
+  attr :eyebrow, :string, required: true
+  attr :title, :string, required: true
+  attr :copy, :string, default: nil
+  attr :nav_items, :list, required: true
+
+  slot :actions
+
+  def training_workspace_header(assigns) do
+    ~H"""
+    <section class="space-y-5">
+      <.portal_page_header eyebrow={@eyebrow} title={@title} copy={@copy}>
+        <:actions>{render_slot(@actions)}</:actions>
+      </.portal_page_header>
+
+      <nav
+        :if={@nav_items != []}
+        aria-label="Training workspace"
+        class="rounded-[28px] border border-slate-200 bg-white/90 p-3 shadow-sm"
+      >
+        <div class="flex flex-wrap gap-2">
+          <.link
+            :for={item <- @nav_items}
+            navigate={item.path}
+            class={[
+              "inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold transition",
+              item.active? &&
+                "bg-[var(--tracms-primary)] text-white shadow-[0_16px_30px_rgba(15,74,146,0.18)]",
+              !item.active? &&
+                "border border-slate-200 bg-slate-50 text-slate-600 hover:border-[var(--tracms-primary)] hover:text-[var(--tracms-primary)]"
+            ]}
+          >
+            {item.label}
+          </.link>
+        </div>
+      </nav>
+    </section>
+    """
+  end
+
   attr :cards, :list, required: true
 
   def portal_stat_grid(assigns) do

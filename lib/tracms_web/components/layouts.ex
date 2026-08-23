@@ -84,46 +84,25 @@ defmodule TracmsWeb.Layouts do
         <nav class="nav-links" aria-label="Primary">
           <%= if @current_scope && @current_scope.user do %>
             <.link navigate={~p"/dashboard"} class="nav-link">Dashboard</.link>
-            <.link
-              :if={Tracms.Accounts.Scope.training_manager?(@current_scope)}
-              navigate={~p"/trainings"}
-              class="nav-link"
-            >
+            <.link navigate={~p"/trainings"} class="nav-link">
               Training Management
             </.link>
-            <.link
-              navigate={
-                if Tracms.Accounts.Scope.training_manager?(@current_scope),
-                  do: ~p"/registrations",
-                  else: ~p"/catalog/trainings"
-              }
-              class="nav-link"
-            >
+            <.link navigate={~p"/registrations"} class="nav-link">
               Registrations
             </.link>
-            <.link navigate={~p"/certificates"} class="nav-link">Certificates</.link>
-            <.link
-              :if={Tracms.Accounts.Scope.training_manager?(@current_scope)}
-              navigate={~p"/reports"}
-              class="nav-link"
-            >
-              Reports
+            <.link navigate={~p"/attendance"} class="nav-link">
+              Attendance
             </.link>
-            <.link
-              :if={Tracms.Accounts.Scope.training_manager?(@current_scope)}
-              navigate={~p"/google-integration"}
-              class="nav-link"
-            >
-              Google Integration
+            <.link navigate={~p"/certificates"} class="nav-link">
+              Certificates
             </.link>
-            <.link navigate={~p"/documents"} class="nav-link">Documents</.link>
             <.link navigate={~p"/users/settings"} class="nav-link">Settings</.link>
             <span class="nav-user">{@current_scope.user.email}</span>
-            <.button href={~p"/users/log-out"} method="delete" variant="ghost">Log out</.button>
+            <.button href={~p"/users/log-out"} method="delete" variant="ghost">Log Out</.button>
           <% else %>
             <.link navigate={~p"/"} class="nav-link">Home</.link>
             <.button :if={@variant != "auth"} navigate={~p"/users/log-in"} variant="secondary">
-              Log in
+              Log In
             </.button>
           <% end %>
         </nav>
@@ -152,7 +131,7 @@ defmodule TracmsWeb.Layouts do
                 <span class="dashboard-profile-name">{user_display_name(@current_scope.user)}</span>
               </div>
             </div>
-            <.button href={~p"/users/log-out"} method="delete" variant="ghost">Log out</.button>
+            <.button href={~p"/users/log-out"} method="delete" variant="ghost">Log Out</.button>
           </div>
         </div>
       </div>
@@ -165,48 +144,26 @@ defmodule TracmsWeb.Layouts do
           >
             Dashboard
           </.link>
-          <.link
-            :if={Tracms.Accounts.Scope.training_manager?(@current_scope)}
-            navigate={~p"/trainings"}
-            class={dashboard_menu_link_class(@active_nav, "trainings")}
-          >
+          <.link navigate={~p"/trainings"} class={dashboard_menu_link_class(@active_nav, "trainings")}>
             Training Management
           </.link>
           <.link
-            navigate={
-              if Tracms.Accounts.Scope.training_manager?(@current_scope),
-                do: ~p"/registrations",
-                else: ~p"/catalog/trainings"
-            }
+            navigate={~p"/registrations"}
             class={dashboard_menu_link_class(@active_nav, "registrations")}
           >
             Registrations
+          </.link>
+          <.link
+            navigate={~p"/attendance"}
+            class={dashboard_menu_link_class(@active_nav, "attendance")}
+          >
+            Attendance
           </.link>
           <.link
             navigate={~p"/certificates"}
             class={dashboard_menu_link_class(@active_nav, "certificates")}
           >
             Certificates
-          </.link>
-          <.link
-            :if={Tracms.Accounts.Scope.training_manager?(@current_scope)}
-            navigate={~p"/reports"}
-            class={dashboard_menu_link_class(@active_nav, "reports")}
-          >
-            Reports
-          </.link>
-          <.link
-            :if={Tracms.Accounts.Scope.training_manager?(@current_scope)}
-            navigate={~p"/google-integration"}
-            class={dashboard_menu_link_class(@active_nav, "google_integration")}
-          >
-            Google Integration
-          </.link>
-          <.link
-            navigate={~p"/documents"}
-            class={dashboard_menu_link_class(@active_nav, "documents")}
-          >
-            Documents
           </.link>
           <.link
             navigate={~p"/users/settings"}

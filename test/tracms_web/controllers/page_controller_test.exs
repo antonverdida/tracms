@@ -1,8 +1,8 @@
 defmodule TracmsWeb.PageControllerTest do
   use TracmsWeb.ConnCase
 
-  test "GET /", %{conn: conn} do
+  test "GET / redirects visitors to sign in", %{conn: conn} do
     conn = get(conn, ~p"/")
-    assert html_response(conn, 200) =~ "Training management for DepEd Region IX."
+    assert redirected_to(conn) == ~p"/users/log-in"
   end
 end

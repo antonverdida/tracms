@@ -30,7 +30,9 @@ defmodule TracmsWeb.TrainingLive.Reports do
           copy="Review accomplishment-style summaries across trainings, registrations, attendance, and completion."
         >
           <:actions>
-            <.button navigate={~p"/trainings"} variant="ghost">Training management</.button>
+            <.button navigate={~p"/trainings"} variant="ghost">Training Management</.button>
+            <.button navigate={~p"/registrations"} variant="ghost">Registrations</.button>
+            <.button navigate={~p"/attendance"} variant="ghost">Attendance</.button>
           </:actions>
         </.portal_page_header>
 
@@ -58,7 +60,6 @@ defmodule TracmsWeb.TrainingLive.Reports do
             <.portal_panel_header
               eyebrow="Training accomplishment"
               title="Training performance summary"
-              meta={training_caption(@training_rows)}
             />
 
             <div class="data-table-wrap">
@@ -107,6 +108,7 @@ defmodule TracmsWeb.TrainingLive.Reports do
                 </tbody>
               </table>
             </div>
+            <p class="mt-4 text-right text-sm text-slate-500">{training_caption(@training_rows)}</p>
           </section>
 
           <section class="content-grid">
@@ -403,7 +405,7 @@ defmodule TracmsWeb.TrainingLive.Reports do
         "amber",
         "Registration Review",
         "Open participant review records.",
-        ~p"/trainings/#{first.id}/registrations"
+        ~p"/registrations?training_id=#{first.id}&view=manage"
       ),
       quick_action(
         "hero-document-check",

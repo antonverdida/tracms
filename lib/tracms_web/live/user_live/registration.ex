@@ -142,8 +142,8 @@ defmodule TracmsWeb.UserLive.Registration do
                 </p>
               </div>
 
-              <.button phx-disable-with="Creating account..." class="w-full auth-portal-submit">
-                <.icon name="hero-paper-airplane" class="size-5" /> Create account
+              <.button phx-disable-with="Creating Account..." class="w-full auth-portal-submit">
+                <.icon name="hero-paper-airplane" class="size-5" /> Create Account
               </.button>
             </.form>
 

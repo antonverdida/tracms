@@ -24,8 +24,8 @@ defmodule TracmsWeb.Router do
   scope "/", TracmsWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
     get "/verify/certificates", CertificateVerificationController, :index
+    get "/verify/certificates/scan/:verification_code", CertificateVerificationController, :scan
     get "/verify/certificates/:certificate_number", CertificateVerificationController, :show
   end
 
@@ -56,21 +56,13 @@ defmodule TracmsWeb.Router do
   scope "/", TracmsWeb do
     pipe_through [:browser, :require_authenticated_user]
 
+    get "/", PageController, :dashboard
     get "/dashboard", PageController, :dashboard
-    get "/certificates/:id/print", CertificateDocumentController, :participant_print
-    get "/certificates/:id/export", CertificateDocumentController, :participant_export
 
     live_session :require_authenticated_user,
       on_mount: [{TracmsWeb.UserAuth, :require_authenticated}] do
       live "/users/settings", UserLive.Settings, :edit
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
-      live "/catalog/trainings", RegistrationLive.Catalog, :index
-      live "/catalog/trainings/:id", RegistrationLive.Show, :show
-      live "/my/registrations", RegistrationLive.MyIndex, :index
-      live "/certificates", CertificateLive.MyIndex, :index
-      live "/certificates/:id", CertificateLive.Show, :show
-      live "/my/registrations/:registration_id/evaluation", RegistrationLive.Evaluation, :edit
-      live "/documents", PortalLive.Documents, :index
     end
 
     post "/users/update-password", UserSessionController, :update_password
@@ -83,27 +75,28 @@ defmodule TracmsWeb.Router do
         CertificateDocumentController,
         :manager_bulk_export
 
+    get "/attendance/export/excel", AttendanceExportController, :excel
+    get "/attendance/export/pdf", AttendanceExportController, :pdf
+    get "/registrations/export/excel", RegistrationExportController, :excel
+    get "/registrations/export/pdf", RegistrationExportController, :pdf
+
     live_session :training_management,
       on_mount: [
         {TracmsWeb.UserAuth, :require_authenticated},
         {TracmsWeb.TrainingLive.Auth, :require_training_manager}
       ] do
       live "/trainings", TrainingLive.Index, :index
+      live "/attendance", TrainingLive.AttendanceIndex, :index
       live "/registrations", TrainingLive.RegistrationManagement, :index
+      live "/certificates", TrainingLive.Certificates, :index
       live "/reports", TrainingLive.Reports, :index
-      live "/google-integration", PortalLive.GoogleIntegration, :index
       live "/trainings/new", TrainingLive.Form, :new
       live "/trainings/:id/edit", TrainingLive.Form, :edit
       live "/trainings/:id", TrainingLive.Show, :show
       live "/registrations/trainings/:training_id", TrainingLive.RegistrationRegister, :index
       live "/trainings/:training_id/integrations", TrainingLive.Integrations, :index
-      live "/trainings/:training_id/registrations", TrainingLive.Registrations, :index
       live "/trainings/:training_id/completion", TrainingLive.Completion, :index
       live "/certificates/trainings/:training_id", TrainingLive.Certificates, :index
-
-      live "/certificates/trainings/:training_id/:certificate_id",
-           TrainingLive.CertificateShow,
-           :show
     end
   end
 

@@ -5,96 +5,15 @@ defmodule TracmsWeb.UserLive.Login do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope} variant="auth">
-      <section class="auth-stage auth-portal-stage">
-        <article class="auth-brand-panel auth-portal-brand-panel">
-          <div class="auth-portal-brand-top">
-            <img
-              src={~p"/images/tracms-region-ix-logo.png"}
-              alt="TRACMS Region IX logo"
-              class="auth-portal-brand-logo"
-            />
-            <div class="auth-portal-brand-lockup">
-              <p class="auth-portal-brand-overline">Department of Education</p>
-              <p class="auth-portal-brand-region">Region IX</p>
-            </div>
-          </div>
-
-          <div class="auth-brand-stack">
-            <p class="auth-portal-brand-divider"></p>
-            <h1 class="auth-portal-brand-system">TRACMS</h1>
-            <h2 class="auth-portal-brand-title">
-              Training, Registration, Attendance, and Certification Management System
-            </h2>
-            <p class="auth-brand-copy">
-              A centralized platform for managing training activities, participant
-              registration, attendance monitoring, digital certification, and professional
-              development records for DepEd Region IX.
-            </p>
-          </div>
-
-          <div class="auth-portal-feature-list">
-            <div class="auth-portal-feature-item">
-              <div class="auth-portal-feature-icon">
-                <.icon name="hero-book-open" class="size-7" />
-              </div>
-              <div>
-                <p class="auth-portal-feature-title">Training Management</p>
-                <p class="auth-portal-feature-copy">
-                  Create, manage, and monitor training activities.
-                </p>
-              </div>
-            </div>
-
-            <div class="auth-portal-feature-item">
-              <div class="auth-portal-feature-icon">
-                <.icon name="hero-users" class="size-7" />
-              </div>
-              <div>
-                <p class="auth-portal-feature-title">Participant Registration</p>
-                <p class="auth-portal-feature-copy">
-                  Online registration and participant management.
-                </p>
-              </div>
-            </div>
-
-            <div class="auth-portal-feature-item">
-              <div class="auth-portal-feature-icon">
-                <.icon name="hero-clipboard-document-check" class="size-7" />
-              </div>
-              <div>
-                <p class="auth-portal-feature-title">Attendance Tracking</p>
-                <p class="auth-portal-feature-copy">Manual and QR-based attendance monitoring.</p>
-              </div>
-            </div>
-
-            <div class="auth-portal-feature-item">
-              <div class="auth-portal-feature-icon">
-                <.icon name="hero-academic-cap" class="size-7" />
-              </div>
-              <div>
-                <p class="auth-portal-feature-title">Digital Certificates</p>
-                <p class="auth-portal-feature-copy">
-                  Automated certificate generation and distribution.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div class="auth-portal-brand-surface" aria-hidden="true"></div>
-        </article>
-
+      <section class="auth-stage auth-portal-stage auth-portal-login-stage">
         <article class="auth-portal-pane">
-          <div class="auth-portal-security-head">
-            <div class="auth-portal-security-icon">
-              <.icon name="hero-shield-check" class="size-10" />
-            </div>
-            <p class="auth-portal-security-kicker">Secure Access</p>
-            <p class="auth-portal-security-copy">Authorized DepEd Region IX personnel only.</p>
-          </div>
-
-          <article class="auth-card auth-portal-card">
+          <article class="auth-card auth-portal-card auth-portal-login-card">
             <div class="auth-portal-avatar">
-              <.icon name="hero-user-circle" class="size-11" />
+              <img
+                src={~p"/images/tracms-region-ix-logo.png"}
+                alt="TRACMS Region IX logo"
+                class="auth-portal-card-logo"
+              />
             </div>
 
             <div class="auth-card-header auth-portal-card-header">
@@ -167,7 +86,7 @@ defmodule TracmsWeb.UserLive.Login do
                   <.input
                     field={f[:remember_me]}
                     type="checkbox"
-                    label="Remember me on this device"
+                    label="Remember Me on This Device"
                     class="auth-portal-checkbox"
                   />
                 </div>

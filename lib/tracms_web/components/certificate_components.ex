@@ -37,6 +37,7 @@ defmodule TracmsWeb.CertificateComponents do
         "certificate-sheet",
         "certificate-sheet-size-#{certificate_size(@layout_settings)}",
         "certificate-sheet-#{certificate_layout_style(@layout_settings)}",
+        !@custom_asset_path && "certificate-sheet-upload-required",
         @custom_asset_path && "certificate-sheet-has-custom-art",
         @custom_asset_path && "certificate-sheet-custom-layout"
       ]}
@@ -77,93 +78,62 @@ defmodule TracmsWeb.CertificateComponents do
           </a>
         </div>
       <% else %>
-        <div class="certificate-sheet-inner">
-          <header class="certificate-sheet-header">
-            <div class="certificate-brand-block">
-              <img
-                src={~p"/images/tracms-region-ix-logo.png"}
-                alt="TRACMS Region IX logo"
-                class="certificate-brand-logo"
-              />
-              <div>
-                <p class="certificate-brand-eyebrow">{@layout_settings.header_title}</p>
-                <h1 class="certificate-brand-title">{@layout_settings.header_subtitle}</h1>
-                <p class="certificate-brand-copy">Official training certificate record</p>
-              </div>
-            </div>
+        <div class="certificate-layout-empty-state">
+          <div class="certificate-layout-empty-icon">
+            <.icon name="hero-photo" class="size-8" />
+          </div>
 
-            <div class="certificate-badge">
-              <.icon name="hero-academic-cap" class="size-8" />
-            </div>
-          </header>
-
-          <section class="certificate-hero">
-            <p class="certificate-kicker">Official Training Credential</p>
-            <h2 class="certificate-title">{@certificate.certificate_type}</h2>
-            <p class="certificate-copy">{@layout_settings.body_intro}</p>
-            <p class="certificate-participant">{@participant_name}</p>
-            <p class="certificate-copy">{@layout_settings.completion_statement}</p>
-            <p class="certificate-training-title">
-              {@certificate.registration.training_activity.title}
+          <div class="certificate-layout-empty-copy">
+            <p class="certificate-layout-empty-eyebrow">Upload Required</p>
+            <h2 class="certificate-layout-empty-title">No certificate layout uploaded yet</h2>
+            <p class="certificate-layout-empty-text">
+              Upload a certificate layout image in Settings so certificate preview, PDF download,
+              and print output use your official design instead of a hardcoded template.
             </p>
-          </section>
+          </div>
 
-          <section class="certificate-details-grid">
-            <div class="certificate-detail-card">
-              <p class="certificate-detail-label">Training Schedule</p>
-              <p class="certificate-detail-value">
+          <div class="certificate-layout-empty-meta">
+            <div class="certificate-layout-empty-card">
+              <p class="certificate-layout-empty-label">Participant Name</p>
+              <p class="certificate-layout-empty-value">{@participant_name}</p>
+            </div>
+            <div class="certificate-layout-empty-card">
+              <p class="certificate-layout-empty-label">Training Title</p>
+              <p class="certificate-layout-empty-value">
+                {@certificate.registration.training_activity.title}
+              </p>
+            </div>
+            <div class="certificate-layout-empty-card">
+              <p class="certificate-layout-empty-label">Training Date</p>
+              <p class="certificate-layout-empty-value">
                 {format_date(@certificate.registration.training_activity.starts_on)} to {format_date(
                   @certificate.registration.training_activity.ends_on
                 )}
               </p>
             </div>
-
-            <div class="certificate-detail-card">
-              <p class="certificate-detail-label">Certificate Number</p>
-              <p class="certificate-detail-value">{@certificate.certificate_number}</p>
-            </div>
-
-            <div class="certificate-detail-card">
-              <p class="certificate-detail-label">Issued On</p>
-              <p class="certificate-detail-value">{format_date(@certificate.issued_on)}</p>
-            </div>
-
-            <div class="certificate-detail-card">
-              <p class="certificate-detail-label">Issuing Office</p>
-              <p class="certificate-detail-value">
-                {effective_issuing_office(@layout_settings, @scope_label, @certificate)}
+            <div class="certificate-layout-empty-card">
+              <p class="certificate-layout-empty-label">Venue</p>
+              <p class="certificate-layout-empty-value">
+                {@certificate.registration.training_activity.venue || "Venue to be announced"}
               </p>
             </div>
-          </section>
-
-          <section class="certificate-body-note">
-            <p>
-              This certificate record was issued through TRACMS for authorized DepEd Region IX
-              training documentation and participant records management.
-            </p>
-          </section>
-
-          <footer class="certificate-footer">
-            <div class="certificate-signature-block">
-              <div class="certificate-signature-line"></div>
-              <p class="certificate-signature-name">{@issued_by_name}</p>
-              <p class="certificate-signature-role">{@layout_settings.signature_label}</p>
+            <div class="certificate-layout-empty-card">
+              <p class="certificate-layout-empty-label">Certificate Number</p>
+              <p class="certificate-layout-empty-value">{@certificate.certificate_number}</p>
             </div>
-
-            <div class="certificate-meta-block">
-              <p class="certificate-meta-label">Record Status</p>
-              <p class="certificate-meta-value">{certificate_status(@certificate.delivery_status)}</p>
+            <div class="certificate-layout-empty-card">
+              <p class="certificate-layout-empty-label">Facilitator or Signatory</p>
+              <p class="certificate-layout-empty-value">{@issued_by_name}</p>
             </div>
-          </footer>
+          </div>
         </div>
       <% end %>
     </article>
     """
   end
 
-  def certificate_participant_name(%{registration: %{registrant_user: registrant_user}}) do
-    registrant_user.full_name || registrant_user.email
-  end
+  def certificate_participant_name(%{registration: registration}),
+    do: Tracms.Registrations.participant_name(registration)
 
   def certificate_issued_by_name(%{issued_by_user: %{full_name: full_name, email: email}}) do
     full_name || email
@@ -252,12 +222,6 @@ defmodule TracmsWeb.CertificateComponents do
     }
   end
 
-  defp effective_issuing_office(layout_settings, scope_label, certificate) do
-    Map.get(layout_settings, :issuing_office_label) ||
-      scope_label ||
-      certificate_scope_label(certificate)
-  end
-
   defp certificate_asset_image_path(layout_settings) do
     asset_path = Map.get(layout_settings, :asset_path)
     asset_content_type = Map.get(layout_settings, :asset_content_type)
@@ -267,9 +231,9 @@ defmodule TracmsWeb.CertificateComponents do
     end
   end
 
-  defp certificate_verification_url(%{certificate_number: certificate_number})
-       when is_binary(certificate_number) and certificate_number != "" do
-    url(~p"/verify/certificates/#{certificate_number}")
+  defp certificate_verification_url(%{verification_code: verification_code})
+       when is_binary(verification_code) and verification_code != "" do
+    url(~p"/verify/certificates/scan/#{verification_code}")
   end
 
   defp certificate_verification_url(_certificate), do: nil
@@ -340,12 +304,5 @@ defmodule TracmsWeb.CertificateComponents do
       true ->
         "DepEd Region IX"
     end
-  end
-
-  defp certificate_status(status) when is_atom(status) do
-    status
-    |> Atom.to_string()
-    |> String.replace("_", " ")
-    |> String.capitalize()
   end
 end
