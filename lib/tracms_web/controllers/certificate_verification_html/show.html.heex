@@ -100,7 +100,7 @@
                   DELIVERY STATUS
                 </dt>
                 <dd class="mt-1 text-sm font-semibold text-slate-900">
-                  {String.replace(to_string(@certificate.delivery_status), "_", " ")
+                  {Tracms.Certificates.format_delivery_status(@certificate.delivery_status)
                   |> String.upcase()}
                 </dd>
               </div>
@@ -137,7 +137,11 @@
             CERTIFICATE NOT FOUND
           </h1>
           <p class="section-copy">
-            No TRACMS certificate record was found for certificate number <span class="font-semibold text-slate-900">{@certificate_number}</span>.
+            <%= if @verification_error == :revoked do %>
+              This certificate has been revoked and is no longer valid in the official TRACMS registry.
+            <% else %>
+              No valid TRACMS certificate record was found for this verification link or certificate number.
+            <% end %>
           </p>
           <div class="flex flex-wrap items-center gap-3">
             <.button navigate={~p"/verify/certificates"}>Back To Verifier</.button>

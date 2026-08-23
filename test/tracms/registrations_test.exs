@@ -30,6 +30,28 @@ defmodule Tracms.RegistrationsTest do
                Registrations.register_user_for_training(participant.scope, training_activity.id)
     end
 
+    test "register_user_for_training/3 supports published trainings without schedule limits" do
+      participant = participant_scope_fixture()
+      %{scope: scope} = training_manager_scope_fixture("training_coordinator")
+
+      training_activity =
+        training_activity_fixture(scope, %{
+          status: :published,
+          published_at: DateTime.utc_now(:second),
+          registration_opens_on: nil,
+          registration_deadline: nil,
+          max_capacity: nil,
+          starts_on: nil,
+          ends_on: nil,
+          total_hours: nil
+        })
+
+      assert {:ok, registration} =
+               Registrations.register_user_for_training(participant.scope, training_activity.id)
+
+      assert registration.training_activity_id == training_activity.id
+    end
+
     test "list_open_training_activities/1 excludes already registered trainings" do
       participant = participant_scope_fixture()
       training_activity = published_training_fixture()

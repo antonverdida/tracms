@@ -54,7 +54,7 @@ defmodule TracmsWeb.TrainingLive.RegistrationRegister do
           copy="Review the registered participants for this training."
         >
           <:actions>
-            <.button navigate={~p"/registrations"} variant="ghost">Back to registrations</.button>
+            <.button navigate={~p"/registrations"} variant="ghost">Back to Registrations</.button>
           </:actions>
         </.portal_page_header>
 
@@ -94,7 +94,7 @@ defmodule TracmsWeb.TrainingLive.RegistrationRegister do
                   id="registration-search-form"
                   phx-change="filter_registrations"
                 >
-                  <div class="relative w-full min-w-[18rem] max-w-md">
+                  <div class="relative w-full min-w-[18rem] sm:w-96 lg:w-[28rem]">
                     <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-[var(--tracms-text-muted)]">
                       <.icon name="hero-magnifying-glass" class="size-5" />
                     </span>
@@ -146,7 +146,7 @@ defmodule TracmsWeb.TrainingLive.RegistrationRegister do
   end
 
   defp participant_name(registration) do
-    registration.registrant_user.full_name || registration.registrant_user.email
+    Registrations.participant_name(registration)
   end
 
   defp assign_filtered_registrations(socket) do

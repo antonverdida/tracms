@@ -9,10 +9,12 @@ defmodule TracmsWeb.UserLive.LoginTest do
       {:ok, _lv, html} = live(conn, ~p"/users/log-in")
 
       assert html =~ "Welcome Back!"
-      assert html =~ "Authorized DepEd Region IX personnel only."
-      assert html =~ "Department of Education"
-      assert html =~ "Training Management"
       assert html =~ "Security Notice"
+      assert html =~ ~s(alt="TRACMS Region IX logo")
+      refute html =~ "Secure Access"
+      refute html =~ "Authorized DepEd Region IX personnel only."
+      refute html =~ "Training Management"
+      refute html =~ "Create, manage, and monitor training activities."
       refute html =~ "Send secure sign-in link"
       refute html =~ "Create account"
     end

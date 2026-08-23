@@ -95,6 +95,10 @@ defmodule Tracms.Trainings do
     end
   end
 
+  def change_training_integration(%TrainingActivity{} = training_activity, attrs \\ %{}) do
+    TrainingActivity.integration_changeset(training_activity, attrs)
+  end
+
   def change_training_certificate_layout(%TrainingActivity{} = training_activity, attrs \\ %{}) do
     TrainingActivity.certificate_layout_changeset(training_activity, attrs)
   end
@@ -141,6 +145,33 @@ defmodule Tracms.Trainings do
 
   def change_training_activity(%TrainingActivity{} = training_activity, attrs \\ %{}) do
     TrainingActivity.changeset(training_activity, attrs)
+  end
+
+  def update_training_status(scope, %TrainingActivity{} = training_activity, target_status)
+      when is_atom(target_status) do
+    with true <- Scope.training_manager?(scope),
+         true <- accessible_to_scope?(scope, training_activity),
+         {:ok, attrs, action} <- status_transition(training_activity, target_status) do
+      Multi.new()
+      |> Multi.update(
+        :training_activity,
+        training_activity
+        |> TrainingActivity.changeset(attrs)
+      )
+      |> Multi.run(:approval_entry, fn repo, %{training_activity: updated_training_activity} ->
+        insert_training_approval(repo, scope, updated_training_activity, %{
+          action: action,
+          from_status: training_activity.status,
+          to_status: updated_training_activity.status
+        })
+      end)
+      |> Repo.transaction()
+      |> transaction_result(:training_activity)
+      |> preload_result()
+    else
+      false -> {:error, :unauthorized}
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   def editable?(%TrainingActivity{status: status}) do
@@ -239,10 +270,40 @@ defmodule Tracms.Trainings do
   end
 
   def format_status(status) when is_atom(status) do
-    status
-    |> Atom.to_string()
-    |> String.split("_")
-    |> Enum.map_join(" ", &String.capitalize/1)
+    case status do
+      :draft ->
+        "Draft"
+
+      :pending_division_approval ->
+        "Pending Division Approval"
+
+      :pending_region_approval ->
+        "Pending Region Approval"
+
+      :published ->
+        "Open for Registration"
+
+      :registration_closed ->
+        "Registration Closed"
+
+      :in_progress ->
+        "Ongoing"
+
+      :completed ->
+        "Completed"
+
+      :cancelled ->
+        "Cancelled"
+
+      :archived ->
+        "Archived"
+
+      _ ->
+        status
+        |> Atom.to_string()
+        |> String.split("_")
+        |> Enum.map_join(" ", &String.capitalize/1)
+    end
   end
 
   defp scope_query(query, scope) do
@@ -350,6 +411,42 @@ defmodule Tracms.Trainings do
   end
 
   defp revision_return_transition(_scope, _training_activity), do: {:error, :invalid_transition}
+
+  defp status_transition(%TrainingActivity{status: :published}, :registration_closed) do
+    {:ok, %{status: :registration_closed}, :closed_registration}
+  end
+
+  defp status_transition(%TrainingActivity{status: :registration_closed}, :published) do
+    {:ok, %{status: :published}, :reopened_registration}
+  end
+
+  defp status_transition(%TrainingActivity{status: status}, :in_progress)
+       when status in [:published, :registration_closed] do
+    {:ok, %{status: :in_progress}, :started}
+  end
+
+  defp status_transition(%TrainingActivity{status: :in_progress}, :completed) do
+    {:ok, %{status: :completed}, :completed}
+  end
+
+  defp status_transition(%TrainingActivity{status: status}, :cancelled)
+       when status in [
+              :draft,
+              :pending_division_approval,
+              :pending_region_approval,
+              :published,
+              :registration_closed,
+              :in_progress
+            ] do
+    {:ok, %{status: :cancelled}, :cancelled}
+  end
+
+  defp status_transition(%TrainingActivity{status: status}, :archived)
+       when status in [:completed, :cancelled] do
+    {:ok, %{status: :archived}, :archived}
+  end
+
+  defp status_transition(_training_activity, _target_status), do: {:error, :invalid_transition}
 
   defp accessible_to_scope?(scope, training_activity) do
     cond do

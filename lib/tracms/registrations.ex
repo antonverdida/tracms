@@ -53,8 +53,16 @@ defmodule Tracms.Registrations do
 
       TrainingActivity
       |> where([training], training.status == :published)
-      |> where([training], training.registration_opens_on <= ^Date.utc_today())
-      |> where([training], training.registration_deadline >= ^DateTime.utc_now(:second))
+      |> where(
+        [training],
+        is_nil(training.registration_opens_on) or
+          training.registration_opens_on <= ^Date.utc_today()
+      )
+      |> where(
+        [training],
+        is_nil(training.registration_deadline) or
+          training.registration_deadline >= ^DateTime.utc_now(:second)
+      )
       |> where([training], training.id not in ^training_ids)
       |> preload([:office, :division])
       |> order_by([training], asc: training.starts_on, asc: training.title)
@@ -127,6 +135,12 @@ defmodule Tracms.Registrations do
     else
       []
     end
+  end
+
+  def list_manageable_registrations(scope, filters) when is_map(filters) do
+    scope
+    |> list_manageable_registrations()
+    |> filter_loaded_manageable_registrations(filters)
   end
 
   def list_training_registrations(scope, training_id) do
@@ -241,6 +255,57 @@ defmodule Tracms.Registrations do
     end
   end
 
+  def create_manual_registrations(scope, training_id, participant_names) do
+    names = normalize_manual_participant_names(participant_names)
+
+    with true <- Scope.training_manager?(scope),
+         %TrainingActivity{} = training_activity <- Repo.get(TrainingActivity, training_id),
+         :ok <- ensure_manual_registration_allowed(training_activity),
+         true <- names != [] do
+      Repo.transaction(fn ->
+        Enum.reduce_while(names, [], fn name, registrations ->
+          with :ok <- ensure_capacity_available(training_activity),
+               {:ok, registration} <-
+                 %Registration{}
+                 |> Registration.changeset(%{
+                   training_activity_id: training_activity.id,
+                   manual_participant_name: name,
+                   status: :approved,
+                   submitted_at: DateTime.utc_now(:second)
+                 })
+                 |> Repo.insert()
+                 |> preload_result() do
+            {:cont, [registration | registrations]}
+          else
+            {:error, reason} -> Repo.rollback(reason)
+          end
+        end)
+      end)
+      |> case do
+        {:ok, registrations} -> {:ok, Enum.reverse(registrations)}
+        {:error, reason} -> {:error, reason}
+      end
+    else
+      false when names == [] -> {:error, :no_participant_names}
+      false -> {:error, :unauthorized}
+      nil -> {:error, :training_not_found}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  def participant_name(%Registration{registrant_user: %{full_name: full_name, email: email}}) do
+    full_name || email
+  end
+
+  def participant_name(%Registration{manual_participant_name: name}),
+    do: name || "Guest Participant"
+
+  def participant_email(%Registration{registrant_user: %{email: email}}), do: email
+  def participant_email(%Registration{manual_participant_email: email}), do: email
+
+  def participant_organization(%Registration{registrant_user: %{office: %{name: name}}}), do: name
+  def participant_organization(_registration), do: "Not assigned"
+
   def withdraw_registration(scope, %Registration{} = registration) do
     if scope && scope.user && registration.registrant_user_id == scope.user.id &&
          registration.status in [:submitted, :approved, :waitlisted] do
@@ -271,6 +336,44 @@ defmodule Tracms.Registrations do
       |> preload_result()
     else
       false -> {:error, :unauthorized}
+    end
+  end
+
+  def change_manager_registration(%Registration{} = registration, attrs \\ %{}) do
+    Registration.changeset(registration, attrs)
+  end
+
+  def update_registration(scope, %Registration{} = registration, attrs) do
+    registration = maybe_preload_registration(registration)
+
+    with true <- Scope.training_manager?(scope),
+         true <- manageable_registration?(scope, registration),
+         {:ok, attrs} <- normalize_manager_registration_attrs(scope, attrs) do
+      registration
+      |> Registration.changeset(attrs)
+      |> Repo.update()
+      |> preload_result()
+    else
+      false -> {:error, :unauthorized}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  def cancel_registration(scope, %Registration{} = registration, notes \\ nil) do
+    registration = maybe_preload_registration(registration)
+
+    if Scope.training_manager?(scope) and manageable_registration?(scope, registration) do
+      registration
+      |> Registration.changeset(%{
+        status: :withdrawn,
+        review_notes: normalize_optional_string(notes) || registration.review_notes,
+        reviewed_at: DateTime.utc_now(:second),
+        reviewer_user_id: scope.user.id
+      })
+      |> Repo.update()
+      |> preload_result()
+    else
+      {:error, :unauthorized}
     end
   end
 
@@ -407,6 +510,22 @@ defmodule Tracms.Registrations do
     |> Repo.all()
   end
 
+  defp normalize_manual_participant_names(participant_names) do
+    participant_names
+    |> to_string()
+    |> String.split(~r/\r?\n/, trim: true)
+    |> Enum.map(&normalize_manual_participant_name/1)
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.uniq_by(&String.downcase/1)
+  end
+
+  defp normalize_manual_participant_name(name) do
+    name
+    |> String.trim()
+    |> String.replace(~r/^\d+\s*(?:[.)]|[-:])\s*/, "")
+    |> String.trim()
+  end
+
   defp ensure_authenticated_scope(%Scope{user: %{id: user_id}}), do: {:ok, user_id}
   defp ensure_authenticated_scope(_scope), do: {:error, :unauthorized}
 
@@ -418,10 +537,11 @@ defmodule Tracms.Registrations do
     today = Date.utc_today()
 
     cond do
-      Date.compare(opens_on, today) == :gt ->
+      not is_nil(opens_on) and Date.compare(opens_on, today) == :gt ->
         {:error, :registration_not_open}
 
-      DateTime.compare(deadline, DateTime.utc_now(:second)) in [:gt, :eq] ->
+      is_nil(deadline) or
+          DateTime.compare(deadline, DateTime.utc_now(:second)) in [:gt, :eq] ->
         :ok
 
       true ->
@@ -430,6 +550,16 @@ defmodule Tracms.Registrations do
   end
 
   defp ensure_training_open(%TrainingActivity{}), do: {:error, :not_published}
+
+  # Managers can add late, walk-in, or certificate-reconciliation participants.
+  defp ensure_manual_registration_allowed(%TrainingActivity{status: status})
+       when status in [:published, :registration_closed, :in_progress, :completed],
+       do: :ok
+
+  defp ensure_manual_registration_allowed(%TrainingActivity{}),
+    do: {:error, :manual_registration_not_allowed}
+
+  defp ensure_capacity_available(%TrainingActivity{max_capacity: nil}), do: :ok
 
   defp ensure_capacity_available(%TrainingActivity{id: training_id, max_capacity: max_capacity}) do
     active_count =
@@ -773,6 +903,102 @@ defmodule Tracms.Registrations do
   end
 
   defp preload_external_result(other), do: other
+
+  defp normalize_manager_registration_attrs(scope, attrs) do
+    status = attrs["status"] || attrs[:status]
+    training_activity_id = attrs["training_activity_id"] || attrs[:training_activity_id]
+
+    cond do
+      status not in [nil, "", :submitted, "submitted", :withdrawn, "withdrawn"] ->
+        {:error, :invalid_status}
+
+      is_binary(training_activity_id) and training_activity_id != "" and
+          is_nil(manageable_training_for_external(scope, training_activity_id)) ->
+        {:error, :training_not_found}
+
+      true ->
+        normalized_attrs =
+          attrs
+          |> Map.new(fn {key, value} -> {to_string(key), value} end)
+          |> Map.take(["training_activity_id", "special_requirements", "review_notes"])
+          |> maybe_put_manager_status(status, scope)
+
+        {:ok, normalized_attrs}
+    end
+  end
+
+  defp maybe_put_manager_status(attrs, nil, _scope), do: attrs
+  defp maybe_put_manager_status(attrs, "", _scope), do: attrs
+
+  defp maybe_put_manager_status(attrs, status, scope) when status in [:submitted, "submitted"] do
+    attrs
+    |> Map.put("status", :submitted)
+    |> Map.put("reviewed_at", DateTime.utc_now(:second))
+    |> Map.put("reviewer_user_id", scope.user.id)
+  end
+
+  defp maybe_put_manager_status(attrs, status, scope) when status in [:withdrawn, "withdrawn"] do
+    attrs
+    |> Map.put("status", :withdrawn)
+    |> Map.put("reviewed_at", DateTime.utc_now(:second))
+    |> Map.put("reviewer_user_id", scope.user.id)
+  end
+
+  defp filter_loaded_manageable_registrations(registrations, filters) do
+    registrations
+    |> filter_loaded_by_search(filters["search"] || filters[:search])
+    |> filter_loaded_by_training(filters["training_id"] || filters[:training_id])
+    |> filter_loaded_by_status_group(filters["status"] || filters[:status])
+  end
+
+  defp filter_loaded_by_search(registrations, nil), do: registrations
+  defp filter_loaded_by_search(registrations, ""), do: registrations
+
+  defp filter_loaded_by_search(registrations, search) when is_binary(search) do
+    search = search |> String.trim() |> String.downcase()
+
+    Enum.filter(registrations, fn registration ->
+      searchable_fields = [
+        participant_name(registration),
+        participant_email(registration),
+        registration.registrant_user && registration.registrant_user.employee_number,
+        registration.training_activity.title,
+        participant_organization(registration),
+        registration.special_requirements,
+        registration.review_notes
+      ]
+
+      Enum.any?(searchable_fields, fn value ->
+        value &&
+          value
+          |> to_string()
+          |> String.downcase()
+          |> String.contains?(search)
+      end)
+    end)
+  end
+
+  defp filter_loaded_by_training(registrations, nil), do: registrations
+  defp filter_loaded_by_training(registrations, ""), do: registrations
+
+  defp filter_loaded_by_training(registrations, training_id) when is_binary(training_id) do
+    Enum.filter(registrations, &(&1.training_activity_id == training_id))
+  end
+
+  defp filter_loaded_by_status_group(registrations, nil), do: registrations
+  defp filter_loaded_by_status_group(registrations, ""), do: registrations
+
+  defp filter_loaded_by_status_group(registrations, status)
+       when status in ["registered", :registered] do
+    Enum.filter(registrations, &(&1.status in [:submitted, :approved, :waitlisted]))
+  end
+
+  defp filter_loaded_by_status_group(registrations, status)
+       when status in ["cancelled", :cancelled] do
+    Enum.filter(registrations, &(&1.status in [:rejected, :withdrawn]))
+  end
+
+  defp filter_loaded_by_status_group(registrations, _status), do: registrations
 
   defp scope_manageable_registrations(query, scope) do
     cond do

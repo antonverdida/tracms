@@ -3,6 +3,7 @@ defmodule TracmsWeb.TrainingLive.Completion do
 
   alias Tracms.Certificates
   alias Tracms.Evaluations
+  alias Tracms.Registrations
   alias Tracms.Trainings
 
   @impl true
@@ -24,23 +25,24 @@ defmodule TracmsWeb.TrainingLive.Completion do
       active_nav="trainings"
     >
       <div class="portal-page-shell">
-        <.portal_page_header
-          eyebrow="Completion summary"
+        <.training_workspace_header
+          eyebrow="Training workspace"
           title={@training_activity.title}
-          copy="Review attendance percentage, evaluation submission, and computed completion status."
+          copy="Review attendance, evaluation status, and certificate readiness for each approved participant."
+          nav_items={training_workspace_nav_items(@training_activity.id, :completion)}
         >
           <:actions>
-            <.button navigate={~p"/trainings/#{@training_activity.id}"} variant="ghost">
-              Back to training
+            <.button navigate={~p"/attendance?training_id=#{@training_activity.id}"} variant="ghost">
+              Attendance
             </.button>
             <.button
               navigate={~p"/certificates/trainings/#{@training_activity.id}"}
-              variant="ghost"
+              variant="secondary"
             >
               Certificates
             </.button>
           </:actions>
-        </.portal_page_header>
+        </.training_workspace_header>
 
         <.portal_stat_grid cards={@summary_cards} />
 
@@ -49,19 +51,19 @@ defmodule TracmsWeb.TrainingLive.Completion do
 
           <div class="dashboard-action-grid">
             <div class="feature-card">
-              <div class="feature-title">Minimum attendance</div>
+              <div class="feature-title">Minimum Attendance</div>
               <div class="feature-copy">
                 {@training_activity.minimum_attendance_percentage}% of recorded sessions
               </div>
             </div>
             <div class="feature-card">
-              <div class="feature-title">Evaluation required</div>
+              <div class="feature-title">Evaluation Required</div>
               <div class="feature-copy">
                 {if @training_activity.evaluation_required, do: "Yes", else: "No"}
               </div>
             </div>
             <div class="feature-card">
-              <div class="feature-title">Certificate release rule</div>
+              <div class="feature-title">Certificate Release Rule</div>
               <div class="feature-copy">
                 Certificates can be issued after completion is satisfied and no certificate record exists yet.
               </div>
@@ -80,7 +82,6 @@ defmodule TracmsWeb.TrainingLive.Completion do
             <.portal_panel_header
               eyebrow="Participant progress"
               title="Completion roster"
-              meta={completion_caption(@entries)}
             />
 
             <div class="data-table-wrap">
@@ -98,7 +99,9 @@ defmodule TracmsWeb.TrainingLive.Completion do
                   <tr :for={entry <- @entries}>
                     <td>
                       <div class="portal-cell-title">{participant_name(entry)}</div>
-                      <div class="portal-cell-meta">{entry.registration.registrant_user.email}</div>
+                      <div class="portal-cell-meta">
+                        {Registrations.participant_email(entry.registration) || "Not provided"}
+                      </div>
                     </td>
                     <td>
                       <div>{entry.attendance_percentage}%</div>
@@ -135,6 +138,7 @@ defmodule TracmsWeb.TrainingLive.Completion do
                 </tbody>
               </table>
             </div>
+            <p class="mt-4 text-right text-sm text-slate-500">{completion_caption(@entries)}</p>
           <% end %>
         </section>
       </div>
@@ -209,7 +213,7 @@ defmodule TracmsWeb.TrainingLive.Completion do
   end
 
   defp participant_name(entry) do
-    entry.registration.registrant_user.full_name || entry.registration.registrant_user.email
+    Registrations.participant_name(entry.registration)
   end
 
   defp completion_status_tone(:completed), do: "green"

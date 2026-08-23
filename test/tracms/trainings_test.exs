@@ -15,13 +15,16 @@ defmodule Tracms.TrainingsTest do
                  title: "Assessment Training",
                  description: "Training description",
                  objectives: "Understand regional assessment planning and classroom application.",
-                 category: "Assessment and Evaluation",
-                 training_type: "Capacity Building Training",
+                 category: "Education Technology Innovation",
+                 training_type: "Custom Professional Learning Program",
                  organizer: "DepEd Region IX",
                  modality: :hybrid,
                  venue: "Pagadian City",
                  venue_address: "Pagadian City, Zamboanga del Sur",
+                 resource_speaker: "Regional ICT Team",
                  total_hours: 16,
+                 start_time: ~T[08:00:00],
+                 end_time: ~T[17:00:00],
                  target_participants: "Teachers and supervisors",
                  participant_qualification: "Must be a current DepEd employee.",
                  registration_opens_on: ~D[2026-08-20],
@@ -39,6 +42,9 @@ defmodule Tracms.TrainingsTest do
       assert training_activity.office_id == office.id
       assert training_activity.division_id == office.division_id
       assert training_activity.status == :draft
+      assert training_activity.resource_speaker == "Regional ICT Team"
+      assert training_activity.category == "Education Technology Innovation"
+      assert training_activity.training_type == "Custom Professional Learning Program"
       assert training_activity.registration_form_url == "https://forms.gle/deped-registration"
       assert training_activity.attendance_form_url == "https://forms.gle/deped-attendance"
 
@@ -48,6 +54,49 @@ defmodule Tracms.TrainingsTest do
       assert approval_entry.to_status == :draft
       assert approval_entry.actor_role_key == scope.role_key
       assert approval_entry.acted_by_user_id == user.id
+    end
+
+    test "create_training_activity/2 allows an unscheduled training record" do
+      %{scope: scope} = training_manager_scope_fixture()
+
+      assert {:ok, %TrainingActivity{} = training_activity} =
+               Trainings.create_training_activity(scope, %{
+                 title: "Future Training Record",
+                 description: "Details will be finalized after planning.",
+                 objectives: "Confirm the final program requirements.",
+                 category: "Teacher Development",
+                 training_type: "Capacity Building Training",
+                 organizer: "DepEd Region IX",
+                 modality: :online,
+                 venue: "To be confirmed",
+                 venue_address: "To be confirmed",
+                 target_participants: "Teachers",
+                 participant_qualification: "To be confirmed",
+                 attendance_monitoring_method: "Manual Verification",
+                 certificate_type: "Certificate of Participation"
+               })
+
+      assert is_nil(training_activity.starts_on)
+      assert is_nil(training_activity.ends_on)
+      assert is_nil(training_activity.total_hours)
+      assert is_nil(training_activity.start_time)
+      assert is_nil(training_activity.end_time)
+      assert is_nil(training_activity.max_capacity)
+      assert is_nil(training_activity.registration_opens_on)
+      assert is_nil(training_activity.registration_deadline)
+    end
+
+    test "create_training_activity/2 accepts custom categories and training types" do
+      %{scope: scope} = training_manager_scope_fixture()
+
+      training_activity =
+        training_activity_fixture(scope, %{
+          category: "Disaster Preparedness",
+          training_type: "Community Learning Session"
+        })
+
+      assert training_activity.category == "Disaster Preparedness"
+      assert training_activity.training_type == "Community Learning Session"
     end
 
     test "list_training_activities/1 restricts coordinator visibility to the assigned office" do
@@ -163,6 +212,36 @@ defmodule Tracms.TrainingsTest do
 
       assert training_activity.attendance_form_url ==
                "https://docs.google.com/forms/d/generated-attendance-form/viewform"
+    end
+
+    test "update_training_status/3 manages lifecycle actions for a training record" do
+      %{scope: scope} = training_manager_scope_fixture("regional_admin")
+
+      training_activity =
+        training_activity_fixture(scope, %{
+          status: :published,
+          published_at: DateTime.utc_now(:second)
+        })
+
+      assert {:ok, training_activity} =
+               Trainings.update_training_status(scope, training_activity, :registration_closed)
+
+      assert training_activity.status == :registration_closed
+
+      assert {:ok, training_activity} =
+               Trainings.update_training_status(scope, training_activity, :in_progress)
+
+      assert training_activity.status == :in_progress
+
+      assert {:ok, training_activity} =
+               Trainings.update_training_status(scope, training_activity, :completed)
+
+      assert training_activity.status == :completed
+
+      assert {:ok, training_activity} =
+               Trainings.update_training_status(scope, training_activity, :archived)
+
+      assert training_activity.status == :archived
     end
   end
 end

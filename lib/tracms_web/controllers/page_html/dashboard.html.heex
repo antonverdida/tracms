@@ -9,7 +9,9 @@
       <div class="dashboard-portal-hero-copy">
         <p class="eyebrow">{@dashboard_role_label}</p>
         <h1 class="dashboard-portal-title">Good Morning, {@greeting_name}</h1>
-        <p class="dashboard-portal-copy">{@dashboard_context_title}</p>
+        <p class="dashboard-portal-copy">
+          Quick access to your current trainings, participant activity, attendance progress, and certificate generation.
+        </p>
       </div>
 
       <div class="dashboard-date-pill">
@@ -35,238 +37,122 @@
       </article>
     </section>
 
-    <section class={[
-      "dashboard-portal-grid",
-      @dashboard_mode == :manager && "dashboard-portal-grid-manager"
-    ]}>
-      <article class="panel portal-panel portal-panel-upcoming">
-        <div class="dashboard-section-head">
-          <div>
-            <p class="eyebrow">
-              {if @dashboard_mode == :manager,
-                do: "Operational schedule",
-                else: "Training schedule"}
-            </p>
-            <h2 class="section-title">
-              {if @dashboard_mode == :manager,
-                do: "Upcoming Training Activities",
-                else: "My Upcoming Trainings"}
-            </h2>
-          </div>
-
-          <.link
-            navigate={
-              if @dashboard_mode == :manager, do: ~p"/trainings", else: ~p"/my/registrations"
-            }
-            class="dashboard-panel-link"
-          >
-            View all
-          </.link>
+    <section class="panel portal-list-panel">
+      <div class="dashboard-section-head">
+        <div class="dashboard-section-copy-block">
+          <p class="eyebrow">Upcoming trainings</p>
+          <h2 class="section-title">Upcoming Trainings</h2>
+          <p class="dashboard-section-copy">
+            Scheduled and near-term trainings that need manager visibility.
+          </p>
         </div>
 
-        <%= if @upcoming_items == [] do %>
-          <.portal_empty_state
-            icon={
-              if @dashboard_mode == :manager, do: "hero-calendar-days", else: "hero-book-open"
-            }
-            title={
-              if @dashboard_mode == :manager,
-                do: "No scheduled training activities yet",
-                else: "No upcoming training records yet"
-            }
-            copy={
-              if @dashboard_mode == :manager,
-                do:
-                  "Create your first training activity to start publishing schedules, managing registrations, and tracking delivery progress.",
-                else:
-                  "Your approved or submitted trainings will appear here once you start joining regional activities."
-            }
-          >
-            <:actions>
-              <.link
-                navigate={
-                  if @dashboard_mode == :manager,
-                    do: ~p"/trainings/new",
-                    else: ~p"/catalog/trainings"
-                }
-                class="portal-link-button portal-link-button-primary"
-              >
-                {if @dashboard_mode == :manager,
-                  do: "Create first training",
-                  else: "Browse trainings"}
-              </.link>
-            </:actions>
-          </.portal_empty_state>
-        <% else %>
-          <div class="portal-event-list">
-            <div :for={item <- @upcoming_items} class="portal-event-card">
-              <div class="portal-date-card">
-                <span class="portal-date-month">{item.month}</span>
-                <span class="portal-date-day">{item.day}</span>
-              </div>
+        <.link navigate={~p"/trainings"} class="dashboard-panel-link">
+          View all trainings
+        </.link>
+      </div>
 
-              <div class="portal-event-body">
-                <div class="portal-event-header">
-                  <h3 class="portal-event-title">{item.title}</h3>
-                  <div class="badge-row portal-event-badges">
-                    <span :for={badge <- item.badges} class="badge-soft">{badge}</span>
-                  </div>
-                </div>
-                <p class="portal-event-meta">{item.meta_primary}</p>
-                <p class="portal-event-submeta">{item.meta_secondary}</p>
-              </div>
-
-              <.link navigate={item.action_path} class="portal-inline-action">
-                {item.action_label}
-              </.link>
-            </div>
-          </div>
-        <% end %>
-      </article>
-
-      <%= if @dashboard_mode == :participant do %>
-        <article class="panel portal-panel portal-panel-status">
-          <div class="dashboard-section-head">
-            <div>
-              <p class="eyebrow">Status overview</p>
-              <h2 class="section-title">My Registration Status</h2>
-            </div>
-          </div>
-
-          <div class="portal-status-list">
-            <div
-              :for={item <- @status_items}
-              class={["portal-status-item", "portal-status-item-#{item.tone}"]}
+      <%= if @upcoming_trainings == [] do %>
+        <.portal_empty_state
+          icon="hero-calendar-days"
+          title="No upcoming trainings scheduled yet"
+          copy="Once a training has a current or future schedule, it will appear here for quick review."
+        >
+          <:actions>
+            <.link
+              navigate={~p"/trainings/new"}
+              class="portal-link-button portal-link-button-primary"
             >
-              <div class="portal-status-head">
-                <div>
-                  <p class="portal-status-label">{item.label}</p>
-                  <p class="portal-status-copy">{item.description}</p>
-                </div>
-                <span class={["portal-status-value", "portal-status-value-#{item.tone}"]}>
-                  {item.value}
-                </span>
-              </div>
-
-              <div class="portal-progress">
-                <span
-                  class={["portal-progress-bar", "portal-progress-bar-#{item.tone}"]}
-                  style={"width: #{item.percent}%"}
-                >
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <p class="portal-note">{@status_note}</p>
-        </article>
-      <% end %>
-
-      <%= if @dashboard_mode == :participant do %>
-        <article class="panel portal-panel portal-panel-workflow">
-          <div class="dashboard-section-head">
-            <div>
-              <p class="eyebrow">Evaluation status</p>
-              <h2 class="section-title">Evaluation & Completion</h2>
-            </div>
-
-            <.link navigate={@workflow_link} class="dashboard-panel-link">
-              Open records
+              Add training
             </.link>
-          </div>
-
-          <div class="portal-workflow-list">
-            <div
-              :for={item <- @workflow_items}
-              class={["portal-workflow-item", "portal-workflow-item-#{item.tone}"]}
-            >
-              <div>
-                <p class="portal-workflow-label">{item.label}</p>
-                <p class="portal-workflow-copy">{item.description}</p>
-              </div>
-              <span class="portal-workflow-value">{item.value}</span>
-            </div>
-          </div>
-        </article>
+          </:actions>
+        </.portal_empty_state>
+      <% else %>
+        <div class="data-table-wrap dashboard-table-wrap">
+          <table class="data-table portal-table">
+            <thead>
+              <tr>
+                <th>Training Title</th>
+                <th>Date</th>
+                <th>Venue</th>
+                <th>Registered</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr :for={training <- @upcoming_trainings}>
+                <td>
+                  <div class="dashboard-record-stack">
+                    <.link
+                      navigate={training.action_path}
+                      class="portal-table-link dashboard-record-link"
+                    >
+                      {training.title}
+                    </.link>
+                    <span class="dashboard-record-meta">{training.venue}</span>
+                  </div>
+                </td>
+                <td class="dashboard-date-cell">{training.schedule}</td>
+                <td class="dashboard-muted-cell">{training.venue}</td>
+                <td class="dashboard-number-cell">{training.registered_count}</td>
+                <td>
+                  <span class={["portal-chip", "portal-chip-#{training.status_tone}"]}>
+                    {training.status_label}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       <% end %>
+    </section>
 
-      <article class="panel portal-panel portal-panel-monitor">
+    <section class="dashboard-content-grid">
+      <article class="panel portal-list-panel dashboard-recent-panel">
         <div class="dashboard-section-head">
-          <div>
-            <p class="eyebrow">
-              {if @dashboard_mode == :manager, do: "Activity capacity", else: "My records"}
+          <div class="dashboard-section-copy-block">
+            <p class="eyebrow">Recent registrations</p>
+            <h2 class="section-title">Recent Registrations</h2>
+            <p class="dashboard-section-copy">
+              The latest participant submissions that may need review or follow-up.
             </p>
-            <h2 class="section-title">
-              {if @dashboard_mode == :manager,
-                do: "Registration Monitoring",
-                else: "My Training Records"}
-            </h2>
           </div>
 
-          <.link
-            navigate={
-              if @dashboard_mode == :manager, do: ~p"/trainings", else: ~p"/my/registrations"
-            }
-            class="dashboard-panel-link"
-          >
-            View all
+          <.link navigate={~p"/registrations"} class="dashboard-panel-link">
+            View registrations
           </.link>
         </div>
 
-        <%= if @monitoring_rows == [] do %>
+        <%= if @recent_registrations == [] do %>
           <div class="portal-empty-quiet">
             <p class="section-copy">
-              {if @dashboard_mode == :manager,
-                do:
-                  "Registration counts and status summaries will appear here once training activities are created.",
-                else:
-                  "Your registration history and evaluation progress will appear here after you join a training."}
+              Newly submitted participant registrations will appear here.
             </p>
           </div>
         <% else %>
-          <div class="data-table-wrap">
+          <div class="data-table-wrap dashboard-table-wrap">
             <table class="data-table portal-table">
               <thead>
                 <tr>
-                  <%= if @dashboard_mode == :manager do %>
-                    <th>Training Title</th>
-                    <th>Registered</th>
-                    <th>Capacity</th>
-                    <th>Status</th>
-                  <% else %>
-                    <th>Training Title</th>
-                    <th>Schedule</th>
-                    <th>Status</th>
-                    <th>Evaluation</th>
-                    <th>Certificate</th>
-                  <% end %>
+                  <th>Participant</th>
+                  <th>Training</th>
+                  <th>Registration Date</th>
                 </tr>
               </thead>
               <tbody>
-                <tr :for={row <- @monitoring_rows}>
+                <tr :for={registration <- @recent_registrations}>
                   <td>
-                    <.link navigate={row.action_path} class="portal-table-link">
-                      {row.title}
+                    <span class="dashboard-record-name">{registration.participant_name}</span>
+                  </td>
+                  <td>
+                    <.link
+                      navigate={registration.action_path}
+                      class="portal-table-link dashboard-record-link"
+                    >
+                      {registration.training_title}
                     </.link>
                   </td>
-                  <%= if @dashboard_mode == :manager do %>
-                    <td>{row.metric}</td>
-                    <td>{row.capacity}</td>
-                    <td>
-                      <span class={["portal-chip", "portal-chip-#{row.status_tone}"]}>
-                        {row.status_label}
-                      </span>
-                    </td>
-                  <% else %>
-                    <td>{row.schedule}</td>
-                    <td>
-                      <span class={["portal-chip", "portal-chip-#{row.status_tone}"]}>
-                        {row.status_label}
-                      </span>
-                    </td>
-                    <td>{row.evaluation_label}</td>
-                    <td>{row.certificate_label}</td>
-                  <% end %>
+                  <td class="dashboard-date-cell">{registration.registration_date}</td>
                 </tr>
               </tbody>
             </table>
@@ -274,58 +160,85 @@
         <% end %>
       </article>
 
-      <article class="panel portal-panel portal-panel-actions">
+      <article class="panel portal-list-panel dashboard-recent-panel">
         <div class="dashboard-section-head">
-          <div>
-            <p class="eyebrow">Quick actions</p>
-            <h2 class="section-title">Quick Actions</h2>
+          <div class="dashboard-section-copy-block">
+            <p class="eyebrow">Recent certificates</p>
+            <h2 class="section-title">Recent Certificates Generated</h2>
+            <p class="dashboard-section-copy">
+              Recently issued certificates so managers can confirm output at a glance.
+            </p>
           </div>
-        </div>
 
-        <div class="portal-action-grid">
-          <.link :for={action <- @quick_actions} navigate={action.path} class="portal-action-tile">
-            <div class={["portal-action-icon", "portal-action-icon-#{action.tone}"]}>
-              <.icon name={action.icon} class="size-6" />
-            </div>
-            <div>
-              <h3 class="portal-action-title">{action.title}</h3>
-              <p class="portal-action-copy">{action.copy}</p>
-            </div>
+          <.link navigate={~p"/certificates"} class="dashboard-panel-link">
+            View certificates
           </.link>
         </div>
-      </article>
 
-      <article class="panel portal-panel portal-panel-activity">
-        <div class="dashboard-section-head">
-          <div>
-            <p class="eyebrow">Recent activity</p>
-            <h2 class="section-title">Latest Updates</h2>
-          </div>
-        </div>
-
-        <%= if @recent_activities == [] do %>
+        <%= if @recent_certificates == [] do %>
           <div class="portal-empty-quiet">
             <p class="section-copy">
-              Recent training, registration, and evaluation updates will appear here once new activity is recorded in TRACMS.
+              Generated certificate records will appear here once certificates are issued.
             </p>
           </div>
         <% else %>
-          <div class="portal-activity-list">
-            <div :for={activity <- @recent_activities} class="portal-activity-item">
-              <div class={["portal-activity-icon", "portal-activity-icon-#{activity.tone}"]}>
-                <.icon name={activity.icon} class="size-5" />
-              </div>
-
-              <div class="portal-activity-copy">
-                <h3 class="portal-activity-title">{activity.title}</h3>
-                <p class="portal-activity-meta">{activity.detail}</p>
-              </div>
-
-              <span class="portal-activity-time">{activity.timestamp}</span>
-            </div>
+          <div class="data-table-wrap dashboard-table-wrap">
+            <table class="data-table portal-table">
+              <thead>
+                <tr>
+                  <th>Participant</th>
+                  <th>Training</th>
+                  <th>Certificate No.</th>
+                  <th>Generated On</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr :for={certificate <- @recent_certificates}>
+                  <td>
+                    <span class="dashboard-record-name">{certificate.participant_name}</span>
+                  </td>
+                  <td>
+                    <.link
+                      navigate={certificate.action_path}
+                      class="portal-table-link dashboard-record-link"
+                    >
+                      {certificate.training_title}
+                    </.link>
+                  </td>
+                  <td>
+                    <span class="dashboard-cert-number">{certificate.certificate_number}</span>
+                  </td>
+                  <td class="dashboard-date-cell">{certificate.generated_on}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         <% end %>
       </article>
+    </section>
+
+    <section class="panel portal-list-panel">
+      <div class="dashboard-section-head">
+        <div class="dashboard-section-copy-block">
+          <p class="eyebrow">Quick actions</p>
+          <h2 class="section-title">Quick Actions</h2>
+          <p class="dashboard-section-copy">
+            Start the most common training-management tasks without leaving the overview page.
+          </p>
+        </div>
+      </div>
+
+      <div class="portal-action-grid dashboard-quick-actions">
+        <.link :for={action <- @quick_actions} navigate={action.path} class="portal-action-tile">
+          <div class={["portal-action-icon", "portal-action-icon-#{action.tone}"]}>
+            <.icon name={action.icon} class="size-6" />
+          </div>
+          <div>
+            <h3 class="portal-action-title">{action.title}</h3>
+            <p class="portal-action-copy">{action.copy}</p>
+          </div>
+        </.link>
+      </div>
     </section>
 
     <footer class="dashboard-portal-footer">

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{@page_title}</title>
+    <link rel="stylesheet" href={~p"/assets/css/app.css"} />
+    <style>
+      body {
+        padding: 2rem;
+        background: #ffffff;
+      }
+
+      .registration-export-shell {
+        display: grid;
+        gap: 1.5rem;
+      }
+
+      .registration-export-meta {
+        color: #526072;
+        font-size: 0.95rem;
+      }
+
+      .registration-export-table th,
+      .registration-export-table td {
+        white-space: normal;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="registration-export-shell">
+      <header>
+        <p class="eyebrow">TRACMS Registration Export</p>
+        <h1 class="portal-page-title">List of Registrations</h1>
+        <p class="registration-export-meta">
+          Exported on {format_datetime(@exported_at)}.
+        </p>
+      </header>
+
+      <div class="data-table-wrap registration-export-table">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Registration Number</th>
+              <th>Participant Name</th>
+              <th>Email Address</th>
+              <th>Contact Number</th>
+              <th>School, Office, or Organization</th>
+              <th>Selected Training</th>
+              <th>Registration Date</th>
+              <th>Registration Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr :for={registration <- @registrations}>
+              <td>{registration_number(registration.id)}</td>
+              <td>{participant_name(registration)}</td>
+              <td>{participant_email(registration)}</td>
+              <td>Not provided</td>
+              <td>{organization_name(registration)}</td>
+              <td>{registration.training_activity.title}</td>
+              <td>{format_datetime(registration.submitted_at || registration.inserted_at)}</td>
+              <td>{registration_status_label(registration.status)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </body>
+</html>

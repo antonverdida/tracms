@@ -138,14 +138,14 @@ defmodule TracmsWeb.UserLive.Confirmation do
                     :if={!@current_scope}
                     field={@form[:remember_me]}
                     type="checkbox"
-                    label="Remember me on this device"
+                    label="Remember Me on This Device"
                     class="auth-portal-checkbox"
                   />
                 </div>
               </div>
 
               <.button phx-disable-with="Confirming..." class="w-full auth-portal-submit">
-                <.icon name="hero-check-circle" class="size-5" /> Confirm and continue
+                <.icon name="hero-check-circle" class="size-5" /> Confirm and Continue
               </.button>
             </.form>
 
@@ -170,7 +170,7 @@ defmodule TracmsWeb.UserLive.Confirmation do
                     :if={!@current_scope}
                     field={@form[:remember_me]}
                     type="checkbox"
-                    label="Remember me on this device"
+                    label="Remember Me on This Device"
                     class="auth-portal-checkbox"
                   />
                 </div>

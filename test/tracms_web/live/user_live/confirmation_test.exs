@@ -19,7 +19,7 @@ defmodule TracmsWeb.UserLive.ConfirmationTest do
 
       {:ok, _lv, html} = live(conn, ~p"/users/log-in/#{token}")
       assert html =~ "Confirm sign-in"
-      assert html =~ "Confirm and continue"
+      assert html =~ "Confirm and Continue"
     end
 
     test "renders login page for confirmed user", %{conn: conn, confirmed_user: user} do
@@ -30,7 +30,7 @@ defmodule TracmsWeb.UserLive.ConfirmationTest do
 
       {:ok, _lv, html} = live(conn, ~p"/users/log-in/#{token}")
       assert html =~ "Continue to TRACMS"
-      assert html =~ "Remember me on this device"
+      assert html =~ "Remember Me on This Device"
     end
 
     test "renders login page for already logged in user", %{conn: conn, confirmed_user: user} do

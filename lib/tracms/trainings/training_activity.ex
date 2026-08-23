@@ -18,6 +18,7 @@ defmodule Tracms.Trainings.TrainingActivity do
     :registration_closed,
     :in_progress,
     :completed,
+    :cancelled,
     :archived
   ]
 
@@ -59,12 +60,15 @@ defmodule Tracms.Trainings.TrainingActivity do
     field :modality, Ecto.Enum, values: @modality_values
     field :venue, :string
     field :venue_address, :string
+    field :resource_speaker, :string
     field :status, Ecto.Enum, values: @status_values, default: :draft
     field :registration_opens_on, :date
     field :registration_deadline, :utc_datetime
     field :max_capacity, :integer
     field :starts_on, :date
     field :ends_on, :date
+    field :start_time, :time
+    field :end_time, :time
     field :total_hours, :integer
     field :objectives, :string
     field :target_participants, :string
@@ -130,12 +134,15 @@ defmodule Tracms.Trainings.TrainingActivity do
       :modality,
       :venue,
       :venue_address,
+      :resource_speaker,
       :status,
       :registration_opens_on,
       :registration_deadline,
       :max_capacity,
       :starts_on,
       :ends_on,
+      :start_time,
+      :end_time,
       :total_hours,
       :objectives,
       :target_participants,
@@ -177,12 +184,6 @@ defmodule Tracms.Trainings.TrainingActivity do
       :venue,
       :venue_address,
       :status,
-      :registration_opens_on,
-      :registration_deadline,
-      :max_capacity,
-      :starts_on,
-      :ends_on,
-      :total_hours,
       :objectives,
       :target_participants,
       :participant_qualification,
@@ -199,6 +200,7 @@ defmodule Tracms.Trainings.TrainingActivity do
     |> validate_length(:organizer, max: 200)
     |> validate_length(:venue, max: 200)
     |> validate_length(:venue_address, max: 255)
+    |> validate_length(:resource_speaker, max: 200)
     |> validate_length(:target_participants, max: 2_000)
     |> validate_length(:participant_qualification, max: 3_000)
     |> validate_length(:attendance_monitoring_method, max: 120)
@@ -217,8 +219,6 @@ defmodule Tracms.Trainings.TrainingActivity do
       greater_than_or_equal_to: 0,
       less_than_or_equal_to: 100
     )
-    |> validate_inclusion(:category, @category_options)
-    |> validate_inclusion(:training_type, @training_type_options)
     |> validate_inclusion(:certificate_type, @certificate_type_options)
     |> validate_inclusion(:attendance_monitoring_method, @attendance_monitoring_method_options)
     |> CertificateLayoutSetting.override_changeset()
@@ -237,6 +237,7 @@ defmodule Tracms.Trainings.TrainingActivity do
     |> validate_registration_opening()
     |> validate_registration_deadline()
     |> validate_schedule_range()
+    |> validate_time_range()
     |> assoc_constraint(:creator_user)
     |> assoc_constraint(:office)
     |> assoc_constraint(:division)
@@ -335,6 +336,22 @@ defmodule Tracms.Trainings.TrainingActivity do
           :registration_opens_on,
           "must be on or before the training start date"
         )
+
+      true ->
+        changeset
+    end
+  end
+
+  defp validate_time_range(changeset) do
+    start_time = get_field(changeset, :start_time)
+    end_time = get_field(changeset, :end_time)
+
+    cond do
+      is_nil(start_time) or is_nil(end_time) ->
+        changeset
+
+      Time.compare(start_time, end_time) != :lt ->
+        add_error(changeset, :end_time, "must be later than the start time")
 
       true ->
         changeset

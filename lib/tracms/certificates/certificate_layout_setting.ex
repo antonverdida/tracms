@@ -41,6 +41,11 @@ defmodule Tracms.Certificates.CertificateLayoutSetting do
     :asset_content_type
   ]
 
+  @certificate_number_range_fields [
+    :certificate_number_start,
+    :certificate_number_end
+  ]
+
   @defaults %{
     scope_key: "default",
     certificate_size: "a4_landscape",
@@ -55,7 +60,9 @@ defmodule Tracms.Certificates.CertificateLayoutSetting do
     issuing_office_label: "DepEd Region IX",
     asset_path: nil,
     asset_name: nil,
-    asset_content_type: nil
+    asset_content_type: nil,
+    certificate_number_start: 1,
+    certificate_number_end: 999_999
   }
 
   @field_aliases %{
@@ -87,6 +94,8 @@ defmodule Tracms.Certificates.CertificateLayoutSetting do
     field :asset_path, :string
     field :asset_name, :string
     field :asset_content_type, :string
+    field :certificate_number_start, :integer, default: 1
+    field :certificate_number_end, :integer, default: 999_999
 
     timestamps(type: :utc_datetime)
   end
@@ -100,9 +109,11 @@ defmodule Tracms.Certificates.CertificateLayoutSetting do
 
   def changeset(layout_setting, attrs \\ %{}) do
     layout_setting
-    |> cast(attrs, [:scope_key | @editable_fields ++ @asset_fields])
+    |> cast(attrs, [
+      :scope_key | @editable_fields ++ @asset_fields ++ @certificate_number_range_fields
+    ])
     |> normalize_fields()
-    |> validate_required([:scope_key])
+    |> validate_required([:scope_key | @certificate_number_range_fields])
     |> validate_length(:scope_key, max: 50)
     |> apply_shared_validations()
     |> unique_constraint(:scope_key)
@@ -137,6 +148,36 @@ defmodule Tracms.Certificates.CertificateLayoutSetting do
     |> validate_length_if_present(asset_field(changeset, :asset_path), 500)
     |> validate_length_if_present(asset_field(changeset, :asset_name), 255)
     |> validate_length_if_present(asset_field(changeset, :asset_content_type), 120)
+    |> validate_certificate_number_range_if_present()
+  end
+
+  defp validate_certificate_number_range_if_present(changeset) do
+    if Map.has_key?(changeset.types, :certificate_number_start) do
+      changeset
+      |> validate_number(:certificate_number_start,
+        greater_than: 0,
+        less_than_or_equal_to: 999_999
+      )
+      |> validate_number(:certificate_number_end, greater_than: 0, less_than_or_equal_to: 999_999)
+      |> validate_certificate_number_range()
+    else
+      changeset
+    end
+  end
+
+  defp validate_certificate_number_range(changeset) do
+    start_number = get_field(changeset, :certificate_number_start)
+    end_number = get_field(changeset, :certificate_number_end)
+
+    if is_integer(start_number) and is_integer(end_number) and start_number > end_number do
+      add_error(
+        changeset,
+        :certificate_number_end,
+        "must be greater than or equal to the starting number"
+      )
+    else
+      changeset
+    end
   end
 
   defp normalize_fields(changeset) do

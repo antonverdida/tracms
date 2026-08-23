@@ -7,6 +7,9 @@ defmodule TracmsWeb.CertificateVerificationControllerTest do
 
   alias Tracms.Attendance
   alias Tracms.Certificates
+  alias Tracms.Certificates.CertificateRecord
+  alias Tracms.Repo
+  alias Tracms.Trainings
 
   describe "public certificate verification" do
     test "shows the recorded certificate details", %{conn: conn} do
@@ -20,6 +23,41 @@ defmodule TracmsWeb.CertificateVerificationControllerTest do
       assert html =~ participant.user.full_name
       assert html =~ certificate.certificate_number
       assert html =~ training.title
+      assert html =~ "No certificate layout uploaded yet"
+    end
+
+    test "validates a QR verification code on the public official route", %{conn: conn} do
+      %{participant: participant, certificate: certificate} = issued_certificate_fixture()
+
+      conn = get(conn, ~p"/verify/certificates/scan/#{certificate.verification_code}")
+      html = response(conn, 200)
+
+      assert html =~ "VERIFIED CERTIFICATE RECORD"
+      assert html =~ participant.user.full_name
+      assert html =~ certificate.certificate_number
+    end
+
+    test "does not accept a certificate number as a QR verification code", %{conn: conn} do
+      %{certificate: certificate} = issued_certificate_fixture()
+
+      conn = get(conn, ~p"/verify/certificates/scan/#{certificate.certificate_number}")
+      html = response(conn, 404)
+
+      assert html =~ "CERTIFICATE NOT FOUND"
+    end
+
+    test "rejects a revoked certificate verification code", %{conn: conn} do
+      %{certificate: certificate} = issued_certificate_fixture()
+
+      certificate
+      |> CertificateRecord.changeset(%{verification_status: :revoked})
+      |> Repo.update!()
+
+      conn = get(conn, ~p"/verify/certificates/scan/#{certificate.verification_code}")
+      html = response(conn, 404)
+
+      assert html =~ "CERTIFICATE NOT FOUND"
+      assert html =~ "has been revoked"
     end
 
     test "search redirects to the matching certificate record", %{conn: conn} do
@@ -36,14 +74,22 @@ defmodule TracmsWeb.CertificateVerificationControllerTest do
       html = response(conn, 404)
 
       assert html =~ "CERTIFICATE NOT FOUND"
-      assert html =~ "TRACMS-UNKNOWN-999999"
+      assert html =~ "No valid TRACMS certificate record was found"
     end
   end
 
   defp issued_certificate_fixture do
     manager = training_manager_scope_fixture()
     participant = participant_scope_fixture()
-    training = published_training_fixture_for_manager(manager.scope)
+    today = Date.utc_today()
+
+    training =
+      published_training_fixture_for_manager(manager.scope, %{
+        registration_opens_on: Date.add(today, -2),
+        registration_deadline: DateTime.add(DateTime.utc_now(:second), 2, :day),
+        starts_on: Date.add(today, 3),
+        ends_on: Date.add(today, 5)
+      })
 
     registration =
       approved_registration_fixture(
@@ -65,6 +111,8 @@ defmodule TracmsWeb.CertificateVerificationControllerTest do
         status: :present
       })
 
+    {:ok, training} = Trainings.update_training_status(manager.scope, training, :in_progress)
+    {:ok, training} = Trainings.update_training_status(manager.scope, training, :completed)
     {:ok, certificate} = Certificates.issue_certificate(manager.scope, registration.id)
 
     %{

@@ -14,7 +14,13 @@ defmodule Tracms.Trainings.TrainingApproval do
     :submitted_to_region,
     :advanced_to_region_approval,
     :published,
-    :returned_for_revision
+    :returned_for_revision,
+    :closed_registration,
+    :reopened_registration,
+    :started,
+    :completed,
+    :cancelled,
+    :archived
   ]
 
   schema "training_approvals" do

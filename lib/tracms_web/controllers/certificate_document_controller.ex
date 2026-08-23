@@ -8,76 +8,33 @@ defmodule TracmsWeb.CertificateDocumentController do
   alias TracmsWeb.CertificateDocumentHTML
   alias TracmsWeb.CertificateComponents
 
-  def participant_print(conn, %{"id" => certificate_id}) do
-    certificate =
-      case Certificates.acknowledge_certificate_access(conn.assigns.current_scope, certificate_id) do
-        {:ok, certificate} ->
-          certificate
-
-        {:error, :not_found} ->
-          raise Ecto.NoResultsError, queryable: Tracms.Certificates.CertificateRecord
-      end
-
-    conn
-    |> put_root_layout(false)
-    |> render(:document,
-      page_title: "#{certificate.certificate_type} Print View",
-      certificate: certificate,
-      layout_settings: Certificates.effective_layout_settings(certificate),
-      participant_name: CertificateComponents.certificate_participant_name(certificate),
-      issued_by_name: CertificateComponents.certificate_issued_by_name(certificate),
-      scope_label: CertificateComponents.certificate_scope_label(certificate),
-      autoprint: true,
-      export_path: ~p"/certificates/#{certificate.id}/export",
-      back_path: ~p"/certificates/#{certificate.id}",
-      back_label: "Back to certificate"
-    )
-  end
-
-  def participant_export(conn, %{"id" => certificate_id}) do
-    certificate =
-      case Certificates.acknowledge_certificate_access(conn.assigns.current_scope, certificate_id) do
-        {:ok, certificate} ->
-          certificate
-
-        {:error, :not_found} ->
-          raise Ecto.NoResultsError, queryable: Tracms.Certificates.CertificateRecord
-      end
-
-    conn
-    |> put_root_layout(false)
-    |> put_resp_header("content-disposition", content_disposition(certificate))
-    |> render(:document,
-      page_title: "#{certificate.certificate_type} Export",
-      certificate: certificate,
-      layout_settings: Certificates.effective_layout_settings(certificate),
-      participant_name: CertificateComponents.certificate_participant_name(certificate),
-      issued_by_name: CertificateComponents.certificate_issued_by_name(certificate),
-      scope_label: CertificateComponents.certificate_scope_label(certificate),
-      autoprint: false,
-      export_path: nil,
-      back_path: ~p"/certificates/#{certificate.id}",
-      back_label: "Back to certificate"
-    )
-  end
-
   def manager_print(conn, %{"training_id" => training_id, "certificate_id" => certificate_id}) do
     certificate =
       get_manager_certificate!(conn.assigns.current_scope, training_id, certificate_id)
 
+    layout_settings = Certificates.effective_layout_settings(certificate)
+
+    {:ok, certificate} =
+      Certificates.mark_training_certificate_released(
+        conn.assigns.current_scope,
+        training_id,
+        certificate.id
+      )
+
     conn
     |> put_root_layout(false)
     |> render(:document,
       page_title: "#{certificate.certificate_type} Print View",
       certificate: certificate,
-      layout_settings: Certificates.effective_layout_settings(certificate),
+      layout_settings: layout_settings,
+      print_page_css: certificate_print_page_css(layout_settings),
       participant_name: CertificateComponents.certificate_participant_name(certificate),
       issued_by_name: CertificateComponents.certificate_issued_by_name(certificate),
       scope_label: CertificateComponents.certificate_scope_label(certificate),
       autoprint: true,
       export_path: ~p"/certificates/trainings/#{training_id}/#{certificate.id}/export",
-      back_path: ~p"/certificates/trainings/#{training_id}/#{certificate.id}",
-      back_label: "Back to preview"
+      back_path: ~p"/certificates?training_id=#{training_id}",
+      back_label: "Back to Certificate Records"
     )
   end
 
@@ -85,21 +42,19 @@ defmodule TracmsWeb.CertificateDocumentController do
     certificate =
       get_manager_certificate!(conn.assigns.current_scope, training_id, certificate_id)
 
+    {:ok, certificate} =
+      Certificates.mark_training_certificate_released(
+        conn.assigns.current_scope,
+        training_id,
+        certificate.id
+      )
+
+    pdf_binary = manager_pdf_binary!(certificate)
+
     conn
-    |> put_root_layout(false)
-    |> put_resp_header("content-disposition", content_disposition(certificate))
-    |> render(:document,
-      page_title: "#{certificate.certificate_type} Export",
-      certificate: certificate,
-      layout_settings: Certificates.effective_layout_settings(certificate),
-      participant_name: CertificateComponents.certificate_participant_name(certificate),
-      issued_by_name: CertificateComponents.certificate_issued_by_name(certificate),
-      scope_label: CertificateComponents.certificate_scope_label(certificate),
-      autoprint: false,
-      export_path: nil,
-      back_path: ~p"/certificates/trainings/#{training_id}/#{certificate.id}",
-      back_label: "Back to preview"
-    )
+    |> put_resp_content_type("application/pdf")
+    |> put_resp_header("content-disposition", pdf_content_disposition(certificate))
+    |> send_resp(200, pdf_binary)
   end
 
   def manager_bulk_export(conn, %{"training_id" => training_id}) do
@@ -116,6 +71,15 @@ defmodule TracmsWeb.CertificateDocumentController do
         |> redirect(to: ~p"/certificates/trainings/#{training_activity.id}")
 
       certificates ->
+        Enum.each(certificates, fn certificate ->
+          _result =
+            Certificates.mark_training_certificate_released(
+              conn.assigns.current_scope,
+              training_activity.id,
+              certificate.id
+            )
+        end)
+
         entries =
           Enum.map(certificates, fn certificate ->
             {String.to_charlist(pdf_filename(certificate)), manager_pdf_binary!(certificate)}
@@ -143,12 +107,8 @@ defmodule TracmsWeb.CertificateDocumentController do
     end
   end
 
-  defp content_disposition(certificate) do
-    ~s(attachment; filename="#{document_filename(certificate)}")
-  end
-
-  defp document_filename(certificate) do
-    "tracms-certificate-#{certificate_number_slug(certificate.certificate_number)}.html"
+  defp pdf_content_disposition(certificate) do
+    ~s(attachment; filename="#{pdf_filename(certificate)}")
   end
 
   defp pdf_filename(certificate) do
@@ -166,18 +126,20 @@ defmodule TracmsWeb.CertificateDocumentController do
   end
 
   defp manager_document_html(certificate) do
+    layout_settings = Certificates.effective_layout_settings(certificate)
+
     render_to_string(CertificateDocumentHTML, "document", "html",
       page_title: "#{certificate.certificate_type} Export",
       certificate: certificate,
-      layout_settings: Certificates.effective_layout_settings(certificate),
+      layout_settings: layout_settings,
+      print_page_css: certificate_print_page_css(layout_settings),
       participant_name: CertificateComponents.certificate_participant_name(certificate),
       issued_by_name: CertificateComponents.certificate_issued_by_name(certificate),
       scope_label: CertificateComponents.certificate_scope_label(certificate),
       autoprint: false,
       export_path: nil,
-      back_path:
-        ~p"/certificates/trainings/#{certificate.registration.training_activity.id}/#{certificate.id}",
-      back_label: "Back to preview"
+      back_path: ~p"/certificates?training_id=#{certificate.registration.training_activity.id}",
+      back_label: "Back to Certificate Records"
     )
   end
 
@@ -308,5 +270,16 @@ defmodule TracmsWeb.CertificateDocumentController do
     |> String.downcase()
     |> String.replace(~r/[^a-z0-9]+/u, "-")
     |> String.trim("-")
+  end
+
+  defp certificate_print_page_css(%{certificate_size: certificate_size}) do
+    page_size =
+      case certificate_size do
+        "letter_landscape" -> "letter landscape"
+        "legal_landscape" -> "legal landscape"
+        _other -> "A4 landscape"
+      end
+
+    "@page { size: #{page_size}; margin: 0; }"
   end
 end

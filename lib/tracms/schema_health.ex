@@ -54,13 +54,13 @@ defmodule Tracms.SchemaHealth do
       inserted_at updated_at
     ),
     "certificate_records" => ~w(
-      id certificate_number certificate_type issued_on delivery_status emailed_at downloaded_at
-      registration_id issued_by_user_id inserted_at updated_at
+      id certificate_number verification_code verification_status certificate_type issued_on
+      delivery_status emailed_at downloaded_at registration_id issued_by_user_id inserted_at updated_at
     ),
     "certificate_layout_settings" => ~w(
       id scope_key certificate_size layout_style accent_color header_title header_subtitle body_intro
       completion_statement signature_label issuing_office_label asset_path asset_name
-      asset_content_type inserted_at updated_at
+      asset_content_type certificate_number_start certificate_number_end inserted_at updated_at
     )
   }
 
