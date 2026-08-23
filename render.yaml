@@ -1,0 +1,27 @@
+services:
+  - type: web
+    runtime: docker
+    name: tracms-region-ix
+    region: singapore
+    plan: free
+    dockerCommand: /bin/sh -c "/app/bin/migrate && exec /app/bin/server"
+    healthCheckPath: /health/ready
+    autoDeployTrigger: commit
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: tracms-region-ix-db
+          property: connectionString
+      - key: SECRET_KEY_BASE
+        generateValue: true
+      - key: PHX_SCHEME
+        value: https
+      - key: PHX_URL_PORT
+        value: "443"
+      - key: POOL_SIZE
+        value: "5"
+
+databases:
+  - name: tracms-region-ix-db
+    region: singapore
+    plan: free

@@ -84,6 +84,17 @@ when a separate official website calls the public API. The local `priv/static/up
 is not persistent on Gigalixir, so certificate layout uploads must be moved to object storage
 before relying on them in production.
 
+## Render Free Deployment
+
+`render.yaml` defines a free Docker web service and free Render Postgres database in Singapore.
+Render generates the application secret, links the database URL, runs migrations before starting
+the release, and uses `/health/ready` as its health check. It also supplies the public hostname
+used for certificate and QR links.
+
+Connect this GitHub repository in Render and create a Blueprint from `render.yaml`. The free tier
+is intended for previews: the web service sleeps after inactivity, its filesystem is ephemeral,
+and the free database expires after 30 days. Do not store uploaded certificate assets locally.
+
 ## Key Docs
 
 - [Implementation plan](./docs/tracms-implementation-plan.md)

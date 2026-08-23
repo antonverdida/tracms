@@ -54,7 +54,7 @@ if config_env() == :prod do
       """
 
   host =
-    System.get_env("PHX_HOST") ||
+    System.get_env("PHX_HOST") || System.get_env("RENDER_EXTERNAL_HOSTNAME") ||
       raise "environment variable PHX_HOST is missing. Set it to your public domain."
 
   scheme = System.get_env("PHX_SCHEME") || "https"
