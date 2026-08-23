@@ -1,6 +1,6 @@
 ARG ELIXIR_VERSION=1.17.3
-ARG OTP_VERSION=27.2.1
-ARG DEBIAN_VERSION=bookworm-20241016-slim
+ARG OTP_VERSION=27.2.4
+ARG DEBIAN_VERSION=bookworm-20260803-slim
 
 FROM hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION} AS build
 
@@ -49,4 +49,4 @@ ENV HOME=/app \
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD curl --fail --silent http://127.0.0.1:4000/health || exit 1
 
-CMD ["/app/bin/server"]
+CMD ["/bin/sh", "-c", "/app/bin/migrate && exec /app/bin/server"]
