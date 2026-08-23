@@ -21,7 +21,7 @@ COPY lib lib
 COPY priv priv
 COPY assets assets
 
-RUN mix assets.deploy && mix compile && mix release
+RUN mix compile && mix assets.deploy && mix release
 
 FROM debian:${DEBIAN_VERSION} AS app
 
