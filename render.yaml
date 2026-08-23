@@ -4,7 +4,7 @@ services:
     name: tracms-region-ix
     region: singapore
     plan: free
-    dockerCommand: /bin/sh -c "/app/bin/migrate && exec /app/bin/server"
+    dockerCommand: /bin/sh -c "/app/bin/tracms eval 'Tracms.Release.migrate()' && exec /app/bin/tracms start"
     healthCheckPath: /health/ready
     autoDeployTrigger: commit
     envVars:

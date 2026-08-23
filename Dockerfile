@@ -49,4 +49,4 @@ ENV HOME=/app \
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD curl --fail --silent http://127.0.0.1:4000/health || exit 1
 
-CMD ["/bin/sh", "-c", "/app/bin/migrate && exec /app/bin/server"]
+CMD ["/bin/sh", "-c", "/app/bin/tracms eval 'Tracms.Release.migrate()' && exec /app/bin/tracms start"]
