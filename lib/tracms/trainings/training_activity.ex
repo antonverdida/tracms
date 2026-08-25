@@ -116,7 +116,6 @@ defmodule Tracms.Trainings.TrainingActivity do
     training_activity
     |> cast(attrs, [
       :title,
-      :description,
       :category,
       :training_type,
       :organizer,
@@ -133,9 +132,6 @@ defmodule Tracms.Trainings.TrainingActivity do
       :start_time,
       :end_time,
       :total_hours,
-      :objectives,
-      :target_participants,
-      :participant_qualification,
       :attendance_monitoring_method,
       :certificate_type,
       :certificate_layout_style,
@@ -165,7 +161,6 @@ defmodule Tracms.Trainings.TrainingActivity do
     ])
     |> validate_required([
       :title,
-      :description,
       :category,
       :training_type,
       :organizer,
@@ -173,9 +168,6 @@ defmodule Tracms.Trainings.TrainingActivity do
       :venue,
       :venue_address,
       :status,
-      :objectives,
-      :target_participants,
-      :participant_qualification,
       :attendance_monitoring_method,
       :certificate_type,
       :minimum_attendance_percentage,

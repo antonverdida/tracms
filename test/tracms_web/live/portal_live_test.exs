@@ -29,10 +29,10 @@ defmodule TracmsWeb.PortalLiveTest do
       assert html =~ "View Registrations"
       assert html =~ "Record Attendance"
       assert html =~ "Generate Certificates"
-      assert html =~ "Profile Information"
+      assert html =~ "View Profile"
       assert html =~ "Account &amp; Security"
-      assert html =~ "Cancel"
       assert html =~ "Log Out"
+      refute html =~ "data-account-menu-cancel"
     end
 
     test "non-manager users are redirected away from the admin dashboard", %{conn: conn} do

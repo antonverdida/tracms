@@ -13,13 +13,13 @@ defmodule TracmsWeb.UserSessionControllerTest do
     }
   end
 
-  describe "POST /users/log-in - email and password" do
+  describe "POST /users/log-in - username and password" do
     test "logs the user in", %{conn: conn, user: user} do
       user = set_password(user)
 
       conn =
         post(conn, ~p"/users/log-in", %{
-          "user" => %{"email" => user.email, "password" => valid_user_password()}
+          "user" => %{"username" => user.username, "password" => valid_user_password()}
         })
 
       assert get_session(conn, :user_token)
@@ -39,7 +39,7 @@ defmodule TracmsWeb.UserSessionControllerTest do
       conn =
         post(conn, ~p"/users/log-in", %{
           "user" => %{
-            "email" => user.email,
+            "username" => user.username,
             "password" => valid_user_password(),
             "remember_me" => "true"
           }
@@ -57,7 +57,7 @@ defmodule TracmsWeb.UserSessionControllerTest do
         |> init_test_session(user_return_to: "/foo/bar")
         |> post(~p"/users/log-in", %{
           "user" => %{
-            "email" => user.email,
+            "username" => user.username,
             "password" => valid_user_password()
           }
         })
@@ -69,10 +69,10 @@ defmodule TracmsWeb.UserSessionControllerTest do
     test "redirects to login page with invalid credentials", %{conn: conn, user: user} do
       conn =
         post(conn, ~p"/users/log-in?mode=password", %{
-          "user" => %{"email" => user.email, "password" => "invalid_password"}
+          "user" => %{"username" => user.username, "password" => "invalid_password"}
         })
 
-      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid email or password"
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid username or password"
       assert redirected_to(conn) == ~p"/users/log-in"
     end
   end

@@ -32,18 +32,20 @@ defmodule Tracms.Certificates.CertificateLayoutSetting do
     :body_intro,
     :completion_statement,
     :signature_label,
-    :issuing_office_label
+    :issuing_office_label,
+    :document_reference_code,
+    :revision_number,
+    :effectivity_date,
+    :participant_name_position
   ]
 
   @asset_fields [
     :asset_path,
     :asset_name,
-    :asset_content_type
-  ]
-
-  @certificate_number_range_fields [
-    :certificate_number_start,
-    :certificate_number_end
+    :asset_content_type,
+    :asset_data,
+    :asset_size,
+    :participant_name_position_source
   ]
 
   @defaults %{
@@ -61,8 +63,13 @@ defmodule Tracms.Certificates.CertificateLayoutSetting do
     asset_path: nil,
     asset_name: nil,
     asset_content_type: nil,
-    certificate_number_start: 1,
-    certificate_number_end: 999_999
+    asset_data: nil,
+    asset_size: nil,
+    document_reference_code: "RO-ORD-F018",
+    revision_number: "00",
+    effectivity_date: ~D[2025-02-20],
+    participant_name_position: 39.0,
+    participant_name_position_source: "fallback"
   }
 
   @field_aliases %{
@@ -74,7 +81,11 @@ defmodule Tracms.Certificates.CertificateLayoutSetting do
     body_intro: [:body_intro, :certificate_body_intro],
     completion_statement: [:completion_statement, :certificate_completion_statement],
     signature_label: [:signature_label, :certificate_signature_label],
-    issuing_office_label: [:issuing_office_label, :certificate_issuing_office_label]
+    issuing_office_label: [:issuing_office_label, :certificate_issuing_office_label],
+    document_reference_code: [:document_reference_code],
+    revision_number: [:revision_number],
+    effectivity_date: [:effectivity_date],
+    participant_name_position: [:participant_name_position]
   }
 
   schema "certificate_layout_settings" do
@@ -94,8 +105,13 @@ defmodule Tracms.Certificates.CertificateLayoutSetting do
     field :asset_path, :string
     field :asset_name, :string
     field :asset_content_type, :string
-    field :certificate_number_start, :integer, default: 1
-    field :certificate_number_end, :integer, default: 999_999
+    field :asset_data, :binary
+    field :asset_size, :integer
+    field :document_reference_code, :string, default: "RO-ORD-F018"
+    field :revision_number, :string, default: "00"
+    field :effectivity_date, :date, default: ~D[2025-02-20]
+    field :participant_name_position, :float, default: 39.0
+    field :participant_name_position_source, :string, default: "fallback"
 
     timestamps(type: :utc_datetime)
   end
@@ -109,11 +125,9 @@ defmodule Tracms.Certificates.CertificateLayoutSetting do
 
   def changeset(layout_setting, attrs \\ %{}) do
     layout_setting
-    |> cast(attrs, [
-      :scope_key | @editable_fields ++ @asset_fields ++ @certificate_number_range_fields
-    ])
+    |> cast(attrs, [:scope_key | @editable_fields ++ @asset_fields])
     |> normalize_fields()
-    |> validate_required([:scope_key | @certificate_number_range_fields])
+    |> validate_required([:scope_key])
     |> validate_length(:scope_key, max: 50)
     |> apply_shared_validations()
     |> unique_constraint(:scope_key)
@@ -145,39 +159,21 @@ defmodule Tracms.Certificates.CertificateLayoutSetting do
     |> validate_length_if_present(resolve_field(changeset, :completion_statement), 500)
     |> validate_length_if_present(resolve_field(changeset, :signature_label), 120)
     |> validate_length_if_present(resolve_field(changeset, :issuing_office_label), 160)
+    |> validate_length_if_present(resolve_field(changeset, :document_reference_code), 80)
+    |> validate_length_if_present(resolve_field(changeset, :revision_number), 20)
     |> validate_length_if_present(asset_field(changeset, :asset_path), 500)
     |> validate_length_if_present(asset_field(changeset, :asset_name), 255)
     |> validate_length_if_present(asset_field(changeset, :asset_content_type), 120)
-    |> validate_certificate_number_range_if_present()
-  end
-
-  defp validate_certificate_number_range_if_present(changeset) do
-    if Map.has_key?(changeset.types, :certificate_number_start) do
-      changeset
-      |> validate_number(:certificate_number_start,
-        greater_than: 0,
-        less_than_or_equal_to: 999_999
-      )
-      |> validate_number(:certificate_number_end, greater_than: 0, less_than_or_equal_to: 999_999)
-      |> validate_certificate_number_range()
-    else
-      changeset
-    end
-  end
-
-  defp validate_certificate_number_range(changeset) do
-    start_number = get_field(changeset, :certificate_number_start)
-    end_number = get_field(changeset, :certificate_number_end)
-
-    if is_integer(start_number) and is_integer(end_number) and start_number > end_number do
-      add_error(
-        changeset,
-        :certificate_number_end,
-        "must be greater than or equal to the starting number"
-      )
-    else
-      changeset
-    end
+    |> validate_number_if_present(:asset_size, greater_than: 0, less_than_or_equal_to: 8_000_000)
+    |> validate_number_if_present(:participant_name_position,
+      greater_than_or_equal_to: 15,
+      less_than_or_equal_to: 75
+    )
+    |> validate_inclusion_if_field_present(:participant_name_position_source, [
+      "fallback",
+      "detected",
+      "manual"
+    ])
   end
 
   defp normalize_fields(changeset) do
@@ -206,6 +202,18 @@ defmodule Tracms.Certificates.CertificateLayoutSetting do
 
   defp validate_length_if_present(changeset, field, max) do
     validate_length(changeset, field, max: max)
+  end
+
+  defp validate_number_if_present(changeset, field, options) do
+    if Map.has_key?(changeset.types, field),
+      do: validate_number(changeset, field, options),
+      else: changeset
+  end
+
+  defp validate_inclusion_if_field_present(changeset, field, values) do
+    if Map.has_key?(changeset.types, field),
+      do: validate_inclusion(changeset, field, values),
+      else: changeset
   end
 
   defp normalize_text(value) when is_binary(value) do

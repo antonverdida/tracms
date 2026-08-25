@@ -19,6 +19,7 @@ defmodule Tracms.Accounts.User do
 
   schema "users" do
     field :email, :string
+    field :username, :string
     field :full_name, :string
     field :employee_number, :string
     field :notification_preferences, :map, default: %{}
@@ -51,6 +52,41 @@ defmodule Tracms.Accounts.User do
     user
     |> cast(attrs, [:email])
     |> validate_email(opts)
+  end
+
+  def username_changeset(user, attrs, opts \\ []) do
+    user
+    |> cast(attrs, [:username])
+    |> update_change(:username, &normalize_username/1)
+    |> validate_required([:username])
+    |> validate_length(:username, min: 3, max: 32)
+    |> validate_format(:username, ~r/^[a-z][a-z0-9._-]*$/,
+      message:
+        "must start with a letter and use only lowercase letters, numbers, periods, hyphens, or underscores"
+    )
+    |> maybe_validate_username_unique(opts)
+  end
+
+  def registration_changeset(user, attrs, opts \\ []) do
+    user
+    |> email_changeset(attrs, opts)
+    |> username_changeset(attrs, opts)
+  end
+
+  defp normalize_username(username) do
+    username
+    |> String.trim()
+    |> String.downcase()
+  end
+
+  defp maybe_validate_username_unique(changeset, opts) do
+    if Keyword.get(opts, :validate_unique, true) do
+      changeset
+      |> unsafe_validate_unique(:username, Tracms.Repo)
+      |> unique_constraint(:username)
+    else
+      changeset
+    end
   end
 
   defp validate_email(changeset, opts) do

@@ -103,7 +103,7 @@ defmodule TracmsWeb.UserLive.Registration do
             <div class="auth-card-header auth-portal-card-header">
               <h2 class="auth-card-title">Create account</h2>
               <p class="auth-card-copy">
-                Enter your work email address to receive your first secure sign-in link.
+                Choose a username and provide your work email to receive your first secure sign-in link.
               </p>
             </div>
 
@@ -115,6 +115,32 @@ defmodule TracmsWeb.UserLive.Registration do
               class="auth-form auth-portal-form"
             >
               <div class="auth-form-section">
+                <label class="auth-portal-field-block">
+                  <span class="field-label auth-portal-label">Username</span>
+                  <div class="auth-portal-input-shell">
+                    <.icon name="hero-user" class="auth-portal-input-icon" />
+                    <input
+                      type="text"
+                      name={@form[:username].name}
+                      id={@form[:username].id}
+                      value={@form[:username].value}
+                      class="auth-portal-input"
+                      autocomplete="username"
+                      spellcheck="false"
+                      placeholder="Choose a username"
+                      required
+                      phx-mounted={JS.focus()}
+                    />
+                  </div>
+                </label>
+                <p
+                  :for={msg <- @form[:username].errors}
+                  class="mt-1 flex items-center gap-2 text-sm text-[var(--tracms-danger)]"
+                >
+                  <.icon name="hero-exclamation-circle" class="size-5" />
+                  {translate_error(msg)}
+                </p>
+
                 <label class="auth-portal-field-block">
                   <span class="field-label auth-portal-label">Email Address</span>
                   <div class="auth-portal-input-shell">
@@ -129,7 +155,6 @@ defmodule TracmsWeb.UserLive.Registration do
                       spellcheck="false"
                       placeholder="Enter your DepEd email address"
                       required
-                      phx-mounted={JS.focus()}
                     />
                   </div>
                 </label>
@@ -185,7 +210,7 @@ defmodule TracmsWeb.UserLive.Registration do
   end
 
   def mount(_params, _session, socket) do
-    changeset = Accounts.change_user_email(%User{}, %{}, validate_unique: false)
+    changeset = Accounts.change_user_registration(%User{}, %{}, validate_unique: false)
 
     {:ok, assign_form(socket, changeset), temporary_assigns: [form: nil]}
   end
@@ -214,7 +239,7 @@ defmodule TracmsWeb.UserLive.Registration do
   end
 
   def handle_event("validate", %{"user" => user_params}, socket) do
-    changeset = Accounts.change_user_email(%User{}, user_params, validate_unique: false)
+    changeset = Accounts.change_user_registration(%User{}, user_params, validate_unique: false)
     {:noreply, assign_form(socket, Map.put(changeset, :action, :validate))}
   end
 

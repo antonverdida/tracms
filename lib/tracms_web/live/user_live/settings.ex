@@ -121,11 +121,11 @@ defmodule TracmsWeb.UserLive.Settings do
                     class="mt-5"
                   >
                     <input
-                      name={@password_form[:email].name}
+                      name={@password_form[:username].name}
                       type="hidden"
-                      id="hidden_user_email"
+                      id="hidden_user_username"
                       spellcheck="false"
-                      value={@current_email}
+                      value={@current_scope.user.username}
                     />
                     <div class="grid gap-4">
                       <.input

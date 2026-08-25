@@ -64,17 +64,13 @@ defmodule TracmsWeb.CertificateComponents do
             href={@certificate_verification_url}
             target="_blank"
             rel="noopener noreferrer"
-            class="certificate-sheet-custom-qr-card"
+            class="certificate-sheet-custom-qr"
           >
             <img
               src={@certificate_qr_data_uri}
               alt={"QR code for certificate #{@certificate.certificate_number}"}
               class="certificate-sheet-custom-qr-image"
             />
-            <div class="certificate-sheet-custom-qr-copy">
-              <p class="certificate-sheet-custom-qr-label">Certificate No.</p>
-              <p class="certificate-sheet-custom-qr-value">{@certificate.certificate_number}</p>
-            </div>
           </a>
         </div>
       <% else %>
@@ -158,6 +154,10 @@ defmodule TracmsWeb.CertificateComponents do
 
     palette
     |> Map.merge(size)
+    |> Map.put(
+      "certificate-participant-name-top",
+      "#{participant_name_position(layout_settings)}%"
+    )
     |> Enum.map_join("; ", fn {key, value} -> "--#{key}: #{value}" end)
   end
 
@@ -223,13 +223,27 @@ defmodule TracmsWeb.CertificateComponents do
   end
 
   defp certificate_asset_image_path(layout_settings) do
+    asset_data = Map.get(layout_settings, :asset_data)
     asset_path = Map.get(layout_settings, :asset_path)
     asset_content_type = Map.get(layout_settings, :asset_content_type)
 
-    if certificate_image_asset?(asset_path, asset_content_type) do
-      asset_path
+    cond do
+      is_binary(asset_data) and byte_size(asset_data) > 0 and is_binary(asset_content_type) ->
+        "data:#{asset_content_type};base64," <> Base.encode64(asset_data)
+
+      certificate_image_asset?(asset_path, asset_content_type) ->
+        asset_path
+
+      true ->
+        nil
     end
   end
+
+  defp participant_name_position(%{participant_name_position: position})
+       when is_number(position) and position >= 15 and position <= 75,
+       do: position
+
+  defp participant_name_position(_layout_settings), do: 39.0
 
   defp certificate_verification_url(%{verification_code: verification_code})
        when is_binary(verification_code) and verification_code != "" do

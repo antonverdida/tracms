@@ -2,6 +2,7 @@ defmodule TracmsWeb.TrainingLive.Certificates do
   use TracmsWeb, :live_view
 
   alias Tracms.Certificates
+  alias Tracms.Certificates.Notifier
   alias Tracms.Registrations
   alias Tracms.Trainings
 
@@ -197,6 +198,44 @@ defmodule TracmsWeb.TrainingLive.Certificates do
     end
   end
 
+  def handle_event("email_all_certificates", _params, socket) do
+    training = socket.assigns.selected_training
+
+    results =
+      socket.assigns.issued_certificates
+      |> Enum.map(fn certificate ->
+        case Notifier.deliver(certificate) do
+          :ok ->
+            _ =
+              Certificates.mark_training_certificate_emailed(
+                socket.assigns.current_scope,
+                training.id,
+                certificate.id
+              )
+
+            :sent
+
+          {:error, :missing_email} ->
+            :missing_email
+
+          {:error, _reason} ->
+            :failed
+        end
+      end)
+
+    sent = Enum.count(results, &(&1 == :sent))
+    missing_email = Enum.count(results, &(&1 == :missing_email))
+    failed = Enum.count(results, &(&1 == :failed))
+
+    {:noreply,
+     socket
+     |> put_flash(
+       :info,
+       "Emailed #{sent} PDF#{if(sent == 1, do: "", else: "s")}. #{missing_email} missing email, #{failed} failed."
+     )
+     |> load_page()}
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -380,6 +419,15 @@ defmodule TracmsWeb.TrainingLive.Certificates do
                     variant="secondary"
                   >
                     Download All PDFs
+                  </.button>
+                  <.button
+                    :if={@issued_certificates != []}
+                    type="button"
+                    phx-click="email_all_certificates"
+                    phx-disable-with="Emailing PDFs..."
+                    variant="secondary"
+                  >
+                    Email All PDFs
                   </.button>
                   <.button patch={~p"/certificates"} variant="ghost">Back</.button>
                 </.form>

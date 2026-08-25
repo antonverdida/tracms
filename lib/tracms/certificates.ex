@@ -294,6 +294,22 @@ defmodule Tracms.Certificates do
     end
   end
 
+  def mark_training_certificate_emailed(scope, training_id, certificate_id) do
+    case get_training_certificate(scope, training_id, certificate_id) do
+      nil ->
+        {:error, :not_found}
+
+      certificate ->
+        certificate
+        |> CertificateRecord.changeset(%{
+          delivery_status: :emailed,
+          emailed_at: DateTime.utc_now(:second)
+        })
+        |> Repo.update()
+        |> preload_result()
+    end
+  end
+
   def mark_downloaded(scope, certificate_id) do
     case get_user_certificate(scope, certificate_id) do
       nil ->
@@ -409,7 +425,7 @@ defmodule Tracms.Certificates do
     ends_on = training_activity.ends_on || Date.add(starts_on, 2)
 
     %{
-      certificate_number: "DEPED9-#{today.year}-000001",
+      certificate_number: "000001",
       certificate_type: training_activity.certificate_type || "Certificate of Completion",
       issued_on: today,
       delivery_status: :available,
@@ -437,7 +453,7 @@ defmodule Tracms.Certificates do
     today = Date.utc_today()
 
     %{
-      certificate_number: "DEPED9-#{today.year}-000001",
+      certificate_number: "000001",
       certificate_type: "Certificate of Completion",
       issued_on: today,
       delivery_status: :available,
@@ -603,27 +619,24 @@ defmodule Tracms.Certificates do
   end
 
   defp next_certificate_number do
-    layout_setting = get_default_certificate_layout_setting()
-    start_number = layout_setting.certificate_number_start || 1
-    end_number = layout_setting.certificate_number_end || 999_999
-    year = Date.utc_today().year
-    prefix = "DEPED9-#{year}-"
-
     issued_serials =
       CertificateRecord
-      |> where([certificate], like(certificate.certificate_number, ^"#{prefix}%"))
       |> select([certificate], certificate.certificate_number)
       |> Repo.all()
-      |> MapSet.new(&certificate_serial(&1, prefix))
+      |> MapSet.new(&certificate_serial/1)
 
-    case Enum.find(start_number..end_number, &(not MapSet.member?(issued_serials, &1))) do
-      nil -> :certificate_number_range_exhausted
-      serial -> {:ok, "#{prefix}#{Integer.to_string(serial) |> String.pad_leading(6, "0")}"}
-    end
+    next_serial = (issued_serials |> Enum.reject(&is_nil/1) |> Enum.max(fn -> 0 end)) + 1
+
+    {:ok, Integer.to_string(next_serial) |> String.pad_leading(6, "0")}
   end
 
-  defp certificate_serial(certificate_number, prefix) do
-    case certificate_number |> String.replace_prefix(prefix, "") |> Integer.parse() do
+  defp certificate_serial(certificate_number) when is_binary(certificate_number),
+    do: parse_serial(certificate_number)
+
+  defp certificate_serial(_certificate_number), do: nil
+
+  defp parse_serial(certificate_number) do
+    case Integer.parse(certificate_number) do
       {serial, ""} -> serial
       _other -> nil
     end

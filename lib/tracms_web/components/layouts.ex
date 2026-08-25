@@ -223,24 +223,21 @@ defmodule TracmsWeb.Layouts do
           </span>
           <div class="account-menu-identity-copy">
             <p class="account-menu-name">{user_display_name(@current_scope.user)}</p>
+            <p class="account-menu-username">@{@current_scope.user.username}</p>
             <p class="account-menu-role">{account_role_label(@current_scope)}</p>
-            <p class="account-menu-email">{@current_scope.user.email}</p>
           </div>
         </div>
 
         <nav class="account-menu-actions" aria-label="Account menu">
           <.link navigate={~p"/profile"} class="account-menu-action">
-            <.icon name="hero-user-circle" class="size-5" /> Profile Information
+            <.icon name="hero-user-circle" class="size-5" /> View Profile
           </.link>
           <.link navigate={~p"/users/settings"} class="account-menu-action">
             <.icon name="hero-shield-check" class="size-5" /> Account &amp; Security
           </.link>
         </nav>
 
-        <div class="account-menu-footer">
-          <button type="button" class="account-menu-cancel" data-account-menu-cancel>
-            Cancel
-          </button>
+        <div class="account-menu-logout-wrap">
           <.button
             href={~p"/users/log-out"}
             method="delete"

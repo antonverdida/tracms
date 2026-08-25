@@ -174,7 +174,7 @@ regional_office = Repo.get_by!(Office, code: "RO9-REG")
 demo_user =
   Repo.get_by(User, email: demo_email) ||
     %User{}
-    |> User.email_changeset(%{email: demo_email})
+    |> User.registration_changeset(%{email: demo_email, username: "admin"})
     |> Repo.insert!()
 
 demo_user
@@ -204,7 +204,7 @@ ensure_user = fn email, attrs ->
   user =
     Repo.get_by(User, email: email) ||
       %User{}
-      |> User.email_changeset(%{email: email})
+      |> User.registration_changeset(%{email: email, username: email |> String.split("@") |> hd()})
       |> Repo.insert!()
 
   user
@@ -852,7 +852,7 @@ Enum.each(
       registration_id:
         registration_for.("Learning Recovery and Acceleration Program", "juan.cruz@deped.gov.ph").id,
       issued_by_user_id: coordinator_user.id,
-      certificate_number: "DEPED9-DEMO-0001",
+      certificate_number: "000001",
       certificate_type: "Certificate of Completion",
       issued_on: ~D[2026-07-05],
       delivery_status: :available
@@ -864,7 +864,7 @@ Enum.each(
           "maria.santos@deped.gov.ph"
         ).id,
       issued_by_user_id: coordinator_user.id,
-      certificate_number: "DEPED9-DEMO-0002",
+      certificate_number: "000002",
       certificate_type: "Certificate of Completion",
       issued_on: ~D[2026-07-05],
       delivery_status: :downloaded,

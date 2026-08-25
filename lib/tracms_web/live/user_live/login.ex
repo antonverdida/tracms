@@ -44,19 +44,19 @@ defmodule TracmsWeb.UserLive.Login do
             >
               <div class="auth-form-section">
                 <label class="auth-portal-field-block">
-                  <span class="field-label auth-portal-label">Email Address</span>
+                  <span class="field-label auth-portal-label">Username</span>
                   <div class="auth-portal-input-shell">
                     <.icon name="hero-envelope" class="auth-portal-input-icon" />
                     <input
                       readonly={!!@current_scope}
-                      type="email"
-                      name={f[:email].name}
-                      id={f[:email].id}
-                      value={f[:email].value}
+                      type="text"
+                      name={f[:username].name}
+                      id={f[:username].id}
+                      value={f[:username].value}
                       class="auth-portal-input"
                       autocomplete="username"
                       spellcheck="false"
-                      placeholder="Enter your DepEd email address"
+                      placeholder="Enter your username"
                       required
                       phx-mounted={JS.focus()}
                     />
@@ -97,7 +97,7 @@ defmodule TracmsWeb.UserLive.Login do
               </.button>
 
               <p class="auth-portal-support-copy">
-                Forgot your password? Contact your system administrator for password assistance.
+                Forgot password?
               </p>
             </.form>
           </article>
@@ -127,11 +127,11 @@ defmodule TracmsWeb.UserLive.Login do
 
   @impl true
   def mount(_params, _session, socket) do
-    email =
-      Phoenix.Flash.get(socket.assigns.flash, :email) ||
-        get_in(socket.assigns, [:current_scope, Access.key(:user), Access.key(:email)])
+    username =
+      Phoenix.Flash.get(socket.assigns.flash, :username) ||
+        get_in(socket.assigns, [:current_scope, Access.key(:user), Access.key(:username)])
 
-    form = to_form(%{"email" => email, "remember_me" => false}, as: "user")
+    form = to_form(%{"username" => username, "remember_me" => false}, as: "user")
 
     {:ok, assign(socket, form: form, trigger_submit: false)}
   end

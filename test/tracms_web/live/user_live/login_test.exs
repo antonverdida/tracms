@@ -28,7 +28,7 @@ defmodule TracmsWeb.UserLive.LoginTest do
 
       form =
         form(lv, "#login_form_password",
-          user: %{email: user.email, password: valid_user_password(), remember_me: true}
+          user: %{username: user.username, password: valid_user_password(), remember_me: true}
         )
 
       conn = submit_form(form, conn)
@@ -42,12 +42,12 @@ defmodule TracmsWeb.UserLive.LoginTest do
       {:ok, lv, _html} = live(conn, ~p"/users/log-in")
 
       form =
-        form(lv, "#login_form_password", user: %{email: "test@email.com", password: "123456"})
+        form(lv, "#login_form_password", user: %{username: "test-user", password: "123456"})
 
       render_submit(form, %{user: %{remember_me: true}})
 
       conn = follow_trigger_action(form, conn)
-      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid email or password"
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid username or password"
       assert redirected_to(conn) == ~p"/users/log-in"
     end
   end
@@ -58,14 +58,14 @@ defmodule TracmsWeb.UserLive.LoginTest do
       %{user: user, conn: log_in_user(conn, user)}
     end
 
-    test "shows login page with email filled in", %{conn: conn, user: user} do
+    test "shows login page with username filled in", %{conn: conn, user: user} do
       {:ok, _lv, html} = live(conn, ~p"/users/log-in")
 
       assert html =~ "Secure Login"
       refute html =~ "Create account"
       refute html =~ "Send secure sign-in link"
-      assert html =~ ~s(id="login_form_password_email")
-      assert html =~ ~s(value="#{user.email}")
+      assert html =~ ~s(id="login_form_password_username")
+      assert html =~ ~s(value="#{user.username}")
     end
   end
 end

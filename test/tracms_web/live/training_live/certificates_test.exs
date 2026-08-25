@@ -101,7 +101,7 @@ defmodule TracmsWeb.TrainingLive.CertificatesTest do
     assert manual_entry.attendance_record == nil
     assert manual_entry.eligible?
     assert manual_entry.certificate
-    assert manual_entry.certificate.certificate_number =~ "DEPED9-"
+    assert manual_entry.certificate.certificate_number =~ ~r/^\d{6}$/
 
     html =
       view
@@ -169,17 +169,11 @@ defmodule TracmsWeb.TrainingLive.CertificatesTest do
     assert html =~ "Certificate Reconciliation Participant"
     assert html =~ "Not Recorded"
     assert html =~ "Generated"
-    assert html =~ "DEPED9-"
+    assert html =~ ~r/\b\d{6}\b/
   end
 
-  test "issues certificate numbers sequentially within the configured range" do
+  test "issues certificate numbers sequentially" do
     manager = training_manager_scope_fixture("regional_admin")
-
-    {:ok, _layout_setting} =
-      Certificates.update_default_certificate_layout(manager.scope, %{
-        "certificate_number_start" => "101",
-        "certificate_number_end" => "102"
-      })
 
     training = completed_training_fixture_for_manager(manager.scope)
 
@@ -196,10 +190,8 @@ defmodule TracmsWeb.TrainingLive.CertificatesTest do
     {:ok, second_certificate} =
       Certificates.issue_certificate(manager.scope, second_registration.id)
 
-    year = Date.utc_today().year
-
-    assert first_certificate.certificate_number == "DEPED9-#{year}-000101"
-    assert second_certificate.certificate_number == "DEPED9-#{year}-000102"
+    assert first_certificate.certificate_number == "000001"
+    assert second_certificate.certificate_number == "000002"
   end
 
   test "generates certificates for all eligible participants from the page header", %{conn: conn} do

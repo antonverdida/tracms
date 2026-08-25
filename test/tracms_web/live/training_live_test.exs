@@ -4,6 +4,8 @@ defmodule TracmsWeb.TrainingLiveTest do
   import Phoenix.LiveViewTest
   import Tracms.TrainingsFixtures
 
+  alias Tracms.Certificates
+
   describe "training management access" do
     test "redirects a logged-in user without training manager role", %{conn: conn} do
       user = Tracms.AccountsFixtures.user_fixture()
@@ -66,8 +68,6 @@ defmodule TracmsWeb.TrainingLiveTest do
         form(lv, "#training-form",
           training_activity: %{
             title: "Regional Literacy Summit",
-            description: "Summit description",
-            objectives: "Improve literacy program delivery and assessment planning.",
             category: "Curriculum and Instruction",
             training_type: "Professional Development Program",
             organizer: "DepEd Region IX",
@@ -78,8 +78,6 @@ defmodule TracmsWeb.TrainingLiveTest do
             total_hours: "24",
             start_time: "08:00",
             end_time: "17:00",
-            target_participants: "Teachers and school heads",
-            participant_qualification: "Must be endorsed by the school head.",
             registration_opens_on: "2026-07-20",
             registration_deadline: "2026-08-01T09:00",
             max_capacity: 150,
@@ -88,30 +86,124 @@ defmodule TracmsWeb.TrainingLiveTest do
             attendance_monitoring_method: "QR Code and Manual Verification",
             certificate_type: "Certificate of Participation",
             registration_form_url: "https://forms.gle/tracms-registration",
-            attendance_form_url: "https://forms.gle/tracms-attendance",
             registration_sheet_id: "sync-sheet-main",
-            registration_sheet_range: "Form Responses 1!A:F",
-            attendance_sheet_id: "attendance-sheet-main",
-            attendance_sheet_range: "Attendance!A:C"
+            registration_sheet_range: "Form Responses 1!A:F"
           }
         )
 
-      assert {:error, {:live_redirect, %{to: path}}} = render_submit(form)
-      assert path == "/trainings"
+      render_submit(form)
 
-      {:ok, _lv, html} =
-        {:error, {:live_redirect, %{to: path}}}
-        |> follow_redirect(conn, path)
+      assert has_element?(lv, "#training-created-confirmation")
+      assert has_element?(lv, "#training-created-confirmation", "Regional Literacy Summit")
 
-      assert html =~ "Regional Literacy Summit"
+      html = render(lv)
+
       refute html =~ "Registration workspace"
 
       refute html =~
                "Use this training-specific workspace to review registrations and registered participants."
 
-      assert html =~ "/trainings/"
-      refute html =~ "/registrations?training_id="
-      assert html =~ "View"
+      assert has_element?(lv, "a[href^='/trainings/']", "View Training")
+    end
+
+    test "shows a drag-and-drop certificate layout upload area for a regional administrator", %{
+      conn: conn
+    } do
+      %{user: user} = training_manager_scope_fixture("regional_admin")
+      conn = log_in_user(conn, user)
+
+      {:ok, lv, _html} =
+        conn
+        |> live(~p"/trainings/new")
+
+      assert has_element?(lv, "#certificate-layout-dropzone[phx-drop-target]")
+
+      assert has_element?(
+               lv,
+               "#certificate-layout-dropzone input[type='file'][data-phx-upload-ref]"
+             )
+
+      assert has_element?(
+               lv,
+               "#certificate-layout-dropzone input[type='file'][data-phx-auto-upload]"
+             )
+
+      assert has_element?(
+               lv,
+               "#certificate-layout-dropzone input[type='file'].certificate-layout-upload-input"
+             )
+    end
+
+    test "uploads a certificate layout and creates a training for a regional administrator", %{
+      conn: conn
+    } do
+      %{user: user} = training_manager_scope_fixture("regional_admin")
+      conn = log_in_user(conn, user)
+
+      {:ok, lv, _html} =
+        conn
+        |> live(~p"/trainings/new")
+
+      assert has_element?(lv, "#save-training-button:not([disabled])")
+
+      lv
+      |> file_input("#certificate-layout-form", :certificate_layout_asset, [
+        %{
+          last_modified: 1_724_486_400_000,
+          name: "certificate-layout.png",
+          content: "certificate image content",
+          type: "image/png"
+        }
+      ])
+      |> render_upload("certificate-layout.png")
+
+      assert has_element?(lv, "#certificate-layout-save-confirmation")
+      assert has_element?(lv, "#flash-info", "Certificate layout saved automatically.")
+      assert has_element?(lv, "#save-training-button:not([disabled])")
+
+      layout = Certificates.get_default_certificate_layout_setting()
+      assert layout.asset_name == "certificate-layout.png"
+      assert layout.asset_path == "database://default"
+      assert layout.asset_data == "certificate image content"
+      assert layout.asset_size == byte_size("certificate image content")
+
+      training_form =
+        form(lv, "#training-form",
+          training_activity: %{
+            title: "Layout-Ready Training",
+            category: "Teacher Development",
+            training_type: "Capacity Building Training",
+            organizer: "DepEd Region IX",
+            modality: "face_to_face",
+            venue: "Regional Learning Center",
+            venue_address: "Pagadian City",
+            attendance_monitoring_method: "QR Code and Manual Verification",
+            certificate_type: "Certificate of Participation",
+            minimum_attendance_percentage: "75",
+            evaluation_required: "false"
+          }
+        )
+
+      render_submit(training_form)
+
+      assert has_element?(lv, "#training-created-confirmation")
+      assert has_element?(lv, "a[href='/trainings']", "Back to List of Trainings")
+      assert has_element?(lv, "a[href^='/trainings/']", "View Training")
+    end
+
+    test "hides certificate document-control settings for a regional administrator", %{conn: conn} do
+      %{user: user} = training_manager_scope_fixture("regional_admin")
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/trainings/new")
+
+      assert has_element?(lv, "#certificate-layout-form")
+      assert has_element?(lv, "select[name='certificate_layout_setting[certificate_size]']")
+      refute has_element?(lv, "input[name='certificate_layout_setting[document_reference_code]']")
+      refute has_element?(lv, "input[name='certificate_layout_setting[revision_number]']")
+      refute has_element?(lv, "input[name='certificate_layout_setting[effectivity_date]']")
     end
 
     test "renders the Google Workspace integration page for a training", %{conn: conn} do

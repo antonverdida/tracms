@@ -28,7 +28,7 @@ defmodule TracmsWeb.UserLive.RegistrationTest do
       result =
         lv
         |> element("#registration_form")
-        |> render_change(user: %{"email" => "with spaces"})
+        |> render_change(user: %{"username" => "with spaces", "email" => "with spaces"})
 
       assert result =~ "Create account"
       assert result =~ "must have the @ sign and no spaces"
@@ -58,7 +58,7 @@ defmodule TracmsWeb.UserLive.RegistrationTest do
       result =
         lv
         |> form("#registration_form",
-          user: %{"email" => user.email}
+          user: %{"username" => user.username, "email" => user.email}
         )
         |> render_submit()
 

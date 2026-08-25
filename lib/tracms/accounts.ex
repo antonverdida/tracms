@@ -31,20 +31,20 @@ defmodule Tracms.Accounts do
   end
 
   @doc """
-  Gets a user by email and password.
+  Gets a user by username and password.
 
   ## Examples
 
-      iex> get_user_by_email_and_password("foo@example.com", "correct_password")
+      iex> get_user_by_username_and_password("foo", "correct_password")
       %User{}
 
-      iex> get_user_by_email_and_password("foo@example.com", "invalid_password")
+      iex> get_user_by_username_and_password("foo", "invalid_password")
       nil
 
   """
-  def get_user_by_email_and_password(email, password)
-      when is_binary(email) and is_binary(password) do
-    user = User |> Repo.get_by(email: email) |> preload_user_context()
+  def get_user_by_username_and_password(username, password)
+      when is_binary(username) and is_binary(password) do
+    user = User |> Repo.get_by(username: String.downcase(username)) |> preload_user_context()
     if User.valid_password?(user, password), do: user
   end
 
@@ -143,10 +143,17 @@ defmodule Tracms.Accounts do
 
   """
   def register_user(attrs) do
+    attrs = put_derived_username(attrs)
+
     %User{}
-    |> User.email_changeset(attrs)
+    |> User.registration_changeset(attrs)
     |> Repo.insert()
     |> preload_user_context_result()
+  end
+
+  def change_user_registration(user, attrs \\ %{}, opts \\ []) do
+    attrs = put_derived_username(attrs)
+    User.registration_changeset(user, attrs, opts)
   end
 
   ## Settings
@@ -376,6 +383,31 @@ defmodule Tracms.Accounts do
         {:ok, {preload_user_context(user), tokens_to_expire}}
       end
     end)
+  end
+
+  defp put_derived_username(attrs) do
+    username = Map.get(attrs, "username") || Map.get(attrs, :username)
+
+    if is_binary(username) and String.trim(username) != "" do
+      attrs
+    else
+      email = Map.get(attrs, "email") || Map.get(attrs, :email) || ""
+
+      derived_username =
+        email
+        |> String.split("@")
+        |> List.first()
+        |> to_string()
+        |> String.downcase()
+        |> String.replace(~r/[^a-z0-9._-]/, "-")
+        |> String.trim("-._")
+
+      Map.put(
+        attrs,
+        if(is_map_key(attrs, "email"), do: "username", else: :username),
+        derived_username
+      )
+    end
   end
 
   defp preload_user_context(nil), do: nil

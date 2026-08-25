@@ -57,6 +57,11 @@ defmodule TracmsWeb.CertificateDocumentController do
     |> send_resp(200, pdf_binary)
   end
 
+  def pdf_binary(certificate), do: manager_pdf_binary!(certificate)
+
+  def pdf_filename(certificate),
+    do: "tracms-certificate-#{certificate_number_slug(certificate.certificate_number)}.pdf"
+
   def manager_bulk_export(conn, %{"training_id" => training_id}) do
     training_activity =
       Trainings.get_training_activity!(conn.assigns.current_scope, training_id)
@@ -109,10 +114,6 @@ defmodule TracmsWeb.CertificateDocumentController do
 
   defp pdf_content_disposition(certificate) do
     ~s(attachment; filename="#{pdf_filename(certificate)}")
-  end
-
-  defp pdf_filename(certificate) do
-    "tracms-certificate-#{certificate_number_slug(certificate.certificate_number)}.pdf"
   end
 
   defp bulk_archive_filename(training_activity) do

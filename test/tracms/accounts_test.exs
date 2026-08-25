@@ -18,21 +18,21 @@ defmodule Tracms.AccountsTest do
     end
   end
 
-  describe "get_user_by_email_and_password/2" do
-    test "does not return the user if the email does not exist" do
-      refute Accounts.get_user_by_email_and_password("unknown@example.com", "hello world!")
+  describe "get_user_by_username_and_password/2" do
+    test "does not return the user if the username does not exist" do
+      refute Accounts.get_user_by_username_and_password("unknown-user", "hello world!")
     end
 
     test "does not return the user if the password is not valid" do
       user = user_fixture() |> set_password()
-      refute Accounts.get_user_by_email_and_password(user.email, "invalid")
+      refute Accounts.get_user_by_username_and_password(user.username, "invalid")
     end
 
-    test "returns the user if the email and password are valid" do
+    test "returns the user if the username and password are valid" do
       %{id: id} = user = user_fixture() |> set_password()
 
       assert %User{id: ^id} =
-               Accounts.get_user_by_email_and_password(user.email, valid_user_password())
+               Accounts.get_user_by_username_and_password(user.username, valid_user_password())
     end
   end
 
@@ -82,10 +82,23 @@ defmodule Tracms.AccountsTest do
       email = unique_user_email()
       {:ok, user} = Accounts.register_user(valid_user_attributes(email: email))
       assert user.email == email
+      assert is_binary(user.username)
       assert user.status == :pending
       assert is_nil(user.hashed_password)
       assert is_nil(user.confirmed_at)
       assert is_nil(user.password)
+    end
+
+    test "normalizes usernames and enforces uniqueness" do
+      {:ok, user} =
+        Accounts.register_user(%{email: unique_user_email(), username: "Regional.Admin"})
+
+      assert user.username == "regional.admin"
+
+      assert {:error, changeset} =
+               Accounts.register_user(%{email: unique_user_email(), username: "regional.admin"})
+
+      assert "has already been taken" in errors_on(changeset).username
     end
   end
 
@@ -299,7 +312,7 @@ defmodule Tracms.AccountsTest do
 
       assert expired_tokens == []
       assert is_nil(user.password)
-      assert Accounts.get_user_by_email_and_password(user.email, "new valid password")
+      assert Accounts.get_user_by_username_and_password(user.username, "new valid password")
     end
 
     test "deletes all tokens for the given user", %{user: user} do

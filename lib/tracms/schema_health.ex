@@ -62,7 +62,7 @@ defmodule Tracms.SchemaHealth do
     "certificate_layout_settings" => ~w(
       id scope_key certificate_size layout_style accent_color header_title header_subtitle body_intro
       completion_statement signature_label issuing_office_label asset_path asset_name
-      asset_content_type certificate_number_start certificate_number_end inserted_at updated_at
+      asset_content_type inserted_at updated_at
     )
   }
 
