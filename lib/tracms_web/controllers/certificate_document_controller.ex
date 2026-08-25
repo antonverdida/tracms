@@ -224,8 +224,6 @@ defmodule TracmsWeb.CertificateDocumentController do
       --no-zygote \
       --disable-gpu \
       --disable-dev-shm-usage \
-      --disable-crash-reporter \
-      --disable-breakpad \
       --disable-background-networking \
       --disable-component-update \
       --disable-default-apps \
