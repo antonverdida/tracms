@@ -220,8 +220,12 @@ defmodule TracmsWeb.CertificateDocumentController do
     #{chrome} \
       --headless \
       --no-sandbox \
+      --disable-setuid-sandbox \
+      --no-zygote \
       --disable-gpu \
       --disable-dev-shm-usage \
+      --disable-crash-reporter \
+      --disable-breakpad \
       --disable-background-networking \
       --disable-component-update \
       --disable-default-apps \
@@ -234,7 +238,7 @@ defmodule TracmsWeb.CertificateDocumentController do
       --print-to-pdf-no-header \
       --run-all-compositor-stages-before-draw \
       --virtual-time-budget=1500 \
-      #{html} >/dev/null 2>&1 &
+      #{html} &
     pid=$!
     last_size=0
     stable_count=0
