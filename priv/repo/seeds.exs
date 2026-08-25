@@ -174,7 +174,7 @@ regional_office = Repo.get_by!(Office, code: "RO9-REG")
 demo_user =
   Repo.get_by(User, email: demo_email) ||
     %User{}
-    |> User.registration_changeset(%{email: demo_email, username: "admin"})
+    |> User.registration_changeset(%{email: demo_email, username: "demo_admin"})
     |> Repo.insert!()
 
 demo_user
