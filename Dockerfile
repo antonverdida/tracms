@@ -42,6 +42,9 @@ RUN groupadd --gid 1000 tracms && \
 
 COPY --from=build --chown=tracms:tracms /app/_build/prod/rel/tracms ./
 
+# Chromium needs writable home, config, and cache directories for crashpad and PDF rendering.
+RUN mkdir -p /app/.cache /app/.config && chown -R tracms:tracms /app
+
 USER tracms
 
 ENV HOME=/app \
