@@ -12,6 +12,7 @@ defmodule TracmsWeb.TrainingLive.Integrations do
      |> assign(:page_title, "Google Workspace Integration")
      |> assign(:training_id, training_id)
      |> assign(:registration_sync_result, nil)
+     |> assign(:integration_error, nil)
      |> assign(:configuring_integrations?, false)}
   end
 
@@ -29,12 +30,13 @@ defmodule TracmsWeb.TrainingLive.Integrations do
       {:ok, result} ->
         {:noreply,
          socket
+         |> assign(:integration_error, nil)
          |> put_flash(:info, registration_sync_summary(result))
          |> load_page()
          |> assign(:registration_sync_result, result)}
 
       {:error, reason} ->
-        {:noreply, put_flash(socket, :error, registration_sync_error_message(reason))}
+        {:noreply, put_integration_error(socket, registration_sync_error_message(reason))}
     end
   end
 
@@ -47,11 +49,12 @@ defmodule TracmsWeb.TrainingLive.Integrations do
       {:ok, training_activity} ->
         {:noreply,
          socket
+         |> assign(:integration_error, nil)
          |> put_flash(:info, "Google registration form generated successfully.")
          |> load_page(training_activity.id)}
 
       {:error, reason} ->
-        {:noreply, put_flash(socket, :error, google_form_error_message(reason))}
+        {:noreply, put_integration_error(socket, google_form_error_message(reason))}
     end
   end
 
@@ -64,11 +67,12 @@ defmodule TracmsWeb.TrainingLive.Integrations do
       {:ok, training_activity} ->
         {:noreply,
          socket
+         |> assign(:integration_error, nil)
          |> put_flash(:info, "Google attendance form generated successfully.")
          |> load_page(training_activity.id)}
 
       {:error, reason} ->
-        {:noreply, put_flash(socket, :error, google_form_error_message(reason))}
+        {:noreply, put_integration_error(socket, google_form_error_message(reason))}
     end
   end
 
@@ -101,6 +105,7 @@ defmodule TracmsWeb.TrainingLive.Integrations do
       {:ok, _training_activity} ->
         {:noreply,
          socket
+         |> assign(:integration_error, nil)
          |> put_flash(:info, "Registration and attendance integrations updated.")
          |> assign(:configuring_integrations?, false)
          |> load_page()}
@@ -109,7 +114,8 @@ defmodule TracmsWeb.TrainingLive.Integrations do
         {:noreply, assign(socket, :integration_form, to_form(changeset, action: :validate))}
 
       {:error, :unauthorized} ->
-        {:noreply, put_flash(socket, :error, "You are not allowed to update these integrations.")}
+        {:noreply,
+         put_integration_error(socket, "You are not allowed to update these integrations.")}
     end
   end
 
@@ -149,6 +155,10 @@ defmodule TracmsWeb.TrainingLive.Integrations do
         </.training_workspace_header>
 
         <.portal_stat_grid cards={@summary_cards} />
+
+        <.alert :if={@integration_error} id="integration-error" kind={:error} title="Action needed">
+          {@integration_error}
+        </.alert>
 
         <section class="panel portal-list-panel">
           <.portal_panel_header
@@ -257,7 +267,10 @@ defmodule TracmsWeb.TrainingLive.Integrations do
               </div>
 
               <div class="mt-4 flex flex-wrap gap-3">
-                <.button phx-click="generate_registration_form">
+                <.button
+                  phx-click="generate_registration_form"
+                  phx-disable-with="Generating Registration Form..."
+                >
                   {if @registration_form_connected?,
                     do: "Regenerate Registration Form",
                     else: "Generate Registration Form"}
@@ -310,6 +323,7 @@ defmodule TracmsWeb.TrainingLive.Integrations do
                 <.button
                   :if={@registration_sheet_connected?}
                   phx-click="sync_registration_sheet"
+                  phx-disable-with="Syncing Registration Intake..."
                 >
                   Sync Registration Intake
                 </.button>
@@ -357,7 +371,10 @@ defmodule TracmsWeb.TrainingLive.Integrations do
               </div>
 
               <div class="mt-4 flex flex-wrap gap-3">
-                <.button phx-click="generate_attendance_form">
+                <.button
+                  phx-click="generate_attendance_form"
+                  phx-disable-with="Generating Attendance Form..."
+                >
                   {if @attendance_form_connected?,
                     do: "Regenerate Attendance Form",
                     else: "Generate Attendance Form"}
@@ -806,6 +823,12 @@ defmodule TracmsWeb.TrainingLive.Integrations do
 
   defp google_form_error_message(_reason) do
     "Unable to generate the Google Form right now."
+  end
+
+  defp put_integration_error(socket, message) do
+    socket
+    |> assign(:integration_error, message)
+    |> put_flash(:error, message)
   end
 
   defp google_form_edit_url(form_id), do: "https://docs.google.com/forms/d/#{form_id}/edit"

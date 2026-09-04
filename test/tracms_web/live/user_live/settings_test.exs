@@ -26,6 +26,7 @@ defmodule TracmsWeb.UserLive.SettingsTest do
       assert html =~ "Security"
       assert html =~ "Change email"
       assert html =~ "Update password"
+      assert html =~ "Notification Settings"
     end
 
     test "redirects if user is not logged in", %{conn: conn} do
@@ -133,7 +134,9 @@ defmodule TracmsWeb.UserLive.SettingsTest do
         |> form("#profile_form", %{
           "user" => %{
             "full_name" => "Juan Dela Cruz",
-            "employee_number" => "DEPED-2026-00125"
+            "employee_number" => "DEPED-2026-00125",
+            "position" => "Regional Administrator",
+            "contact_number" => "+63 912 345 6789"
           }
         })
         |> render_submit()
@@ -143,6 +146,30 @@ defmodule TracmsWeb.UserLive.SettingsTest do
       updated_user = Accounts.get_user!(user.id)
       assert updated_user.full_name == "Juan Dela Cruz"
       assert updated_user.employee_number == "DEPED-2026-00125"
+      assert updated_user.position == "Regional Administrator"
+      assert updated_user.contact_number == "+63 912 345 6789"
+    end
+
+    test "updates notification preferences", %{conn: conn, user: user} do
+      {:ok, lv, _html} = live(conn, ~p"/users/settings")
+
+      result =
+        lv
+        |> form("#notification-preferences-form", %{
+          "notification_preferences" => %{
+            "training_announcements" => "true",
+            "registration_updates" => "false",
+            "certificate_availability" => "true",
+            "system_announcements" => "false"
+          }
+        })
+        |> render_submit()
+
+      assert result =~ "Notification settings updated."
+
+      updated_user = Accounts.get_user!(user.id)
+      assert updated_user.notification_preferences["registration_updates"] == false
+      assert updated_user.notification_preferences["system_announcements"] == false
     end
   end
 
@@ -175,7 +202,7 @@ defmodule TracmsWeb.UserLive.SettingsTest do
       assert get_session(new_password_conn, :user_token) != get_session(conn, :user_token)
 
       assert Phoenix.Flash.get(new_password_conn.assigns.flash, :info) =~
-               "Password updated successfully"
+               "Your password has been updated successfully"
 
       assert Accounts.get_user_by_username_and_password(user.username, new_password)
     end

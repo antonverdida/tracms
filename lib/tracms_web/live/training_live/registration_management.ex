@@ -229,86 +229,64 @@ defmodule TracmsWeb.TrainingLive.RegistrationManagement do
         />
 
         <%= if is_nil(@selected_training) do %>
-          <section class="panel portal-list-panel">
-            <.portal_panel_header
-              eyebrow="Training directory"
-              title="Choose a Training First"
-            />
-
-            <%= if @trainings == [] do %>
-              <.portal_empty_state
-                icon="hero-calendar-days"
-                title="No trainings available yet"
-                copy="Create a training activity first before managing registrations."
-              />
-            <% else %>
-              <div class="data-table-wrap">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>Training Title</th>
-                      <th>Schedule</th>
-                      <th>Venue</th>
-                      <th>Status</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr :for={training <- @trainings}>
-                      <td>
-                        <div class="portal-cell-title">{training.title}</div>
-                        <div class="portal-cell-meta">
-                          {training.resource_speaker || "Facilitator to be assigned"}
-                        </div>
-                      </td>
-                      <td>
-                        <div class="portal-cell-title">
-                          {format_date(training.starts_on)} to {format_date(training.ends_on)}
-                        </div>
-                        <div class="portal-cell-meta">
-                          {schedule_time_label(training.start_time, training.end_time)}
-                        </div>
-                      </td>
-                      <td>{training.venue || "Venue to be announced"}</td>
-                      <td>
-                        <span class={[
-                          "portal-chip",
-                          "portal-chip-#{training_status_tone(training.status)}"
-                        ]}>
-                          {Trainings.format_status(training.status)}
-                        </span>
-                      </td>
-                      <td>
-                        <.button
-                          patch={training_management_path(training.id, @filters)}
-                          variant="secondary"
-                        >
-                          View
-                        </.button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+          <.panel eyebrow="Training directory" title="Choose a Training First">
+            <.data_table
+              id="registration-training-directory"
+              rows={@trainings}
+              row_id={fn training -> "registration-training-#{training.id}" end}
+              empty?={@trainings == []}
+            >
+              <:col :let={training} label="Training Title">
+                <div class="portal-cell-title">{training.title}</div>
+                <div class="portal-cell-meta">
+                  {training.resource_speaker || "Facilitator to be assigned"}
+                </div>
+              </:col>
+              <:col :let={training} label="Schedule">
+                <div class="portal-cell-title">
+                  {format_date(training.starts_on)} to {format_date(training.ends_on)}
+                </div>
+                <div class="portal-cell-meta">
+                  {schedule_time_label(training.start_time, training.end_time)}
+                </div>
+              </:col>
+              <:col :let={training} label="Venue">{training.venue || "Venue to be announced"}</:col>
+              <:col :let={training} label="Status">
+                <.badge tone={training_status_tone(training.status)}>
+                  {Trainings.format_status(training.status)}
+                </.badge>
+              </:col>
+              <:action :let={training}>
+                <.button patch={training_management_path(training.id, @filters)} variant="secondary">
+                  View
+                </.button>
+              </:action>
+              <:empty>
+                <.portal_empty_state
+                  icon="hero-calendar-days"
+                  title="No trainings available yet"
+                  copy="Create a training activity first before managing registrations."
+                />
+              </:empty>
+            </.data_table>
+            <%= if @trainings != [] do %>
               <p class="mt-4 text-right text-sm text-slate-500">{@training_directory_caption}</p>
             <% end %>
-          </section>
+          </.panel>
         <% else %>
           <.portal_stat_grid cards={@registration_summary_cards} />
 
           <%= if @manual_registration_open? do %>
-            <section class="panel portal-list-panel">
-              <.portal_panel_header
-                eyebrow="Manual entry"
-                title="Add Participants"
-                meta="Enter one full name per line. User accounts and email addresses are optional."
-              >
-                <:actions>
-                  <.button type="button" phx-click="cancel_manual_registration" variant="ghost">
-                    Back to Registration List
-                  </.button>
-                </:actions>
-              </.portal_panel_header>
+            <.panel
+              eyebrow="Manual entry"
+              title="Add Participants"
+              description="Enter one full name per line. User accounts and email addresses are optional."
+            >
+              <:actions>
+                <.button type="button" phx-click="cancel_manual_registration" variant="ghost">
+                  Back to Registration List
+                </.button>
+              </:actions>
 
               <.form
                 for={@manual_registration_form}
@@ -331,21 +309,19 @@ defmodule TracmsWeb.TrainingLive.RegistrationManagement do
                   <.button phx-disable-with="Adding Participants...">Add Participants</.button>
                 </div>
               </.form>
-            </section>
+            </.panel>
           <% else %>
             <%= if @selected_registration do %>
-              <section class="panel portal-list-panel">
-                <.portal_panel_header
-                  eyebrow="Participant information"
-                  title={participant_name(@selected_registration)}
-                  meta={registration_number(@selected_registration)}
-                >
-                  <:actions>
-                    <.button type="button" phx-click="hide_registration" variant="ghost">
-                      Back to Registration List
-                    </.button>
-                  </:actions>
-                </.portal_panel_header>
+              <.panel
+                eyebrow="Participant information"
+                title={participant_name(@selected_registration)}
+                description={registration_number(@selected_registration)}
+              >
+                <:actions>
+                  <.button type="button" phx-click="hide_registration" variant="ghost">
+                    Back to Registration List
+                  </.button>
+                </:actions>
 
                 <div class="portal-resource-facts">
                   <div>
@@ -385,25 +361,23 @@ defmodule TracmsWeb.TrainingLive.RegistrationManagement do
                 </div>
 
                 <div class="mt-6 grid gap-6 lg:grid-cols-2">
-                  <div class="feature-card">
-                    <div class="feature-title">Registration Notes</div>
-                    <div class="feature-copy">
+                  <.card title="Registration Notes">
+                    <p class="feature-copy">
                       {@selected_registration.review_notes || "No registration notes yet."}
-                    </div>
-                  </div>
+                    </p>
+                  </.card>
 
-                  <div class="feature-card">
-                    <div class="feature-title">Special Requirements</div>
-                    <div class="feature-copy">
+                  <.card title="Special Requirements">
+                    <p class="feature-copy">
                       {@selected_registration.special_requirements ||
                         "No special requirements provided."}
-                    </div>
-                  </div>
+                    </p>
+                  </.card>
                 </div>
-              </section>
+              </.panel>
             <% else %>
               <div class="content-grid">
-                <section class="panel portal-list-panel md:col-span-2">
+                <.panel title="Registration directory" class="md:col-span-2">
                   <.form
                     for={to_form(@filters, as: :filters)}
                     id="registration-filters"
@@ -437,77 +411,62 @@ defmodule TracmsWeb.TrainingLive.RegistrationManagement do
                     </div>
                   </.form>
 
-                  <%= if @registrations == [] do %>
-                    <.portal_empty_state
-                      icon="hero-user-group"
-                      title="No registrations found"
-                      copy="There are no registration records matching the current search and filter selection."
-                    />
-                  <% else %>
-                    <div class="data-table-wrap">
-                      <table class="data-table">
-                        <thead>
-                          <tr>
-                            <th>Registration Number</th>
-                            <th>Participant Name</th>
-                            <th>School, Office, or Organization</th>
-                            <th>Selected Training</th>
-                            <th>Registration Date</th>
-                            <th>Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr :for={registration <- @registrations}>
-                            <td>
-                              <span class="dashboard-cert-number">
-                                {registration_number(registration)}
-                              </span>
-                            </td>
-                            <td>
-                              <div class="portal-cell-title">{participant_name(registration)}</div>
-                              <div class="portal-cell-meta">
-                                {participant_employee_number(registration)}
-                              </div>
-                            </td>
-                            <td>{organization_name(registration)}</td>
-                            <td>
-                              <div class="portal-cell-title">
-                                {registration.training_activity.title}
-                              </div>
-                              <div class="portal-cell-meta">
-                                {format_date(registration.training_activity.starts_on)}
-                              </div>
-                            </td>
-                            <td>{registration_date(registration)}</td>
-                            <td>
-                              <div class="portal-action-stack">
-                                <.button
-                                  type="button"
-                                  phx-click="show_registration"
-                                  phx-value-id={registration.id}
-                                  variant="secondary"
-                                >
-                                  View
-                                </.button>
-                              </div>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  <% end %>
+                  <.data_table
+                    id="registration-directory"
+                    rows={@registrations}
+                    row_id={fn registration -> "registration-#{registration.id}" end}
+                    empty?={@registrations == []}
+                  >
+                    <:col :let={registration} label="Registration Number">
+                      <span class="dashboard-cert-number">
+                        {registration_number(registration)}
+                      </span>
+                    </:col>
+                    <:col :let={registration} label="Participant Name">
+                      <div class="portal-cell-title">{participant_name(registration)}</div>
+                      <div class="portal-cell-meta">{participant_employee_number(registration)}</div>
+                    </:col>
+                    <:col :let={registration} label="School, Office, or Organization">
+                      {organization_name(registration)}
+                    </:col>
+                    <:col :let={registration} label="Selected Training">
+                      <div class="portal-cell-title">{registration.training_activity.title}</div>
+                      <div class="portal-cell-meta">
+                        {format_date(registration.training_activity.starts_on)}
+                      </div>
+                    </:col>
+                    <:col :let={registration} label="Registration Date">
+                      {registration_date(registration)}
+                    </:col>
+                    <:action :let={registration}>
+                      <.button
+                        type="button"
+                        phx-click="show_registration"
+                        phx-value-id={registration.id}
+                        variant="secondary"
+                      >
+                        View
+                      </.button>
+                    </:action>
+                    <:empty>
+                      <.portal_empty_state
+                        icon="hero-user-group"
+                        title="No registrations found"
+                        copy="There are no registration records matching the current search and filter selection."
+                      />
+                    </:empty>
+                  </.data_table>
 
                   <p class="mt-4 text-right text-sm text-slate-500">{@registration_caption}</p>
-                </section>
+                </.panel>
 
                 <aside class="portal-panel-stack">
-                  <section :if={@editing_registration} class="panel portal-list-panel">
-                    <.portal_panel_header
-                      eyebrow="Edit registration"
-                      title="Update registration"
-                      meta="Adjust the selected training, notes, or manager status for this record."
-                    />
-
+                  <.panel
+                    :if={@editing_registration}
+                    eyebrow="Edit registration"
+                    title="Update registration"
+                    description="Adjust the selected training, notes, or manager status for this record."
+                  >
                     <.form
                       for={@edit_registration_form}
                       id="edit-registration-form"
@@ -548,7 +507,7 @@ defmodule TracmsWeb.TrainingLive.RegistrationManagement do
                         <.button phx-disable-with="Saving Changes...">Save Changes</.button>
                       </div>
                     </.form>
-                  </section>
+                  </.panel>
                 </aside>
               </div>
             <% end %>
@@ -769,11 +728,11 @@ defmodule TracmsWeb.TrainingLive.RegistrationManagement do
 
   defp training_status_tone(status) do
     cond do
-      status in [:published, :registration_closed, :in_progress] -> "green"
-      status in [:draft, :pending_division_approval, :pending_region_approval] -> "amber"
-      status in [:completed, :archived] -> "blue"
-      status == :cancelled -> "rose"
-      true -> "slate"
+      status in [:published, :registration_closed, :in_progress] -> :success
+      status in [:draft, :pending_division_approval, :pending_region_approval] -> :warning
+      status in [:completed, :archived] -> :info
+      status == :cancelled -> :danger
+      true -> :neutral
     end
   end
 

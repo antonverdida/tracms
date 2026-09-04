@@ -11,6 +11,7 @@ defmodule Tracms.Trainings do
   alias Tracms.Attendance
   alias Tracms.GoogleForms
   alias Tracms.GoogleForms.Template
+  alias Tracms.Notifications
   alias Tracms.Repo
   alias Tracms.Trainings.TrainingApproval
   alias Tracms.Trainings.TrainingActivity
@@ -152,22 +153,32 @@ defmodule Tracms.Trainings do
     with true <- Scope.training_manager?(scope),
          true <- accessible_to_scope?(scope, training_activity),
          {:ok, attrs, action} <- status_transition(training_activity, target_status) do
-      Multi.new()
-      |> Multi.update(
-        :training_activity,
-        training_activity
-        |> TrainingActivity.changeset(attrs)
-      )
-      |> Multi.run(:approval_entry, fn repo, %{training_activity: updated_training_activity} ->
-        insert_training_approval(repo, scope, updated_training_activity, %{
-          action: action,
-          from_status: training_activity.status,
-          to_status: updated_training_activity.status
-        })
-      end)
-      |> Repo.transaction()
-      |> transaction_result(:training_activity)
-      |> preload_result()
+      result =
+        Multi.new()
+        |> Multi.update(
+          :training_activity,
+          training_activity
+          |> TrainingActivity.changeset(attrs)
+        )
+        |> Multi.run(:approval_entry, fn repo, %{training_activity: updated_training_activity} ->
+          insert_training_approval(repo, scope, updated_training_activity, %{
+            action: action,
+            from_status: training_activity.status,
+            to_status: updated_training_activity.status
+          })
+        end)
+        |> Repo.transaction()
+        |> transaction_result(:training_activity)
+        |> preload_result()
+
+      case result do
+        {:ok, %{status: :completed} = completed_training} ->
+          Notifications.enqueue_evaluation_followups(completed_training.id)
+          result
+
+        _ ->
+          result
+      end
     else
       false -> {:error, :unauthorized}
       {:error, reason} -> {:error, reason}

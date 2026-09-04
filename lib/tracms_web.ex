@@ -89,6 +89,13 @@ defmodule TracmsWeb do
       import TracmsWeb.CertificateComponents
       import TracmsWeb.PortalComponents
       import TracmsWeb.PortalHelpers
+      import TracmsWeb.UI.Alert
+      import TracmsWeb.UI.Badge
+      import TracmsWeb.UI.Card
+      import TracmsWeb.UI.DataTable
+      import TracmsWeb.UI.Loading
+      import TracmsWeb.UI.Modal
+      import TracmsWeb.UI.Panel
 
       # Common modules used in templates
       alias Phoenix.LiveView.JS

@@ -16,6 +16,7 @@ defmodule TracmsWeb.AttendanceLiveTest do
 
       assert html =~ "List of Attendance"
       assert html =~ "Choose a Training First"
+      assert has_element?(lv, "#attendance-training-directory-table.ui-data-table")
 
       assert has_element?(lv, "a[href='/attendance?training_id=#{training_activity.id}']", "View")
 
@@ -23,6 +24,7 @@ defmodule TracmsWeb.AttendanceLiveTest do
 
       refute has_element?(list_lv, "#attendance-session-form")
       assert has_element?(list_lv, "#attendance-filters")
+      assert has_element?(list_lv, "#attendance-roster-table.ui-data-table")
       assert has_element?(list_lv, ".portal-empty-state", "No Participants Found")
       assert has_element?(list_lv, ".portal-mini-stat-card", "Total Participants")
       assert has_element?(list_lv, ".portal-mini-stat-card", "Attendance Recorded")

@@ -60,6 +60,7 @@ defmodule Tracms.MixProject do
        compile: false,
        depth: 1},
       {:swoosh, "~> 1.16"},
+      {:oban, "~> 2.23"},
       {:req, "~> 0.5"},
       {:eqrcode, "~> 0.2.0"},
       {:telemetry_metrics, "~> 1.0"},

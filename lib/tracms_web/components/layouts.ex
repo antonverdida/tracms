@@ -105,6 +105,9 @@ defmodule TracmsWeb.Layouts do
               <.link navigate={~p"/certificates"} class={nav_link_class(@active_nav, "certificates")}>
                 Certificates
               </.link>
+              <.link navigate={~p"/reports"} class={nav_link_class(@active_nav, "reports")}>
+                Reports
+              </.link>
               <.link navigate={~p"/users/settings"} class={nav_link_class(@active_nav, "settings")}>
                 Settings
               </.link>
@@ -135,8 +138,9 @@ defmodule TracmsWeb.Layouts do
               />
             </div>
             <span class="dashboard-brand-copy">
-              <span class="dashboard-brand-eyebrow">Department of Education • Region IX</span>
-              <span class="dashboard-brand-title">TRACMS Portal</span>
+              <span class="dashboard-brand-description">
+                Training, Registration, Attendance, &amp; Certificate Management System
+              </span>
             </span>
           </div>
 
@@ -174,6 +178,9 @@ defmodule TracmsWeb.Layouts do
             class={dashboard_menu_link_class(@active_nav, "certificates")}
           >
             Certificates
+          </.link>
+          <.link navigate={~p"/reports"} class={dashboard_menu_link_class(@active_nav, "reports")}>
+            Reports
           </.link>
           <.link
             navigate={~p"/users/settings"}
@@ -223,17 +230,21 @@ defmodule TracmsWeb.Layouts do
           </span>
           <div class="account-menu-identity-copy">
             <p class="account-menu-name">{user_display_name(@current_scope.user)}</p>
-            <p class="account-menu-username">@{@current_scope.user.username}</p>
+            <p class="account-menu-username">{@current_scope.user.email}</p>
             <p class="account-menu-role">{account_role_label(@current_scope)}</p>
+            <p class="account-menu-username">{account_location(@current_scope.user)}</p>
           </div>
         </div>
 
         <nav class="account-menu-actions" aria-label="Account menu">
           <.link navigate={~p"/profile"} class="account-menu-action">
-            <.icon name="hero-user-circle" class="size-5" /> View Profile
+            <.icon name="hero-user-circle" class="size-5" /> My Profile
           </.link>
           <.link navigate={~p"/users/settings"} class="account-menu-action">
-            <.icon name="hero-shield-check" class="size-5" /> Account &amp; Security
+            <.icon name="hero-cog-6-tooth" class="size-5" /> Account Settings
+          </.link>
+          <.link href={~p"/profile#recent-activity"} class="account-menu-action">
+            <.icon name="hero-clipboard-document-list" class="size-5" /> Activity Logs
           </.link>
         </nav>
 
@@ -268,6 +279,10 @@ defmodule TracmsWeb.Layouts do
   defp account_role_label(%{role_key: "division_admin"}), do: "Division Administrator"
   defp account_role_label(%{role_key: "training_coordinator"}), do: "Training Coordinator"
   defp account_role_label(_scope), do: "Administrator"
+
+  defp account_location(%{office: %{division: %{name: division_name}}}), do: division_name
+  defp account_location(%{office: %{name: office_name}}), do: office_name
+  defp account_location(_user), do: "TRACMS"
 
   @doc """
   Shows the flash group with standard titles and content.

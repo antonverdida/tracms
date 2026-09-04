@@ -46,6 +46,15 @@ config :tracms, TracmsWeb.Endpoint,
 # at the `config/runtime.exs`.
 config :tracms, Tracms.Mailer, adapter: Swoosh.Adapters.Local
 
+config :tracms, Oban,
+  repo: Tracms.Repo,
+  queues: [notifications: 10],
+  plugins: [
+    {Oban.Plugins.Pruner, max_age: 86_400},
+    {Oban.Plugins.Cron,
+     crontab: [{"0 * * * *", Tracms.Notifications.TrainingReminderSchedulerWorker}]}
+  ]
+
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.25.4",

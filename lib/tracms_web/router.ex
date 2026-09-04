@@ -110,6 +110,8 @@ defmodule TracmsWeb.Router do
       live "/attendance", TrainingLive.AttendanceIndex, :index
       live "/registrations", TrainingLive.RegistrationManagement, :index
       live "/certificates", TrainingLive.Certificates, :index
+      live "/reports", TrainingLive.Reports, :index
+      live "/audit-logs", TrainingLive.AuditLog, :index
       live "/trainings/new", TrainingLive.Form, :new
       live "/trainings/:id/edit", TrainingLive.Form, :edit
       live "/trainings/:id", TrainingLive.Show, :show

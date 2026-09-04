@@ -8,7 +8,7 @@ defmodule TracmsWeb.UserLive.Login do
       <section class="auth-stage auth-portal-stage auth-portal-login-stage">
         <article class="auth-portal-pane">
           <article class="auth-card auth-portal-card auth-portal-login-card">
-            <div class="auth-portal-avatar">
+            <div class="auth-portal-login-logo">
               <img
                 src={~p"/images/tracms-region-ix-logo.png"}
                 alt="TRACMS Region IX logo"

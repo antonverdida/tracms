@@ -5,10 +5,16 @@ defmodule TracmsWeb.ErrorHTMLTest do
   import Phoenix.Template, only: [render_to_string: 4]
 
   test "renders 404.html" do
-    assert render_to_string(TracmsWeb.ErrorHTML, "404", "html", []) == "Not Found"
+    html = render_to_string(TracmsWeb.ErrorHTML, "404", "html", [])
+
+    assert html =~ "Page not found"
+    assert html =~ "Go to sign in"
   end
 
   test "renders 500.html" do
-    assert render_to_string(TracmsWeb.ErrorHTML, "500", "html", []) == "Internal Server Error"
+    html = render_to_string(TracmsWeb.ErrorHTML, "500", "html", [])
+
+    assert html =~ "We could not complete that request"
+    assert html =~ "Return to sign in"
   end
 end

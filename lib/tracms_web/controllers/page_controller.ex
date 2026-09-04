@@ -9,6 +9,7 @@ defmodule TracmsWeb.PageController do
   alias Tracms.Registrations
   alias Tracms.Repo
   alias Tracms.Trainings
+  alias TracmsWeb.DashboardGreeting
 
   def dashboard(conn, _params) do
     scope = conn.assigns.current_scope
@@ -47,6 +48,7 @@ defmodule TracmsWeb.PageController do
     %{
       dashboard_role_label: role_label,
       dashboard_context_title: context_title,
+      dashboard_greeting: DashboardGreeting.for_utc_datetime(DateTime.utc_now()),
       greeting_name: greeting_name(scope.user),
       dashboard_date: format_dashboard_date(today),
       current_year: today.year

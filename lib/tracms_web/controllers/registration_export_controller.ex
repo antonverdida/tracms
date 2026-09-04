@@ -125,6 +125,8 @@ defmodule TracmsWeb.RegistrationExportController do
     #{chrome} \
       --headless \
       --no-sandbox \
+      --disable-setuid-sandbox \
+      --no-zygote \
       --disable-gpu \
       --disable-dev-shm-usage \
       --disable-background-networking \
@@ -139,9 +141,31 @@ defmodule TracmsWeb.RegistrationExportController do
       --print-to-pdf-no-header \
       --run-all-compositor-stages-before-draw \
       --virtual-time-budget=1500 \
-      #{html} >/dev/null 2>&1 &
-    chrome_pid=$!
-    wait $chrome_pid
+      #{html} &
+    pid=$!
+    last_size=0
+    stable_count=0
+
+    for _ in $(seq 1 80); do
+      if [ -s #{pdf} ]; then
+        current_size=$(wc -c < #{pdf})
+        if [ "$current_size" -eq "$last_size" ] && [ "$current_size" -gt 0 ]; then
+          stable_count=$((stable_count + 1))
+        else
+          stable_count=0
+          last_size=$current_size
+        fi
+
+        if [ "$stable_count" -ge 2 ]; then
+          break
+        fi
+      fi
+
+      sleep 0.2
+    done
+
+    kill "$pid" >/dev/null 2>&1 || true
+    wait "$pid" >/dev/null 2>&1 || true
     [ -s #{pdf} ]
     """
   end

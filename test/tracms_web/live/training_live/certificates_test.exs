@@ -61,6 +61,7 @@ defmodule TracmsWeb.TrainingLive.CertificatesTest do
       |> live(~p"/certificates/trainings/#{training.id}")
 
     assert has_element?(view, "#certificate-filter-form")
+    assert has_element?(view, "#certificate-records-table.ui-data-table")
 
     assert has_element?(
              view,

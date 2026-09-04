@@ -26,6 +26,8 @@ config :tracms, TracmsWeb.Endpoint,
 # In test we don't send emails
 config :tracms, Tracms.Mailer, adapter: Swoosh.Adapters.Test
 
+config :tracms, Oban, queues: false, plugins: false
+
 # Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false
 

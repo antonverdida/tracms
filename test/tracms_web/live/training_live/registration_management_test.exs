@@ -78,7 +78,8 @@ defmodule TracmsWeb.TrainingLive.RegistrationManagementTest do
     assert html =~ "Add Participant Manually"
     assert html =~ "List of Registration"
     assert has_element?(lv, ".portal-page-title", "List of Registration")
-    refute has_element?(lv, ".section-title")
+    assert has_element?(lv, ".ui-panel .section-title", "Registration directory")
+    assert has_element?(lv, "#registration-directory-table.ui-data-table")
 
     lv
     |> element("a[href='/registrations']", "Back")
