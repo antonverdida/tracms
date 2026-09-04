@@ -8,10 +8,7 @@
     <section class="dashboard-portal-hero">
       <div class="dashboard-portal-hero-copy">
         <p class="eyebrow">{@dashboard_role_label}</p>
-        <h1 class="dashboard-portal-title">Good Morning, {@greeting_name}</h1>
-        <p class="dashboard-portal-copy">
-          Quick access to your current trainings, participant activity, attendance progress, and certificate generation.
-        </p>
+        <h1 class="dashboard-portal-title">{@dashboard_greeting}, {@greeting_name}</h1>
       </div>
 
       <div class="dashboard-date-pill">
@@ -21,20 +18,15 @@
     </section>
 
     <section class="dashboard-stat-grid">
-      <article
+      <.card
         :for={metric <- @metrics}
+        variant={:stat}
+        icon={metric.icon}
+        title={metric.label}
+        value={metric.value}
+        trend={metric.meta}
         class={["dashboard-stat-card", "dashboard-stat-card-#{metric.tone}"]}
-      >
-        <div class={["dashboard-stat-icon", "dashboard-stat-icon-#{metric.tone}"]}>
-          <.icon name={metric.icon} class="size-7" />
-        </div>
-
-        <div class="dashboard-stat-content">
-          <p class="dashboard-stat-label">{metric.label}</p>
-          <p class="dashboard-stat-value">{metric.value}</p>
-          <p :if={metric.meta && metric.meta != ""} class="dashboard-stat-meta">{metric.meta}</p>
-        </div>
-      </article>
+      />
     </section>
 
     <section class="panel portal-list-panel">

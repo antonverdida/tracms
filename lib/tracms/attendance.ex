@@ -5,9 +5,12 @@ defmodule Tracms.Attendance do
 
   import Ecto.Query, warn: false
 
+  alias Ecto.Multi
   alias Tracms.Accounts.Scope
   alias Tracms.Attendance.{AttendanceRecord, AttendanceSession}
+  alias Tracms.Audit
   alias Tracms.GoogleSheets
+  alias Tracms.Notifications
   alias Tracms.Registrations
   alias Tracms.Registrations.Registration
   alias Tracms.Repo
@@ -132,7 +135,14 @@ defmodule Tracms.Attendance do
   end
 
   def close_session(scope, %AttendanceSession{} = attendance_session) do
-    transition_session(scope, attendance_session, :closed)
+    case transition_session(scope, attendance_session, :closed) do
+      {:ok, closed_session} = result ->
+        Notifications.enqueue_session_attendance_followups(closed_session)
+        result
+
+      other ->
+        other
+    end
   end
 
   def list_session_roster(scope, session_id) do
@@ -171,9 +181,28 @@ defmodule Tracms.Attendance do
         |> Map.put("marked_at", DateTime.utc_now(:second))
         |> Map.put("marked_by_user_id", scope.user.id)
 
-      attendance_record
-      |> AttendanceRecord.changeset(attrs)
-      |> Repo.insert_or_update()
+      action = if attendance_record.id, do: "attendance_updated", else: "attendance_marked"
+
+      Multi.new()
+      |> Multi.insert_or_update(
+        :attendance_record,
+        AttendanceRecord.changeset(attendance_record, attrs)
+      )
+      |> Multi.run(:audit_log, fn repo, %{attendance_record: saved_record} ->
+        Audit.log(repo, scope, %{
+          action: action,
+          entity_type: "attendance_record",
+          entity_id: saved_record.id,
+          training_activity_id: session.training_activity_id,
+          metadata: %{
+            "attendance_session_id" => session.id,
+            "registration_id" => registration.id,
+            "status" => Atom.to_string(saved_record.status)
+          }
+        })
+      end)
+      |> Repo.transaction()
+      |> transaction_result(:attendance_record)
       |> preload_record_result()
     end
   end
@@ -700,6 +729,9 @@ defmodule Tracms.Attendance do
   end
 
   defp preload_record_result(other), do: other
+
+  defp transaction_result({:ok, results}, key), do: {:ok, Map.fetch!(results, key)}
+  defp transaction_result({:error, _operation, reason, _changes}, _key), do: {:error, reason}
 
   defp stringify_keys(attrs) when is_map(attrs) do
     Map.new(attrs, fn

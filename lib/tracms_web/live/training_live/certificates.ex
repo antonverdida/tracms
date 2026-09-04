@@ -260,6 +260,7 @@ defmodule TracmsWeb.TrainingLive.Certificates do
                 :if={@pending_candidates != []}
                 type="button"
                 phx-click="generate_all_certificates"
+                phx-disable-with="Generating Certificates..."
                 variant="secondary"
               >
                 Generate All Certificates
@@ -269,88 +270,66 @@ defmodule TracmsWeb.TrainingLive.Certificates do
         <% end %>
 
         <%= if is_nil(@selected_training) do %>
-          <section class="panel portal-list-panel">
-            <.portal_panel_header eyebrow="Training Directory" title="Choose a Training First" />
-
-            <%= if @certificate_trainings == [] do %>
-              <.portal_empty_state
-                icon="hero-document-text"
-                title="No Completed Trainings Available Yet"
-                copy="Certificates become available after a training is completed and attendance has been finalized."
-              />
-            <% else %>
-              <div class="data-table-wrap">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>Training Title</th>
-                      <th>Schedule</th>
-                      <th>Venue</th>
-                      <th>Status</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr :for={training <- @certificate_trainings}>
-                      <td>
-                        <div class="portal-cell-title">{training.title}</div>
-                        <div class="portal-cell-meta">
-                          {training.resource_speaker || "Facilitator to be assigned"}
-                        </div>
-                      </td>
-                      <td>
-                        <div class="portal-cell-title">
-                          {format_date(training.starts_on)} to {format_date(training.ends_on)}
-                        </div>
-                        <div class="portal-cell-meta">
-                          {schedule_time_label(training.start_time, training.end_time)}
-                        </div>
-                      </td>
-                      <td>{training.venue || "Venue to be announced"}</td>
-                      <td>
-                        <span class={[
-                          "portal-chip",
-                          "portal-chip-#{training_status_tone(training.status)}"
-                        ]}>
-                          {Trainings.format_status(training.status)}
-                        </span>
-                      </td>
-                      <td>
-                        <.button
-                          patch={training_selection_path(training.id)}
-                          variant="secondary"
-                        >
-                          View
-                        </.button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+          <.panel eyebrow="Training Directory" title="Choose a Training First">
+            <.data_table
+              id="certificate-training-directory"
+              rows={@certificate_trainings}
+              row_id={fn training -> "certificate-training-#{training.id}" end}
+              empty?={@certificate_trainings == []}
+            >
+              <:col :let={training} label="Training Title">
+                <div class="portal-cell-title">{training.title}</div>
+                <div class="portal-cell-meta">
+                  {training.resource_speaker || "Facilitator to be assigned"}
+                </div>
+              </:col>
+              <:col :let={training} label="Schedule">
+                <div class="portal-cell-title">
+                  {format_date(training.starts_on)} to {format_date(training.ends_on)}
+                </div>
+                <div class="portal-cell-meta">
+                  {schedule_time_label(training.start_time, training.end_time)}
+                </div>
+              </:col>
+              <:col :let={training} label="Venue">{training.venue || "Venue to be announced"}</:col>
+              <:col :let={training} label="Status">
+                <.badge tone={training_status_tone(training.status)}>
+                  {Trainings.format_status(training.status)}
+                </.badge>
+              </:col>
+              <:action :let={training}>
+                <.button patch={training_selection_path(training.id)} variant="secondary">
+                  View
+                </.button>
+              </:action>
+              <:empty>
+                <.portal_empty_state
+                  icon="hero-document-text"
+                  title="No Completed Trainings Available Yet"
+                  copy="Certificates become available after a training is completed and attendance has been finalized."
+                />
+              </:empty>
+            </.data_table>
+            <%= if @certificate_trainings != [] do %>
               <p class="mt-4 text-right text-sm text-slate-500">{@training_directory_caption}</p>
             <% end %>
-          </section>
+          </.panel>
         <% else %>
           <.portal_stat_grid cards={
             certificate_summary_cards(@selected_training, @all_candidate_rows)
           } />
 
-          <section :if={@manual_participant_open?} class="panel portal-list-panel">
-            <.portal_panel_header
-              eyebrow="Manual Entry"
-              title="Add Participants"
-              meta="Enter one full name per line. Numbering is removed automatically."
-            >
-              <:actions>
-                <.button
-                  type="button"
-                  phx-click="hide_manual_participant_form"
-                  variant="ghost"
-                >
-                  Close
-                </.button>
-              </:actions>
-            </.portal_panel_header>
+          <.panel
+            :if={@manual_participant_open?}
+            eyebrow="Manual Entry"
+            title="Add Participants"
+            description="Enter one full name per line. Numbering is removed automatically."
+          >
+            <:actions>
+              <.button type="button" phx-click="hide_manual_participant_form" variant="ghost">
+                Close
+              </.button>
+            </:actions>
 
             <.form
               for={@manual_participant_form}
@@ -377,143 +356,118 @@ defmodule TracmsWeb.TrainingLive.Certificates do
                 <.button phx-disable-with="Adding Participants...">Add Participants</.button>
               </div>
             </.form>
-          </section>
+          </.panel>
 
-          <section class="panel portal-list-panel">
-            <.portal_panel_header
-              eyebrow="Certificate Records"
-              title="Participant Certificate Records"
-            >
-              <:actions>
-                <.form
-                  for={to_form(@filters, as: :certificate_filters)}
-                  id="certificate-filter-form"
-                  phx-change="filter_certificates"
-                  class="certificate-records-controls flex flex-wrap items-center justify-end gap-3"
+          <.panel eyebrow="Certificate Records" title="Participant Certificate Records">
+            <:actions>
+              <.form
+                for={to_form(@filters, as: :certificate_filters)}
+                id="certificate-filter-form"
+                phx-change="filter_certificates"
+                class="certificate-records-controls flex flex-wrap items-center justify-end gap-3"
+              >
+                <.input
+                  field={to_form(@filters, as: :certificate_filters)[:search]}
+                  type="search"
+                  aria-label="Search Certificate Records"
+                  placeholder="Search certificate records"
+                  class="field-input w-full sm:w-96 lg:w-[28rem]"
+                />
+                <.button type="button" phx-click="show_manual_participant_form" variant="secondary">
+                  Add Participant Manually
+                </.button>
+                <.button
+                  :if={@filters["search"] != ""}
+                  type="button"
+                  phx-click="reset_filters"
+                  variant="ghost"
                 >
-                  <.input
-                    field={to_form(@filters, as: :certificate_filters)[:search]}
-                    type="search"
-                    aria-label="Search Certificate Records"
-                    placeholder="Search certificate records"
-                    class="field-input w-full sm:w-96 lg:w-[28rem]"
-                  />
+                  Clear
+                </.button>
+                <.button
+                  :if={@issued_certificates != []}
+                  href={~p"/certificates/trainings/#{@selected_training.id}/download-all"}
+                  variant="secondary"
+                >
+                  Download All PDFs
+                </.button>
+                <.button
+                  :if={@issued_certificates != []}
+                  type="button"
+                  phx-click="email_all_certificates"
+                  phx-disable-with="Emailing PDFs..."
+                  variant="secondary"
+                >
+                  Email All PDFs
+                </.button>
+                <.button patch={~p"/certificates"} variant="ghost">Back</.button>
+              </.form>
+            </:actions>
+
+            <.data_table
+              id="certificate-records"
+              rows={@candidate_rows}
+              row_id={fn entry -> "certificate-registration-#{entry.registration.id}" end}
+              empty?={@candidate_rows == []}
+            >
+              <:col :let={entry} label="Participant">
+                <div class="portal-cell-title">{participant_name(entry.registration)}</div>
+                <div class="portal-cell-meta">
+                  {Registrations.participant_email(entry.registration) || "No email provided"}
+                </div>
+              </:col>
+              <:col :let={entry} label="Attendance">
+                <.badge tone={attendance_status_tone(entry.attendance_record)}>
+                  {attendance_status_label(entry.attendance_record)}
+                </.badge>
+              </:col>
+              <:col :let={entry} label="Certificate Status">
+                <.badge tone={certificate_status_tone(entry.certificate)}>
+                  {Certificates.certificate_status_label(entry.certificate)}
+                </.badge>
+              </:col>
+              <:col :let={entry} label="Certificate Number">
+                {(entry.certificate && entry.certificate.certificate_number) || "Not Generated"}
+              </:col>
+              <:action :let={entry}>
+                <div :if={entry.certificate} class="flex flex-wrap gap-2">
                   <.button
-                    type="button"
-                    phx-click="show_manual_participant_form"
-                    variant="secondary"
-                  >
-                    Add Participant Manually
-                  </.button>
-                  <.button
-                    :if={@filters["search"] != ""}
-                    type="button"
-                    phx-click="reset_filters"
+                    href={
+                      ~p"/certificates/trainings/#{@selected_training.id}/#{entry.certificate.id}/export"
+                    }
                     variant="ghost"
                   >
-                    Clear
+                    Download PDF
                   </.button>
                   <.button
-                    :if={@issued_certificates != []}
-                    href={~p"/certificates/trainings/#{@selected_training.id}/download-all"}
-                    variant="secondary"
+                    href={
+                      ~p"/certificates/trainings/#{@selected_training.id}/#{entry.certificate.id}/print"
+                    }
+                    target="_blank"
+                    rel="noopener"
+                    variant="ghost"
                   >
-                    Download All PDFs
+                    Print
                   </.button>
-                  <.button
-                    :if={@issued_certificates != []}
-                    type="button"
-                    phx-click="email_all_certificates"
-                    phx-disable-with="Emailing PDFs..."
-                    variant="secondary"
-                  >
-                    Email All PDFs
-                  </.button>
-                  <.button patch={~p"/certificates"} variant="ghost">Back</.button>
-                </.form>
-              </:actions>
-            </.portal_panel_header>
-
-            <%= if @candidate_rows == [] do %>
-              <.portal_empty_state
-                icon="hero-document-text"
-                title="No Approved Participants Yet"
-                copy="Approve participant registrations to include them in certificate tracking."
-              />
-            <% else %>
-              <div class="data-table-wrap">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>Participant</th>
-                      <th>Attendance</th>
-                      <th>Certificate Status</th>
-                      <th>Certificate Number</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr :for={entry <- @candidate_rows}>
-                      <td>
-                        <div class="portal-cell-title">{participant_name(entry.registration)}</div>
-                        <div class="portal-cell-meta">
-                          {Registrations.participant_email(entry.registration) || "No email provided"}
-                        </div>
-                      </td>
-                      <td>
-                        <span class={[
-                          "portal-chip",
-                          "portal-chip-#{attendance_status_tone(entry.attendance_record)}"
-                        ]}>
-                          {attendance_status_label(entry.attendance_record)}
-                        </span>
-                      </td>
-                      <td>
-                        <span class={[
-                          "portal-chip",
-                          "portal-chip-#{certificate_status_tone(entry.certificate)}"
-                        ]}>
-                          {Certificates.certificate_status_label(entry.certificate)}
-                        </span>
-                      </td>
-                      <td>
-                        {(entry.certificate && entry.certificate.certificate_number) ||
-                          "Not Generated"}
-                      </td>
-                      <td>
-                        <div :if={entry.certificate} class="flex flex-wrap gap-2">
-                          <.button
-                            href={
-                              ~p"/certificates/trainings/#{@selected_training.id}/#{entry.certificate.id}/export"
-                            }
-                            variant="ghost"
-                          >
-                            Download PDF
-                          </.button>
-                          <.button
-                            href={
-                              ~p"/certificates/trainings/#{@selected_training.id}/#{entry.certificate.id}/print"
-                            }
-                            target="_blank"
-                            rel="noopener"
-                            variant="ghost"
-                          >
-                            Print
-                          </.button>
-                        </div>
-                        <span :if={is_nil(entry.certificate)} class="portal-cell-meta">
-                          {certificate_next_step(entry)}
-                        </span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+                </div>
+                <span :if={is_nil(entry.certificate)} class="portal-cell-meta">
+                  {certificate_next_step(entry)}
+                </span>
+              </:action>
+              <:empty>
+                <.portal_empty_state
+                  icon="hero-document-text"
+                  title="No Approved Participants Yet"
+                  copy="Approve participant registrations to include them in certificate tracking."
+                />
+              </:empty>
+            </.data_table>
+            <%= if @candidate_rows != [] do %>
               <p class="mt-4 text-right text-sm text-slate-500">
                 {certificate_record_caption(@candidate_rows)}
               </p>
             <% end %>
-          </section>
+          </.panel>
         <% end %>
       </div>
     </Layouts.app>
@@ -663,10 +617,10 @@ defmodule TracmsWeb.TrainingLive.Certificates do
   defp attendance_status_label(_record), do: "Not Recorded"
 
   defp attendance_status_tone(%{status: status}) when status in [:present, :late, :excused],
-    do: "green"
+    do: :success
 
-  defp attendance_status_tone(%{status: :absent}), do: "rose"
-  defp attendance_status_tone(_record), do: "amber"
+  defp attendance_status_tone(%{status: :absent}), do: :danger
+  defp attendance_status_tone(_record), do: :warning
 
   defp certificate_next_step(%{eligible?: true}), do: "Ready to generate"
   defp certificate_next_step(%{attendance_record: nil}), do: "Mark attendance first"
@@ -680,11 +634,11 @@ defmodule TracmsWeb.TrainingLive.Certificates do
 
   defp training_status_tone(status) do
     cond do
-      status in [:published, :registration_closed, :in_progress] -> "green"
-      status in [:draft, :pending_division_approval, :pending_region_approval] -> "amber"
-      status in [:completed, :archived] -> "blue"
-      status == :cancelled -> "rose"
-      true -> "slate"
+      status in [:published, :registration_closed, :in_progress] -> :success
+      status in [:draft, :pending_division_approval, :pending_region_approval] -> :warning
+      status in [:completed, :archived] -> :info
+      status == :cancelled -> :danger
+      true -> :neutral
     end
   end
 
@@ -708,9 +662,9 @@ defmodule TracmsWeb.TrainingLive.Certificates do
     Registrations.participant_organization(registration)
   end
 
-  defp certificate_status_tone(nil), do: "slate"
-  defp certificate_status_tone(%{delivery_status: :available}), do: "blue"
-  defp certificate_status_tone(%{delivery_status: _status}), do: "green"
+  defp certificate_status_tone(nil), do: :neutral
+  defp certificate_status_tone(%{delivery_status: :available}), do: :info
+  defp certificate_status_tone(%{delivery_status: _status}), do: :success
 
   defp released_certificate?(%{delivery_status: :available}), do: false
   defp released_certificate?(%{}), do: true

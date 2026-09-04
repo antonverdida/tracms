@@ -128,89 +128,65 @@ defmodule TracmsWeb.TrainingLive.AttendanceIndex do
           }
         />
 
-        <section
+        <.panel
           :if={is_nil(@selected_training)}
-          class="panel portal-list-panel"
+          eyebrow="Training directory"
+          title="Choose a Training First"
         >
-          <.portal_panel_header
-            eyebrow="Training directory"
-            title="Choose a Training First"
-          />
-
-          <%= if @trainings == [] do %>
-            <.portal_empty_state
-              icon="hero-calendar-days"
-              title="No trainings available yet"
-              copy="Create a training activity first before recording attendance."
-            />
-          <% else %>
-            <div class="data-table-wrap">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Training Title</th>
-                    <th>Schedule</th>
-                    <th>Venue</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr :for={training <- @trainings}>
-                    <td>
-                      <div class="portal-cell-title">{training.title}</div>
-                      <div class="portal-cell-meta">
-                        {training.resource_speaker || "Facilitator to be assigned"}
-                      </div>
-                    </td>
-                    <td>
-                      <div class="portal-cell-title">
-                        {format_date(training.starts_on)} to {format_date(training.ends_on)}
-                      </div>
-                      <div class="portal-cell-meta">
-                        {schedule_time_label(training.start_time, training.end_time)}
-                      </div>
-                    </td>
-                    <td>{training.venue || "Venue to be announced"}</td>
-                    <td>
-                      <span class={[
-                        "portal-chip",
-                        "portal-chip-#{training_status_tone(training.status)}"
-                      ]}>
-                        {Trainings.format_status(training.status)}
-                      </span>
-                    </td>
-                    <td>
-                      <div class="flex flex-wrap items-center gap-2">
-                        <.button
-                          patch={training_selection_path(training.id)}
-                          variant="secondary"
-                          class="whitespace-nowrap"
-                        >
-                          View
-                        </.button>
-                        <.button
-                          patch={attendance_workspace_path(training.id)}
-                          variant="ghost"
-                          class="whitespace-nowrap"
-                        >
-                          Attendance Workspace
-                        </.button>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+          <.data_table
+            id="attendance-training-directory"
+            rows={@trainings}
+            row_id={fn training -> "attendance-training-#{training.id}" end}
+            empty?={@trainings == []}
+          >
+            <:col :let={training} label="Training Title">
+              <div class="portal-cell-title">{training.title}</div>
+              <div class="portal-cell-meta">
+                {training.resource_speaker || "Facilitator to be assigned"}
+              </div>
+            </:col>
+            <:col :let={training} label="Schedule">
+              <div class="portal-cell-title">
+                {format_date(training.starts_on)} to {format_date(training.ends_on)}
+              </div>
+              <div class="portal-cell-meta">
+                {schedule_time_label(training.start_time, training.end_time)}
+              </div>
+            </:col>
+            <:col :let={training} label="Venue">{training.venue || "Venue to be announced"}</:col>
+            <:col :let={training} label="Status">
+              <.badge tone={training_status_tone(training.status)}>
+                {Trainings.format_status(training.status)}
+              </.badge>
+            </:col>
+            <:action :let={training}>
+              <div class="flex flex-wrap items-center gap-2">
+                <.button patch={training_selection_path(training.id)} variant="secondary">
+                  View
+                </.button>
+                <.button patch={attendance_workspace_path(training.id)} variant="ghost">
+                  Attendance Workspace
+                </.button>
+              </div>
+            </:action>
+            <:empty>
+              <.portal_empty_state
+                icon="hero-calendar-days"
+                title="No trainings available yet"
+                copy="Create a training activity first before recording attendance."
+              />
+            </:empty>
+          </.data_table>
+          <%= if @trainings != [] do %>
             <p class="mt-4 text-right text-sm text-slate-500">{@training_directory_caption}</p>
           <% end %>
-        </section>
+        </.panel>
 
         <div :if={@selected_training && @filters["view"] == "list"} class="space-y-6">
           <.portal_stat_grid cards={@attendance_summary_cards} />
 
           <div class="content-grid">
-            <section class="panel portal-list-panel md:col-span-2">
+            <.panel title="Participant attendance" class="md:col-span-2">
               <.form
                 for={@filter_form}
                 id="attendance-filters"
@@ -241,84 +217,64 @@ defmodule TracmsWeb.TrainingLive.AttendanceIndex do
                 </div>
               </.form>
 
-              <%= if @attendance_entries == [] do %>
-                <.portal_empty_state
-                  icon="hero-user-group"
-                  title="No Participants Found"
-                  copy="There are no approved participants matching the current search."
-                />
-              <% else %>
-                <div class="data-table-wrap">
-                  <table class="data-table">
-                    <thead>
-                      <tr>
-                        <th>Participant Name</th>
-                        <th>School, Office, or Organization</th>
-                        <th>Selected Training</th>
-                        <th>Attendance Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr :for={entry <- @attendance_entries}>
-                        <td>
-                          <div class="portal-cell-title">
-                            {Registrations.participant_name(entry.registration)}
-                          </div>
-                          <div class="portal-cell-meta">
-                            {Registrations.participant_email(entry.registration) || "Not provided"}
-                          </div>
-                        </td>
-                        <td>
-                          {Registrations.participant_organization(entry.registration) ||
-                            "Not provided"}
-                        </td>
-                        <td>
-                          <div class="portal-cell-title">{@selected_training.title}</div>
-                          <div class="portal-cell-meta">
-                            {format_date(@selected_training.starts_on)}
-                          </div>
-                        </td>
-                        <td>
-                          <span class={[
-                            "portal-chip",
-                            "portal-chip-#{attendance_status_tone(entry.record)}"
-                          ]}>
-                            {attendance_status_label(entry.record)}
-                          </span>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              <% end %>
+              <.data_table
+                id="attendance-roster"
+                rows={@attendance_entries}
+                row_id={fn entry -> "attendance-registration-#{entry.registration.id}" end}
+                empty?={@attendance_entries == []}
+              >
+                <:col :let={entry} label="Participant Name">
+                  <div class="portal-cell-title">
+                    {Registrations.participant_name(entry.registration)}
+                  </div>
+                  <div class="portal-cell-meta">
+                    {Registrations.participant_email(entry.registration) || "Not provided"}
+                  </div>
+                </:col>
+                <:col :let={entry} label="School, Office, or Organization">
+                  {Registrations.participant_organization(entry.registration) || "Not provided"}
+                </:col>
+                <:col label="Selected Training">
+                  <div class="portal-cell-title">{@selected_training.title}</div>
+                  <div class="portal-cell-meta">{format_date(@selected_training.starts_on)}</div>
+                </:col>
+                <:col :let={entry} label="Attendance Status">
+                  <.badge tone={attendance_status_tone(entry.record)}>
+                    {attendance_status_label(entry.record)}
+                  </.badge>
+                </:col>
+                <:empty>
+                  <.portal_empty_state
+                    icon="hero-user-group"
+                    title="No Participants Found"
+                    copy="There are no approved participants matching the current search."
+                  />
+                </:empty>
+              </.data_table>
               <p class="mt-4 text-right text-sm text-slate-500">
                 {attendance_roster_caption(@attendance_entries)}
               </p>
-            </section>
+            </.panel>
           </div>
         </div>
 
-        <section
+        <.panel
           :if={@selected_training && @filters["view"] == "workspace"}
-          class="panel portal-list-panel"
+          eyebrow="Attendance Workspace"
+          title="Manage Attendance Sessions"
         >
-          <.portal_panel_header
-            eyebrow="Attendance Workspace"
-            title="Manage Attendance Sessions"
-          >
-            <:actions>
-              <.button patch={training_selection_path(@selected_training.id)} variant="ghost">
-                Back
-              </.button>
-              <.button
-                type="submit"
-                form="attendance-session-form"
-                phx-disable-with="Creating Session..."
-              >
-                Create Session
-              </.button>
-            </:actions>
-          </.portal_panel_header>
+          <:actions>
+            <.button patch={training_selection_path(@selected_training.id)} variant="ghost">
+              Back
+            </.button>
+            <.button
+              type="submit"
+              form="attendance-session-form"
+              phx-disable-with="Creating Session..."
+            >
+              Create Session
+            </.button>
+          </:actions>
 
           <.form
             for={@session_form}
@@ -343,7 +299,7 @@ defmodule TracmsWeb.TrainingLive.AttendanceIndex do
             </div>
           </.form>
 
-          <div class="mt-8 border-t border-slate-200 pt-6">
+          <div class="mt-8 border-t border-[var(--tracms-border)] pt-6">
             <%= if @attendance_sessions == [] do %>
               <.portal_empty_state
                 icon="hero-calendar-days"
@@ -352,61 +308,60 @@ defmodule TracmsWeb.TrainingLive.AttendanceIndex do
               />
             <% else %>
               <div class="session-list">
-                <div
+                <.card
                   :for={session <- @attendance_sessions}
+                  id={"attendance-session-#{session.id}"}
+                  title={session.name}
+                  description={
+                    "#{format_date(session.session_date)} • #{format_time(session.starts_at)} to #{format_time(session.ends_at)}"
+                  }
                   class={[
-                    "feature-card session-card",
+                    "session-card",
                     session.id == (@attendance_session && @attendance_session.id) &&
                       "session-card-active"
                   ]}
                 >
-                  <div class="flex flex-wrap items-start justify-between gap-4">
-                    <.link
-                      patch={attendance_workspace_selection_path(@selected_training.id, session.id)}
-                      class="session-card-link"
+                  <:actions>
+                    <.badge tone={session_status_tone(session.status)}>
+                      {Attendance.format_status(session.status)}
+                    </.badge>
+                  </:actions>
+                  <.link
+                    patch={attendance_workspace_selection_path(@selected_training.id, session.id)}
+                    class="session-card-link"
+                  >
+                    View this attendance session
+                  </.link>
+                  <:footer>
+                    <.button
+                      :if={session.status == :draft}
+                      type="button"
+                      phx-click="open_session"
+                      phx-value-id={session.id}
+                      phx-disable-with="Opening Session..."
+                      variant="secondary"
                     >
-                      <p class="feature-title">{session.name}</p>
-                      <p class="feature-copy">
-                        {format_date(session.session_date)} • {format_time(session.starts_at)} to {format_time(
-                          session.ends_at
-                        )}
-                      </p>
-                    </.link>
-                    <div class="flex flex-wrap items-center gap-2">
-                      <span class={[
-                        "portal-chip",
-                        "portal-chip-#{session_status_tone(session.status)}"
-                      ]}>
-                        {Attendance.format_status(session.status)}
-                      </span>
-                      <.button
-                        :if={session.status == :draft}
-                        type="button"
-                        phx-click="open_session"
-                        phx-value-id={session.id}
-                        variant="secondary"
-                      >
-                        Open Session
-                      </.button>
-                      <.button
-                        :if={session.status == :open}
-                        type="button"
-                        phx-click="close_session"
-                        phx-value-id={session.id}
-                        variant="secondary"
-                      >
-                        Close Session
-                      </.button>
-                    </div>
-                  </div>
-                </div>
+                      Open Session
+                    </.button>
+                    <.button
+                      :if={session.status == :open}
+                      type="button"
+                      phx-click="close_session"
+                      phx-value-id={session.id}
+                      phx-disable-with="Closing Session..."
+                      variant="secondary"
+                    >
+                      Close Session
+                    </.button>
+                  </:footer>
+                </.card>
               </div>
               <p class="mt-4 text-right text-sm text-slate-500">
                 {session_caption(@attendance_sessions)}
               </p>
             <% end %>
           </div>
-        </section>
+        </.panel>
       </div>
     </Layouts.app>
     """
@@ -500,11 +455,11 @@ defmodule TracmsWeb.TrainingLive.AttendanceIndex do
 
   defp training_status_tone(status) do
     cond do
-      status in [:published, :registration_closed, :in_progress] -> "green"
-      status in [:draft, :pending_division_approval, :pending_region_approval] -> "amber"
-      status in [:completed, :archived] -> "blue"
-      status == :cancelled -> "rose"
-      true -> "slate"
+      status in [:published, :registration_closed, :in_progress] -> :success
+      status in [:draft, :pending_division_approval, :pending_region_approval] -> :warning
+      status in [:completed, :archived] -> :info
+      status == :cancelled -> :danger
+      true -> :neutral
     end
   end
 
@@ -592,10 +547,10 @@ defmodule TracmsWeb.TrainingLive.AttendanceIndex do
     "Showing #{count} attendance #{if(count == 1, do: "session", else: "sessions")}."
   end
 
-  defp session_status_tone(:draft), do: "amber"
-  defp session_status_tone(:open), do: "green"
-  defp session_status_tone(:closed), do: "blue"
-  defp session_status_tone(_status), do: "slate"
+  defp session_status_tone(:draft), do: :warning
+  defp session_status_tone(:open), do: :success
+  defp session_status_tone(:closed), do: :info
+  defp session_status_tone(_status), do: :neutral
 
   defp attendance_status_label(record) do
     case Attendance.manual_status(record) do
@@ -607,9 +562,9 @@ defmodule TracmsWeb.TrainingLive.AttendanceIndex do
 
   defp attendance_status_tone(record) do
     case Attendance.manual_status(record) do
-      :present -> "green"
-      :absent -> "rose"
-      _status -> "amber"
+      :present -> :success
+      :absent -> :danger
+      _status -> :warning
     end
   end
 

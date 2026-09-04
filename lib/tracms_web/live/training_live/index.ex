@@ -134,7 +134,7 @@ defmodule TracmsWeb.TrainingLive.Index do
         </section>
 
         <%= if @trainings == [] do %>
-          <section class="panel portal-list-panel">
+          <.panel title="Training activities">
             <.portal_empty_state
               icon="hero-calendar-days"
               title="No training activities yet"
@@ -149,41 +149,33 @@ defmodule TracmsWeb.TrainingLive.Index do
                 </.link>
               </:actions>
             </.portal_empty_state>
-          </section>
+          </.panel>
         <% else %>
-          <section class="panel portal-list-panel">
-            <.portal_panel_header title="List of Trainings" />
-
+          <.panel title="List of Trainings">
             <div class="training-record-list">
-              <article :for={training <- @trainings} class="training-record-card">
-                <div class="training-record-head">
-                  <div class="training-record-copy">
-                    <div class="badge-row">
-                      <span class={[
-                        "portal-chip",
-                        "portal-chip-#{training_status_tone(training.status)}"
-                      ]}>
-                        {Trainings.format_status(training.status)}
-                      </span>
-                      <span class="badge-soft">{format_modality(training.modality)}</span>
-                      <span class="badge-soft">{training.category}</span>
-                    </div>
-
-                    <h2 class="training-record-title">{training.title}</h2>
-
-                    <p class="training-record-subtitle">
-                      Led by {display_value(training.resource_speaker, "Facilitator to be assigned")}
-                    </p>
-                  </div>
-
-                  <div class="training-record-actions">
-                    <.button
-                      :if={Trainings.editable?(training)}
-                      navigate={~p"/trainings/#{training.id}/edit"}
-                      variant="ghost"
-                    >
-                      Edit
-                    </.button>
+              <.card
+                :for={training <- @trainings}
+                id={"training-#{training.id}"}
+                class="training-record-card"
+                title={training.title}
+                description={"Led by #{display_value(training.resource_speaker, "Facilitator to be assigned")}"}
+              >
+                <:actions>
+                  <.button
+                    :if={Trainings.editable?(training)}
+                    navigate={~p"/trainings/#{training.id}/edit"}
+                    variant="ghost"
+                  >
+                    Edit
+                  </.button>
+                </:actions>
+                <div class="training-record-copy">
+                  <div class="badge-row">
+                    <.badge tone={training_status_tone(training.status)}>
+                      {Trainings.format_status(training.status)}
+                    </.badge>
+                    <.badge tone={:info}>{format_modality(training.modality)}</.badge>
+                    <.badge tone={:neutral}>{training.category}</.badge>
                   </div>
                 </div>
 
@@ -225,20 +217,13 @@ defmodule TracmsWeb.TrainingLive.Index do
                   </div>
                 </div>
 
-                <div class="training-record-footer">
-                  <div class="training-record-inline-actions">
-                    <.button
-                      navigate={~p"/trainings/#{training.id}"}
-                      variant="secondary"
-                    >
-                      View
-                    </.button>
-                  </div>
-                </div>
-              </article>
+                <:footer>
+                  <.button navigate={~p"/trainings/#{training.id}"} variant="secondary">View</.button>
+                </:footer>
+              </.card>
             </div>
             <p class="mt-4 text-right text-sm text-slate-500">{@managed_training_caption}</p>
-          </section>
+          </.panel>
         <% end %>
       </div>
     </Layouts.app>
@@ -351,11 +336,11 @@ defmodule TracmsWeb.TrainingLive.Index do
 
   defp training_status_tone(status) do
     cond do
-      status in [:published, :registration_closed, :in_progress] -> "green"
-      status in [:draft, :pending_division_approval, :pending_region_approval] -> "amber"
-      status in [:completed, :archived] -> "blue"
-      status == :cancelled -> "rose"
-      true -> "slate"
+      status in [:published, :registration_closed, :in_progress] -> :success
+      status in [:draft, :pending_division_approval, :pending_region_approval] -> :warning
+      status in [:completed, :archived] -> :info
+      status == :cancelled -> :danger
+      true -> :neutral
     end
   end
 

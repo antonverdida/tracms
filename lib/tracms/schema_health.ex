@@ -33,6 +33,9 @@ defmodule Tracms.SchemaHealth do
       id action actor_role_key from_status to_status notes training_activity_id acted_by_user_id
       inserted_at
     ),
+    "audit_logs" => ~w(
+      id action entity_type entity_id metadata actor_user_id training_activity_id inserted_at
+    ),
     "registrations" => ~w(
       id status special_requirements review_notes submitted_at reviewed_at training_activity_id
       registrant_user_id reviewer_user_id manual_participant_name manual_participant_email

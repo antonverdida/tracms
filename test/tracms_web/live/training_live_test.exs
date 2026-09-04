@@ -30,6 +30,7 @@ defmodule TracmsWeb.TrainingLiveTest do
 
       assert html =~ "Training Activities"
       assert html =~ "Training Management 101"
+      assert has_element?(lv, "#training-#{training_activity.id}.ui-card")
 
       assert has_element?(
                lv,

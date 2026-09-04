@@ -3,6 +3,7 @@ defmodule TracmsWeb.UserLive.Settings do
 
   alias Tracms.Accounts
   alias Tracms.Accounts.Scope
+  alias Tracms.Accounts.User
   alias Tracms.Certificates
 
   @certificate_asset_accept ~w(.png .jpg .jpeg .webp .svg)
@@ -49,24 +50,43 @@ defmodule TracmsWeb.UserLive.Settings do
                   placeholder="Juan Dela Cruz"
                 />
                 <.input
+                  field={@profile_form[:position]}
+                  type="text"
+                  label="Position"
+                  placeholder="Regional Administrator"
+                />
+                <.input
                   field={@profile_form[:employee_number]}
                   type="text"
                   label="Employee ID"
                   placeholder="DEPED-2026-00125"
                 />
+                <.input
+                  field={@profile_form[:contact_number]}
+                  type="tel"
+                  label="Contact Number"
+                  autocomplete="tel"
+                  placeholder="+63 XXX XXX XXXX"
+                />
               </div>
 
               <div class="mt-6 grid gap-3 md:grid-cols-3">
                 <div class="feature-card">
-                  <div class="feature-title">Office</div>
+                  <div class="feature-title">
+                    <.icon name="hero-building-office-2" class="mr-1 inline size-4" /> Office
+                  </div>
                   <div class="feature-copy">{office_name(@current_scope.user)}</div>
                 </div>
                 <div class="feature-card">
-                  <div class="feature-title">Division</div>
+                  <div class="feature-title">
+                    <.icon name="hero-folder" class="mr-1 inline size-4" /> Division
+                  </div>
                   <div class="feature-copy">{division_name(@current_scope.user)}</div>
                 </div>
                 <div class="feature-card">
-                  <div class="feature-title">Current Email</div>
+                  <div class="feature-title">
+                    <.icon name="hero-envelope" class="mr-1 inline size-4" /> Current Email
+                  </div>
                   <div class="feature-copy">{@current_email}</div>
                 </div>
               </div>
@@ -152,6 +172,50 @@ defmodule TracmsWeb.UserLive.Settings do
                   </.form>
                 </div>
               </div>
+            </div>
+
+            <div class="mt-8 border-t border-[var(--tracms-border)] pt-8">
+              <div class="mb-5">
+                <p class="eyebrow">Preferences</p>
+                <h3 class="section-title">Notification Settings</h3>
+                <p class="section-copy">
+                  Choose which operational updates TRACMS should send to your account.
+                </p>
+              </div>
+
+              <.form
+                for={@notification_form}
+                id="notification-preferences-form"
+                phx-submit="update_notification_preferences"
+              >
+                <div class="grid gap-4 md:grid-cols-2">
+                  <.input
+                    field={@notification_form[:training_announcements]}
+                    type="checkbox"
+                    label="Training approval and publishing updates"
+                  />
+                  <.input
+                    field={@notification_form[:registration_updates]}
+                    type="checkbox"
+                    label="New registration alerts"
+                  />
+                  <.input
+                    field={@notification_form[:certificate_availability]}
+                    type="checkbox"
+                    label="Certificate generation and delivery alerts"
+                  />
+                  <.input
+                    field={@notification_form[:system_announcements]}
+                    type="checkbox"
+                    label="System announcements"
+                  />
+                </div>
+                <div class="mt-6 flex justify-end">
+                  <.button phx-disable-with="Saving Preferences...">
+                    Save Notification Settings
+                  </.button>
+                </div>
+              </.form>
             </div>
           </section>
 
@@ -495,12 +559,36 @@ defmodule TracmsWeb.UserLive.Settings do
     end
   end
 
+  def handle_event(
+        "update_notification_preferences",
+        %{"notification_preferences" => preferences},
+        socket
+      ) do
+    user = socket.assigns.current_scope.user
+
+    case Accounts.update_user_notification_preferences(user, %{
+           "notification_preferences" => preferences
+         }) do
+      {:ok, updated_user} ->
+        updated_user = %{updated_user | authenticated_at: user.authenticated_at}
+
+        {:noreply,
+         socket
+         |> assign(:current_scope, Scope.for_user(updated_user))
+         |> load_user_settings(updated_user)
+         |> put_flash(:info, "Notification settings updated.")}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, :notification_form, to_form(changeset))}
+    end
+  end
+
   defp require_recent_sign_in(socket) do
     put_flash(socket, :error, "Please sign in again before changing your email or password.")
   end
 
   defp profile_attrs(user_params) do
-    Map.take(user_params, ["full_name", "employee_number"])
+    Map.take(user_params, ["full_name", "position", "employee_number", "contact_number"])
   end
 
   defp office_name(%{office: office}) when not is_nil(office), do: office.name
@@ -517,6 +605,12 @@ defmodule TracmsWeb.UserLive.Settings do
     socket
     |> assign(:current_email, user.email)
     |> assign(:profile_form, to_form(Accounts.change_user_profile(user)))
+    |> assign(
+      :notification_form,
+      to_form(User.default_notification_preferences(user.notification_preferences),
+        as: :notification_preferences
+      )
+    )
     |> assign_saved_certificate_layout(default_certificate_layout_setting)
   end
 

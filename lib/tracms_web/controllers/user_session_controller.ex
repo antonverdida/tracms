@@ -5,11 +5,11 @@ defmodule TracmsWeb.UserSessionController do
   alias TracmsWeb.UserAuth
 
   def create(conn, %{"_action" => "confirmed"} = params) do
-    create(conn, params, "User confirmed successfully.")
+    create(conn, params, "Your account has been confirmed. Welcome to TRACMS.")
   end
 
   def create(conn, params) do
-    create(conn, params, "Welcome back!")
+    create(conn, params, "Welcome to TRACMS. You have signed in successfully.")
   end
 
   # magic link login
@@ -24,7 +24,10 @@ defmodule TracmsWeb.UserSessionController do
 
       _ ->
         conn
-        |> put_flash(:error, "The link is invalid or it has expired.")
+        |> put_flash(
+          :error,
+          "This sign-in link is invalid or has expired. Request a new link and try again."
+        )
         |> redirect(to: ~p"/users/log-in")
     end
   end
@@ -40,7 +43,7 @@ defmodule TracmsWeb.UserSessionController do
     else
       # In order to prevent user enumeration attacks, don't disclose whether the username is registered.
       conn
-      |> put_flash(:error, "Invalid username or password")
+      |> put_flash(:error, "The username or password you entered is incorrect.")
       |> put_flash(:username, String.slice(username, 0, 32))
       |> redirect(to: ~p"/users/log-in")
     end
@@ -57,7 +60,7 @@ defmodule TracmsWeb.UserSessionController do
 
       conn
       |> put_session(:user_return_to, ~p"/users/settings")
-      |> create(params, "Password updated successfully!")
+      |> create(params, "Your password has been updated successfully.")
     else
       conn
       |> put_flash(:error, "Please sign in again before updating your password.")
@@ -67,7 +70,7 @@ defmodule TracmsWeb.UserSessionController do
 
   def delete(conn, _params) do
     conn
-    |> put_flash(:info, "Logged out successfully.")
+    |> put_flash(:info, "You have been signed out successfully.")
     |> UserAuth.log_out_user()
   end
 end

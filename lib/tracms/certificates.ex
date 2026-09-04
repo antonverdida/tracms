@@ -5,8 +5,10 @@ defmodule Tracms.Certificates do
 
   import Ecto.Query, warn: false
 
+  alias Ecto.Multi
   alias Tracms.Accounts.Scope
   alias Tracms.Attendance.{AttendanceRecord, AttendanceSession}
+  alias Tracms.Audit
   alias Tracms.Certificates.CertificateLayoutSetting
   alias Tracms.Certificates.CertificateRecord
   alias Tracms.Registrations.Registration
@@ -189,18 +191,31 @@ defmodule Tracms.Certificates do
          true <- certificate_eligible_for_issuance?(registration),
          nil <- get_certificate_for_registration(registration.id),
          {:ok, certificate_number} <- next_certificate_number() do
-      %CertificateRecord{}
-      |> CertificateRecord.changeset(%{
-        registration_id: registration.id,
-        issued_by_user_id: scope.user.id,
-        certificate_number: certificate_number,
-        verification_code: generate_verification_code(),
-        verification_status: :active,
-        certificate_type: registration.training_activity.certificate_type,
-        issued_on: Date.utc_today(),
-        delivery_status: :available
-      })
-      |> Repo.insert()
+      Multi.new()
+      |> Multi.insert(
+        :certificate,
+        CertificateRecord.changeset(%CertificateRecord{}, %{
+          registration_id: registration.id,
+          issued_by_user_id: scope.user.id,
+          certificate_number: certificate_number,
+          verification_code: generate_verification_code(),
+          verification_status: :active,
+          certificate_type: registration.training_activity.certificate_type,
+          issued_on: Date.utc_today(),
+          delivery_status: :available
+        })
+      )
+      |> Multi.run(:audit_log, fn repo, %{certificate: certificate} ->
+        Audit.log(repo, scope, %{
+          action: "certificate_issued",
+          entity_type: "certificate_record",
+          entity_id: certificate.id,
+          training_activity_id: registration.training_activity_id,
+          metadata: %{"certificate_number" => certificate.certificate_number}
+        })
+      end)
+      |> Repo.transaction()
+      |> transaction_result(:certificate)
       |> preload_result()
     else
       false -> {:error, :unauthorized}
@@ -265,16 +280,18 @@ defmodule Tracms.Certificates do
         {:error, :not_found}
 
       certificate ->
-        certificate
-        |> CertificateRecord.changeset(%{
-          issued_on: Date.utc_today(),
-          certificate_type: certificate.registration.training_activity.certificate_type,
-          delivery_status: :available,
-          downloaded_at: nil,
-          emailed_at: nil
-        })
-        |> Repo.update()
-        |> preload_result()
+        update_certificate_with_audit(
+          scope,
+          certificate,
+          %{
+            issued_on: Date.utc_today(),
+            certificate_type: certificate.registration.training_activity.certificate_type,
+            delivery_status: :available,
+            downloaded_at: nil,
+            emailed_at: nil
+          },
+          "certificate_regenerated"
+        )
     end
   end
 
@@ -647,6 +664,26 @@ defmodule Tracms.Certificates do
 
   defp preload_result({:ok, certificate}), do: {:ok, Repo.preload(certificate, @preloads)}
   defp preload_result(other), do: other
+
+  defp update_certificate_with_audit(scope, certificate, attrs, action) do
+    Multi.new()
+    |> Multi.update(:certificate, CertificateRecord.changeset(certificate, attrs))
+    |> Multi.run(:audit_log, fn repo, %{certificate: updated_certificate} ->
+      Audit.log(repo, scope, %{
+        action: action,
+        entity_type: "certificate_record",
+        entity_id: updated_certificate.id,
+        training_activity_id: updated_certificate.registration.training_activity_id,
+        metadata: %{"certificate_number" => updated_certificate.certificate_number}
+      })
+    end)
+    |> Repo.transaction()
+    |> transaction_result(:certificate)
+    |> preload_result()
+  end
+
+  defp transaction_result({:ok, results}, key), do: {:ok, Map.fetch!(results, key)}
+  defp transaction_result({:error, _operation, reason, _changes}, _key), do: {:error, reason}
 
   defp training_layout_overrides(training_activity) do
     %{

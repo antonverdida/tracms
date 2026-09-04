@@ -60,7 +60,7 @@ defmodule TracmsWeb.UserLive.ConfirmationTest do
       conn = follow_trigger_action(form, conn)
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
-               "User confirmed successfully"
+               "Your account has been confirmed. Welcome to TRACMS."
 
       assert Accounts.get_user!(user.id).confirmed_at
       # we are logged in now
@@ -94,7 +94,7 @@ defmodule TracmsWeb.UserLive.ConfirmationTest do
       conn = follow_trigger_action(form, conn)
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
-               "Welcome back!"
+               "Welcome to TRACMS. You have signed in successfully."
 
       assert Accounts.get_user!(user.id).confirmed_at == user.confirmed_at
 

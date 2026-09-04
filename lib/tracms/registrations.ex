@@ -8,7 +8,9 @@ defmodule Tracms.Registrations do
   alias Ecto.Multi
   alias Tracms.Accounts
   alias Tracms.Accounts.Scope
+  alias Tracms.Audit
   alias Tracms.GoogleSheets
+  alias Tracms.Notifications
   alias Tracms.Registrations.ExternalRegistrationSubmission
   alias Tracms.Registrations.Registration
   alias Tracms.Repo
@@ -238,15 +240,19 @@ defmodule Tracms.Registrations do
          :ok <- ensure_training_open(training_activity),
          :ok <- ensure_capacity_available(training_activity),
          nil <- get_user_registration_for_training(scope, training_id) do
-      %Registration{}
-      |> Registration.changeset(%{
-        training_activity_id: training_id,
-        registrant_user_id: user_id,
-        submitted_at: DateTime.utc_now(:second),
-        special_requirements: attrs["special_requirements"] || attrs[:special_requirements]
-      })
-      |> Repo.insert()
-      |> preload_result()
+      registration_result =
+        %Registration{}
+        |> Registration.changeset(%{
+          training_activity_id: training_id,
+          registrant_user_id: user_id,
+          submitted_at: DateTime.utc_now(:second),
+          special_requirements: attrs["special_requirements"] || attrs[:special_requirements]
+        })
+        |> Repo.insert()
+        |> preload_result()
+
+      notify_registration_submission(registration_result)
+      registration_result
     else
       {:error, :unauthorized} -> {:error, :unauthorized}
       nil -> {:error, :training_not_found}
@@ -325,15 +331,35 @@ defmodule Tracms.Registrations do
     with true <- Scope.training_manager?(scope),
          true <- manageable_registration?(scope, registration),
          true <- status in [:approved, :rejected, :waitlisted] do
-      registration
-      |> Registration.changeset(%{
-        status: status,
-        review_notes: notes,
-        reviewed_at: DateTime.utc_now(:second),
-        reviewer_user_id: scope.user.id
-      })
-      |> Repo.update()
-      |> preload_result()
+      review_result =
+        Multi.new()
+        |> Multi.update(
+          :registration,
+          Registration.changeset(registration, %{
+            status: status,
+            review_notes: notes,
+            reviewed_at: DateTime.utc_now(:second),
+            reviewer_user_id: scope.user.id
+          })
+        )
+        |> Multi.run(:audit_log, fn repo, %{registration: reviewed_registration} ->
+          Audit.log(repo, scope, %{
+            action: "registration_reviewed",
+            entity_type: "registration",
+            entity_id: reviewed_registration.id,
+            training_activity_id: reviewed_registration.training_activity_id,
+            metadata: %{
+              "from_status" => Atom.to_string(registration.status),
+              "to_status" => Atom.to_string(reviewed_registration.status)
+            }
+          })
+        end)
+        |> Repo.transaction()
+        |> transaction_result(:registration)
+        |> preload_result()
+
+      notify_registration_review(review_result)
+      review_result
     else
       false -> {:error, :unauthorized}
     end
@@ -889,6 +915,21 @@ defmodule Tracms.Registrations do
 
   defp normalize_optional_string(value), do: value
 
+  defp notify_registration_submission({:ok, registration}) do
+    _ = Notifications.enqueue_registration_submission(registration)
+    :ok
+  end
+
+  defp notify_registration_submission(_registration_result), do: :ok
+
+  defp notify_registration_review({:ok, %{status: status} = registration})
+       when status in [:approved, :rejected, :waitlisted] do
+    _ = Notifications.enqueue_registration_reviewed(registration)
+    :ok
+  end
+
+  defp notify_registration_review(_registration_result), do: :ok
+
   defp maybe_preload_registration(nil), do: nil
   defp maybe_preload_registration(registration), do: Repo.preload(registration, @preloads)
 
@@ -897,6 +938,9 @@ defmodule Tracms.Registrations do
 
   defp preload_result({:ok, registration}), do: {:ok, Repo.preload(registration, @preloads)}
   defp preload_result(other), do: other
+
+  defp transaction_result({:ok, results}, key), do: {:ok, Map.fetch!(results, key)}
+  defp transaction_result({:error, _operation, reason, _changes}, _key), do: {:error, reason}
 
   defp preload_external_result({:ok, submission}) do
     {:ok, Repo.preload(submission, @external_preloads)}

@@ -47,7 +47,7 @@ defmodule TracmsWeb.UserLive.RegistrationTest do
         |> follow_redirect(conn, ~p"/users/log-in")
 
       assert html =~
-               ~r/An email was sent to .*, please access it to confirm your account/
+               ~r/We sent a confirmation link to .*\. Open it to activate your TRACMS account/
     end
 
     test "renders errors for duplicated email", %{conn: conn} do

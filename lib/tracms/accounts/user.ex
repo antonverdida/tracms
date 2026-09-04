@@ -22,6 +22,8 @@ defmodule Tracms.Accounts.User do
     field :username, :string
     field :full_name, :string
     field :employee_number, :string
+    field :position, :string
+    field :contact_number, :string
     field :notification_preferences, :map, default: %{}
     field :status, Ecto.Enum, values: @status_values, default: :pending
     field :approved_at, :utc_datetime
@@ -143,9 +145,20 @@ defmodule Tracms.Accounts.User do
   """
   def profile_changeset(user, attrs) do
     user
-    |> cast(attrs, [:full_name, :employee_number, :status, :role_id, :office_id, :approved_at])
+    |> cast(attrs, [
+      :full_name,
+      :employee_number,
+      :position,
+      :contact_number,
+      :status,
+      :role_id,
+      :office_id,
+      :approved_at
+    ])
     |> validate_length(:full_name, max: 160)
     |> validate_length(:employee_number, max: 64)
+    |> validate_length(:position, max: 160)
+    |> validate_length(:contact_number, max: 40)
     |> assoc_constraint(:role)
     |> assoc_constraint(:office)
   end

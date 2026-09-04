@@ -75,7 +75,7 @@ defmodule TracmsWeb.CoreComponents do
           class="mt-0.5 size-5 shrink-0 text-[var(--tracms-danger)]"
         />
         <div class="min-w-0 flex-1">
-          <p :if={@title} class="font-semibold">{@title}</p>
+          <p class="font-semibold">{@title || flash_title(@kind, msg)}</p>
           <p>{msg}</p>
         </div>
         <button type="button" class="flash-close self-start" aria-label={gettext("close")}>
@@ -85,6 +85,17 @@ defmodule TracmsWeb.CoreComponents do
     </div>
     """
   end
+
+  defp flash_title(:info, message) when is_binary(message) do
+    cond do
+      String.starts_with?(message, "Welcome to TRACMS") -> "Welcome to TRACMS"
+      String.starts_with?(message, "We sent a confirmation link") -> "Check your email"
+      true -> "Success"
+    end
+  end
+
+  defp flash_title(:info, _message), do: "Success"
+  defp flash_title(:error, _message), do: "Action needed"
 
   @doc """
   Renders a button with navigation support.

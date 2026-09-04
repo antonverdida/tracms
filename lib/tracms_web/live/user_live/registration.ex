@@ -229,7 +229,7 @@ defmodule TracmsWeb.UserLive.Registration do
          socket
          |> put_flash(
            :info,
-           "An email was sent to #{user.email}, please access it to confirm your account."
+           "We sent a confirmation link to #{user.email}. Open it to activate your TRACMS account."
          )
          |> push_navigate(to: ~p"/users/log-in")}
 
